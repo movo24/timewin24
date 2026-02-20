@@ -1,36 +1,184 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TimeWin - Gestion de Planning du Personnel
 
-## Getting Started
+Outil interne de gestion de planning multi-boutiques. Concu pour scaler jusqu'a 100 magasins.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript
+- **Prisma 7** ORM + PostgreSQL
+- **NextAuth 4** (Credentials + bcrypt)
+- **shadcn/ui** style components (Radix UI + Tailwind CSS 4)
+
+## Prerequis
+
+- **Node.js** >= 18
+- **Docker** + Docker Compose (pour PostgreSQL)
+- **npm**
+
+## Installation rapide
 
 ```bash
+# 1. Cloner le projet
+git clone <repo-url> && cd time_win
+
+# 2. Installer les dependances
+npm install
+
+# 3. Lancer PostgreSQL via Docker
+docker compose up -d
+
+# 4. Configurer les variables d'environnement
+cp .env.example .env
+# (les valeurs par defaut fonctionnent avec le docker-compose fourni)
+
+# 5. Generer le client Prisma, pousser le schema, et seeder la base
+npm run setup
+
+# 6. Lancer le serveur de dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir **http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Comptes de test
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role     | Email                    | Mot de passe |
+|----------|--------------------------|--------------|
+| Admin    | admin@timewin.fr         | admin123     |
+| Employe  | jean.dupont@timewin.fr   | pass123      |
 
-## Learn More
+## Variables d'environnement
 
-To learn more about Next.js, take a look at the following resources:
+| Variable         | Description                        | Defaut                                                        |
+|------------------|------------------------------------|---------------------------------------------------------------|
+| `DATABASE_URL`   | URL de connexion PostgreSQL        | `postgresql://timewin:timewin_secret@localhost:5432/timewin`  |
+| `NEXTAUTH_SECRET`| Secret pour les sessions JWT       | (a changer en production)                                     |
+| `NEXTAUTH_URL`   | URL de base de l'application       | `http://localhost:3000`                                       |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Commandes disponibles
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev          # Lancer en mode dev
+npm run build        # Build production
+npm run start        # Lancer le build production
+npm run test         # Lancer les tests unitaires
+npm run setup        # Prisma generate + db push + seed (setup complet)
+npm run db:generate  # Generer le client Prisma
+npm run db:push      # Pousser le schema vers la DB
+npm run db:seed      # Lancer le seed
+npm run db:reset     # Reset complet de la DB + re-seed
+```
 
-## Deploy on Vercel
+## Structure du projet
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+  app/
+    (auth)/login/         # Page de connexion
+    (dashboard)/          # Layout avec sidebar (protege)
+      planning/           # Vue planning par boutique + par employe
+      stores/             # CRUD magasins
+      employees/          # CRUD employes
+      audit/              # Journal d'audit
+    api/
+      auth/[...nextauth]/ # Auth API
+      stores/             # API magasins
+      employees/          # API employes
+      shifts/             # API shifts (CRUD + duplicate + export)
+      audit/              # API audit
+  components/
+    ui/                   # Composants de base (button, input, dialog...)
+    planning/             # Composants planning (grille semaine, modal shift)
+    sidebar.tsx           # Navigation laterale
+    store-search.tsx      # Recherche de magasin avec autocomplete
+  lib/
+    prisma.ts             # Instance Prisma (singleton)
+    auth.ts               # Configuration NextAuth
+    validations.ts        # Schemas Zod
+    shifts.ts             # Logique metier shifts (overlap, heures)
+    shift-utils.ts        # Fonctions pures (testables sans DB)
+    audit.ts              # Helper d'audit
+    utils.ts              # Utilitaires (dates, semaines, formatage)
+    api-helpers.ts        # Helpers API (auth, responses)
+  __tests__/
+    shift-overlap.test.ts # Tests de detection de chevauchement
+prisma/
+  schema.prisma           # Schema de base de donnees
+  seed.ts                 # Script de seed (10 magasins, 30 employes, 2 semaines)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Schema de base de donnees
+
+```
+User           1---0..1  Employee       (compte utilisateur lie a un employe)
+Store          *---*     Employee       (via StoreEmployee, many-to-many)
+Shift          *---1     Store          (un shift = 1 boutique)
+Shift          *---1     Employee       (un shift = 1 employe)
+AuditLog       *---1     User           (qui a fait quoi)
+```
+
+**Index performances:** `(store_id, date)`, `(employee_id, date)`, `(date)` sur Shift.
+
+## Fonctionnalites
+
+### Admin
+- **Planning par boutique**: selecteur boutique avec recherche, grille 7 jours, navigation semaine
+- **Planning par employe**: vue dediee avec total heures
+- **Creer/modifier/supprimer** des shifts via modal
+- **Duplication de semaine**: copie les shifts d'une semaine vers la suivante (par boutique)
+- **Detection de conflits**: impossible d'affecter un employe a 2 shifts qui se chevauchent
+- **Alerte depassement heures**: avertissement non-bloquant si l'employe depasse ses heures/sem
+- **Export CSV**: export du planning d'une boutique pour une semaine
+- **CRUD magasins** avec pagination et recherche
+- **CRUD employes** avec affectation multi-boutiques
+- **Journal d'audit**: log de toutes les modifications
+
+### Employe
+- **Lecture seule** de son propre planning
+- **Navigation semaine par semaine**
+
+## Tests
+
+```bash
+npm test
+```
+
+11 tests unitaires sur la fonction de detection de chevauchement de shifts couvrant:
+- Chevauchement partiel, total, identique
+- Shifts consecutifs (pas de chevauchement)
+- Dates differentes
+- Meme shift ID (exclusion de soi-meme en edition)
+- Cas limites (1 minute de chevauchement)
+
+## Securite
+
+- Authentification obligatoire sur toutes les routes
+- Protection admin sur toutes les routes d'administration
+- Rate limiting sur login (5 tentatives max, verrouillage 15 min)
+- Mots de passe hashe en bcrypt
+- Validation server-side avec Zod sur toutes les entrees
+- Sessions JWT (8h max)
+
+## Choix techniques
+
+**Prisma 7 + pg adapter**: Prisma 7 impose l'utilisation d'un driver adapter (`@prisma/adapter-pg`) au lieu de la connexion directe. Cela ajoute une dependance mais offre un meilleur controle sur le pool de connexions.
+
+**Temps stockes en string "HH:mm"**: Plus simple qu'un DateTime complet pour des creneaux intra-journee. La comparaison lexicographique suffit pour la detection de chevauchement (pas de shifts a cheval sur minuit dans le scope MVP).
+
+**Architecture plate**: Pas de couche "service" separee des routes API. Pour un MVP a perimetre restreint, les route handlers contiennent directement la logique. Si le projet grossit, extraire une couche service sera trivial.
+
+## Ameliorations futures (NON implementees)
+
+- **Drag & drop** sur la grille pour deplacer/redimensionner les shifts
+- **Notifications** (email/push) quand le planning d'un employe change
+- **Gestion des conges/absences** integree au planning
+- **Templates de planning** reutilisables (ex: "semaine type hiver")
+- **Vue multi-boutiques** pour comparer les plannings cote a cote
+- **Mode hors-ligne** (PWA + sync)
+- **Export PDF** du planning avec mise en page imprimable
+- **API publique** avec cles API pour integration tierce
+- **Historique / versioning** du planning (revenir a une version precedente)
+- **Calcul automatique** de la masse salariale estimee
+- **Support shifts de nuit** (chevauchement minuit)
+- **i18n** multi-langue
+- **RBAC avance** (manager de zone, responsable magasin)

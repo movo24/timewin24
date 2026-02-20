@@ -1,0 +1,25 @@
+{
+  "name": "TimeWin - Gestion de Planning",
+  "short_name": "TimeWin",
+  "description": "Application de gestion de planning du personnel pour le retail",
+  "start_url": "/planning",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "orientation": "any",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

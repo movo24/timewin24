@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         Role       @default(EMPLOYEE)
+  employeeId   String?    @unique
+  employee     Employee?  @relation(fields: [employeeId], references: [id])
+  auditLogs    AuditLog[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Rate limiting: track failed login attempts
+  failedAttempts Int      @default(0)
+  lockedUntil    DateTime?
+
+  @@index([email])
+}
+
+model Store {
+  id        String          @id @default(cuid())
+  name      String
+  city      String?
+  address   String?
+  timezone  String?         @default("Europe/Paris")
+  employees StoreEmployee[]
+  shifts    Shift[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([name])
+  @@index([city])
+}
+
+model Employee {
+  id          String          @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String          @unique
+  active      Boolean         @default(true)
+  weeklyHours Float?
+  stores      StoreEmployee[]
+  shifts      Shift[]
+  user        User?
+  costConfig  EmployeeCost?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([email])
+  @@index([lastName, firstName])
+}
+
+model StoreEmployee {
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId    String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  assignedAt DateTime @default(now())
+
+  @@id([storeId, employeeId])
+  @@index([storeId])
+  @@index([employeeId])
+}
+
+model Shift {
+  id         String   @id @default(cuid())
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId    String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  date       DateTime @db.Date
+  startTime  String   // "HH:mm" format
+  endTime    String   // "HH:mm" format
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([storeId, date])
+  @@index([employeeId, date])
+  @@index([date])
+}
+
+// ─── Employer Cost Engine ─────────────────────────
+// Country-level rules for employer cost calculation
+
+model CountryConfig {
+  id              String   @id @default(cuid())
+  code            String   @unique // "FR", "BE", "ES", etc.
+  name            String   // "France", "Belgique", etc.
+  currency        String   @default("EUR")
+  minimumWageHour Float    // SMIC horaire brut (ex: 12.02 for FR 2026)
+  employerRate    Float    // Taux charges patronales global "plein pot" (ex: 0.45)
+
+  // Fillon-style reduction parameters
+  reductionEnabled    Boolean @default(true)
+  reductionMaxCoeff   Float   @default(0.3206) // Coefficient max de réduction (au SMIC)
+  reductionThreshold  Float   @default(1.6)    // Seuil en multiple du SMIC (1.6x = fin de réduction)
+
+  // Extra fixed costs per hour (mutuelle, transport, etc.)
+  extraHourlyCost Float   @default(0)
+
+  notes         String?  // Notes libres (ex: "MAJ 01/01/2026")
+  effectiveFrom DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  employees EmployeeCost[]
+
+  @@index([code])
+}
+
+// Per-employee cost parameters (overrides country defaults if needed)
+model EmployeeCost {
+  id              String   @id @default(cuid())
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId      String   @unique
+  country         CountryConfig @relation(fields: [countryCode], references: [code])
+  countryCode     String
+  hourlyRateGross Float    // Taux horaire brut de l'employé
+  fixedMissionCost Float?  // Coût fixe par mission (€) — optionnel
+
+  // Optional overrides (null = use country defaults)
+  employerRateOverride Float?
+  extraHourlyCostOverride Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([countryCode])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  action    String   // CREATE, UPDATE, DELETE
+  entity    String   // Shift, Store, Employee
+  entityId  String
+  diff      String?  // JSON string of changes
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
