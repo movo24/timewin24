@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
       const role = sessionData?.user?.role;
       if (role === "EMPLOYEE") {
         // Un employé ne devrait pas se connecter ici
-        setError("Acc\u00e8s r\u00e9serv\u00e9 aux administrateurs. Utilisez la page de connexion employ\u00e9.");
+        setError("Acc\u00e8s r\u00e9serv\u00e9 aux administrateurs. Utilisez la page de connexion employ\u00e9s.");
         // Déconnecter
         await fetch("/api/auth/signout", { method: "POST" });
         setLoading(false);
@@ -137,7 +137,7 @@ export default function AdminLoginPage() {
               href="/login"
               className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
             >
-              &larr; Retour \u00e0 la connexion employ\u00e9
+              &#8592; Retour &agrave; la connexion employ&eacute;
             </Link>
           </div>
         </div>
