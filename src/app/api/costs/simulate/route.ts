@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const body = await req.json();
-  const { hourlyRateGross, hours, countryCode, employerRateOverride, extraHourlyCostOverride } = body;
+  const { hourlyRateGross, hours, employerRateOverride, extraHourlyCostOverride } = body;
 
   if (hourlyRateGross == null || hours == null) {
     return errorResponse("Champs obligatoires: hourlyRateGross, hours", 400);
@@ -18,13 +18,12 @@ export async function POST(req: NextRequest) {
   // Get country rules
   let rules: CountryRules;
 
-  if (countryCode) {
-    const country = await prisma.countryConfig.findUnique({
-      where: { code: countryCode.toUpperCase() },
-    });
-    if (!country) {
-      return errorResponse(`Pays "${countryCode}" non configuré`, 404);
-    }
+  // Always use France 2026 defaults (single-country mode)
+  // If country config exists in DB, use it; otherwise fallback to hardcoded defaults
+  const country = await prisma.countryConfig.findUnique({
+    where: { code: "FR" },
+  });
+  if (country) {
     rules = {
       code: country.code,
       name: country.name,
@@ -37,7 +36,6 @@ export async function POST(req: NextRequest) {
       extraHourlyCost: country.extraHourlyCost,
     };
   } else {
-    // Default to France 2026
     rules = FRANCE_2026_DEFAULTS;
   }
 

@@ -120,16 +120,6 @@ interface StoreOption {
   city: string | null;
 }
 
-interface CountryOption {
-  code: string;
-  name: string;
-  employerRate: number;
-  minimumWageHour: number;
-  reductionEnabled: boolean;
-  reductionMaxCoeff: number;
-  reductionThreshold: number;
-}
-
 /** Calculate Fillon coefficient (same formula as server) */
 function calcFillonCoeff(
   grossPeriod: number,
@@ -175,7 +165,6 @@ export default function EmployeesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [allStores, setAllStores] = useState<StoreOption[]>([]);
-  const [countries, setCountries] = useState<CountryOption[]>([]);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -194,7 +183,6 @@ export default function EmployeesPage() {
     // Cost fields
     hourlyRateGross: "",
     fixedMissionCost: "",
-    countryCode: "FR",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -225,11 +213,6 @@ export default function EmployeesPage() {
       .then((r) => r.json())
       .then((data) => setAllStores(data.stores || []))
       .catch(() => {});
-
-    fetch("/api/costs/countries")
-      .then((r) => r.json())
-      .then((data) => setCountries(data.countries || []))
-      .catch(() => {});
   }, []);
 
   function openCreate() {
@@ -251,7 +234,6 @@ export default function EmployeesPage() {
       storeIds: [],
       hourlyRateGross: "",
       fixedMissionCost: "",
-      countryCode: "FR",
     });
     setError("");
     setDialogOpen(true);
@@ -276,7 +258,6 @@ export default function EmployeesPage() {
       storeIds: emp.stores.map((s) => s.store.id),
       hourlyRateGross: emp.costConfig?.hourlyRateGross?.toString() || "",
       fixedMissionCost: emp.costConfig?.fixedMissionCost?.toString() || "",
-      countryCode: emp.costConfig?.countryCode || "FR",
     });
     setError("");
     setDialogOpen(true);
@@ -340,7 +321,7 @@ export default function EmployeesPage() {
     if (form.hourlyRateGross && empId) {
       const costPayload = {
         employeeId: empId,
-        countryCode: form.countryCode,
+        countryCode: "FR",
         hourlyRateGross: form.hourlyRateGross,
         fixedMissionCost: form.fixedMissionCost || null,
       };
@@ -407,15 +388,23 @@ export default function EmployeesPage() {
     setRecalculating(false);
   }
 
-  // Live calculation of cost per hour in the form
+  // Live calculation of cost per hour in the form (France only)
   const formCostPerHour = useMemo(() => {
     if (!form.hourlyRateGross) return null;
     const rate = parseFloat(form.hourlyRateGross);
     if (isNaN(rate) || rate <= 0) return null;
-    const country = countries.find((c) => c.code === form.countryCode);
-    if (!country) return null;
-    return calcCostPerHour(rate, country, null);
-  }, [form.hourlyRateGross, form.countryCode, countries]);
+    // Use France defaults directly
+    const franceDefaults: CostCountry = {
+      code: "FR",
+      name: "France",
+      employerRate: 0.45,
+      minimumWageHour: 12.02,
+      reductionEnabled: true,
+      reductionMaxCoeff: 0.3206,
+      reductionThreshold: 1.6,
+    };
+    return calcCostPerHour(rate, franceDefaults, null);
+  }, [form.hourlyRateGross]);
 
   return (
     <div>
@@ -915,25 +904,7 @@ export default function EmployeesPage() {
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
-                <Label>Pays</Label>
-                <select
-                  value={form.countryCode}
-                  onChange={(e) =>
-                    setForm({ ...form, countryCode: e.target.value })
-                  }
-                  className="w-full h-9 rounded-md border border-gray-200 bg-white px-3 text-sm"
-                >
-                  {countries.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.code} — {c.name}
-                    </option>
-                  ))}
-                  {countries.length === 0 && (
-                    <option value="FR">FR — France (défaut)</option>
-                  )}
-                </select>
-              </div>
+              {/* Pays fixé à France */}
 
               {/* Live cost preview */}
               {formCostPerHour != null && (

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
+import { FRANCE_2026_DEFAULTS } from "@/lib/employer-cost";
 
 // GET /api/costs/employees?storeId=xxx - List employee cost configs
 export async function GET(req: NextRequest) {
@@ -42,8 +43,24 @@ export async function POST(req: NextRequest) {
   const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
   if (!employee) return errorResponse("Employé non trouvé", 404);
 
-  // Verify country exists
-  const country = await prisma.countryConfig.findUnique({ where: { code: countryCode.toUpperCase() } });
+  // Verify country exists — auto-create France if missing
+  let country = await prisma.countryConfig.findUnique({ where: { code: countryCode.toUpperCase() } });
+  if (!country && countryCode.toUpperCase() === "FR") {
+    country = await prisma.countryConfig.create({
+      data: {
+        code: "FR",
+        name: "France",
+        currency: "EUR",
+        minimumWageHour: FRANCE_2026_DEFAULTS.minimumWageHour,
+        employerRate: FRANCE_2026_DEFAULTS.employerRate,
+        reductionEnabled: FRANCE_2026_DEFAULTS.reductionEnabled,
+        reductionMaxCoeff: FRANCE_2026_DEFAULTS.reductionMaxCoeff,
+        reductionThreshold: FRANCE_2026_DEFAULTS.reductionThreshold,
+        extraHourlyCost: FRANCE_2026_DEFAULTS.extraHourlyCost,
+        notes: "France 2026 - auto-configuré",
+      },
+    });
+  }
   if (!country) return errorResponse(`Pays "${countryCode}" non configuré`, 404);
 
   // Upsert

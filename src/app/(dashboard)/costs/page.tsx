@@ -144,7 +144,6 @@ export default function CostsPage() {
 function SimulatorTab() {
   const [hourlyRate, setHourlyRate] = useState("12.02");
   const [hours, setHours] = useState("35");
-  const [countryCode, setCountryCode] = useState("FR");
   const [breakdown, setBreakdown] = useState<CostBreakdown | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -156,7 +155,6 @@ function SimulatorTab() {
       body: JSON.stringify({
         hourlyRateGross: parseFloat(hourlyRate),
         hours: parseFloat(hours),
-        countryCode: countryCode || undefined,
       }),
     });
     const data = await res.json();
@@ -164,7 +162,7 @@ function SimulatorTab() {
     if (res.ok) {
       setBreakdown(data.breakdown);
     }
-  }, [hourlyRate, hours, countryCode]);
+  }, [hourlyRate, hours]);
 
   // Auto-simulate on input change
   useEffect(() => {
@@ -205,16 +203,7 @@ function SimulatorTab() {
             <p className="text-xs text-gray-400 mt-1">35h = temps plein légal</p>
           </div>
 
-          <div>
-            <Label>Pays</Label>
-            <select
-              className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm mt-1"
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-            >
-              <option value="FR">France (défaut)</option>
-            </select>
-          </div>
+          {/* Pays fixé : France */}
         </div>
 
         {/* Quick presets */}
@@ -574,7 +563,7 @@ function ConfigTab() {
   // Employee cost configs
   const [employeeConfigs, setEmployeeConfigs] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [empForm, setEmpForm] = useState({ employeeId: "", countryCode: "FR", hourlyRateGross: "12.02" });
+  const [empForm, setEmpForm] = useState({ employeeId: "", hourlyRateGross: "12.02" });
   const [empSaving, setEmpSaving] = useState(false);
 
   useEffect(() => {
@@ -606,7 +595,7 @@ function ConfigTab() {
     const res = await fetch("/api/costs/employees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(empForm),
+      body: JSON.stringify({ ...empForm, countryCode: "FR" }),
     });
     const data = await res.json();
     setEmpSaving(false);
@@ -751,17 +740,17 @@ function ConfigTab() {
         </div>
 
         {/* Add form */}
-        {countries.length > 0 && unconfiguredEmployees.length > 0 && (
+        {unconfiguredEmployees.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 mb-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-end gap-3">
               <div className="sm:col-span-2 lg:min-w-[200px] lg:w-auto">
-                <Label className="text-xs">Employé</Label>
+                <Label className="text-xs">Employ&eacute;</Label>
                 <select
                   className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm mt-1"
                   value={empForm.employeeId}
                   onChange={(e) => setEmpForm({ ...empForm, employeeId: e.target.value })}
                 >
-                  <option value="">Sélectionner...</option>
+                  <option value="">S&eacute;lectionner...</option>
                   {unconfiguredEmployees.map((emp: any) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.firstName} {emp.lastName}
@@ -770,19 +759,7 @@ function ConfigTab() {
                 </select>
               </div>
               <div>
-                <Label className="text-xs">Pays</Label>
-                <select
-                  className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm mt-1"
-                  value={empForm.countryCode}
-                  onChange={(e) => setEmpForm({ ...empForm, countryCode: e.target.value })}
-                >
-                  {countries.map((c) => (
-                    <option key={c.code} value={c.code}>{c.code}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs">Taux brut (€/h)</Label>
+                <Label className="text-xs">Taux brut (&euro;/h)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -804,11 +781,8 @@ function ConfigTab() {
             <div className="space-y-2 lg:hidden">
               {employeeConfigs.map((c: any) => (
                 <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium text-sm">{c.employee.firstName} {c.employee.lastName}</span>
-                    <span className="text-xs text-gray-400 ml-1.5">{c.country.code}</span>
-                  </div>
-                  <span className="font-mono font-semibold text-sm">{c.hourlyRateGross.toFixed(2)} €/h</span>
+                  <span className="font-medium text-sm">{c.employee.firstName} {c.employee.lastName}</span>
+                  <span className="font-mono font-semibold text-sm">{c.hourlyRateGross.toFixed(2)} &euro;/h</span>
                 </div>
               ))}
             </div>
@@ -818,8 +792,7 @@ function ConfigTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-4 py-2 font-medium text-gray-500">Employé</th>
-                    <th className="text-left px-4 py-2 font-medium text-gray-500">Pays</th>
+                    <th className="text-left px-4 py-2 font-medium text-gray-500">Employ&eacute;</th>
                     <th className="text-right px-4 py-2 font-medium text-gray-500">Taux brut/h</th>
                   </tr>
                 </thead>
@@ -827,8 +800,7 @@ function ConfigTab() {
                   {employeeConfigs.map((c: any) => (
                     <tr key={c.id} className="border-b border-gray-100">
                       <td className="px-4 py-2">{c.employee.firstName} {c.employee.lastName}</td>
-                      <td className="px-4 py-2 text-gray-600">{c.country.code} — {c.country.name}</td>
-                      <td className="px-4 py-2 text-right font-mono font-medium">{c.hourlyRateGross.toFixed(2)} €</td>
+                      <td className="px-4 py-2 text-right font-mono font-medium">{c.hourlyRateGross.toFixed(2)} &euro;</td>
                     </tr>
                   ))}
                 </tbody>
@@ -838,8 +810,8 @@ function ConfigTab() {
         ) : (
           <div className="bg-white border border-gray-200 rounded-lg p-6 text-center text-gray-400">
             <Users className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-            <p>Aucun employé configuré.</p>
-            <p className="text-xs mt-1">Ajoutez d'abord un pays, puis assignez des taux.</p>
+            <p>Aucun employ&eacute; configur&eacute;.</p>
+            <p className="text-xs mt-1">Assignez des taux horaires aux employ&eacute;s.</p>
           </div>
         )}
       </div>
