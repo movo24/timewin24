@@ -17,6 +17,7 @@ export async function GET(
     where: { id },
     include: {
       employees: { include: { employee: true } },
+      schedules: { orderBy: { dayOfWeek: "asc" } },
       _count: { select: { shifts: true } },
     },
   });

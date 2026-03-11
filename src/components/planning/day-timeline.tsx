@@ -6,9 +6,14 @@ import {
   assignLanes,
   calculateCoverage,
   getEmployeeColor,
+  detectShiftViolations,
+  timeToMinutes,
   type TimelineShift,
   type PositionedShift,
+  type StoreScheduleInfo,
 } from "@/lib/timeline-utils";
+import { ShiftDragGhost } from "./shift-drag-ghost";
+import type { DragState } from "@/hooks/useShiftDrag";
 
 interface DayTimelineProps {
   date: string; // "YYYY-MM-DD"
@@ -18,6 +23,23 @@ interface DayTimelineProps {
   mode: "store" | "employee";
   gridStartHour: number;
   gridEndHour: number;
+  storeSchedules?: StoreScheduleInfo[];
+  multiStore?: boolean;
+  // Drag-and-drop props
+  dragState?: DragState | null;
+  onShiftPointerDown?: (
+    e: React.PointerEvent,
+    shiftId: string,
+    startMin: number,
+    endMin: number,
+    date: string,
+    lane: number,
+    totalLanes: number,
+    employeeId: string | null
+  ) => void;
+  didDrag?: boolean;
+  clearDidDrag?: () => void;
+  gridRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DayTimeline({
@@ -28,6 +50,13 @@ export function DayTimeline({
   mode,
   gridStartHour,
   gridEndHour,
+  storeSchedules,
+  multiStore,
+  dragState,
+  onShiftPointerDown,
+  didDrag,
+  clearDidDrag,
+  gridRef,
 }: DayTimelineProps) {
   const totalHours = gridEndHour - gridStartHour;
   const HOUR_HEIGHT = 64; // slightly taller for day view
@@ -58,11 +87,20 @@ export function DayTimeline({
     ? ((nowMinutes - gridStartHour * 60) / (totalHours * 60)) * gridHeight
     : -1;
 
+  // Store schedule for this specific day
+  const scheduleForDay = useMemo(() => {
+    if (!storeSchedules) return null;
+    const [y, m, d] = date.split("-").map(Number);
+    const dayDate = new Date(Date.UTC(y, m - 1, d));
+    const dayOfWeek = dayDate.getUTCDay();
+    return storeSchedules.find(s => s.dayOfWeek === dayOfWeek) || null;
+  }, [storeSchedules, date]);
+
   // Employee summary for sidebar
   const employeeSummary = useMemo(() => {
     const map = new Map<string, { name: string; totalMinutes: number; shifts: number }>();
     for (const s of dayShifts) {
-      const key = s.employeeId;
+      const key = s.employeeId || "__unassigned__";
       const existing = map.get(key);
       const [sh, sm] = s.startTime.split(":").map(Number);
       const [eh, em] = s.endTime.split(":").map(Number);
@@ -72,7 +110,9 @@ export function DayTimeline({
         existing.shifts++;
       } else {
         map.set(key, {
-          name: `${s.employee.firstName} ${s.employee.lastName}`,
+          name: s.employee
+            ? `${s.employee.firstName} ${s.employee.lastName}`
+            : "NON ASSIGNÉ",
           totalMinutes: duration,
           shifts: 1,
         });
@@ -82,6 +122,10 @@ export function DayTimeline({
   }, [dayShifts]);
 
   function handleBgClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (didDrag) {
+      clearDidDrag?.();
+      return;
+    }
     if ((e.target as HTMLElement).dataset.bgCell !== "true") return;
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
@@ -91,6 +135,17 @@ export function DayTimeline({
     const time = `${hour.toString().padStart(2, "0")}:${(minutes % 60).toString().padStart(2, "0")}`;
     onAddShift(date, time);
   }
+
+  // Store hours overlay helpers
+  const gridStartMin = gridStartHour * 60;
+  const gridEndMin = gridEndHour * 60;
+  const isOpen = scheduleForDay && !scheduleForDay.closed;
+  const openMin = isOpen ? timeToMinutes(scheduleForDay!.openTime) : 0;
+  const closeMin = isOpen ? timeToMinutes(scheduleForDay!.closeTime) : 1440;
+  const closedStyle = {
+    background: 'repeating-linear-gradient(-45deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 2px, transparent 2px, transparent 6px)',
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  };
 
   return (
     <div className="flex gap-4">
@@ -115,8 +170,13 @@ export function DayTimeline({
             <div className="w-3 shrink-0 border-r border-gray-200 relative" style={{ height: gridHeight }}>
               {coverage.map((slot) => {
                 const top = (slot.hour - gridStartHour) * HOUR_HEIGHT;
+                const slotMin = slot.hour * 60;
+                const isDuringOpen = !scheduleForDay || (isOpen && slotMin >= openMin && slotMin < closeMin);
+
                 let color = "bg-gray-100";
-                if (slot.count === 0) color = "bg-red-400";
+                if (!isDuringOpen) {
+                  color = "bg-gray-100"; // Outside hours: neutral
+                } else if (slot.count === 0) color = "bg-red-400";
                 else if (slot.count === 1) color = "bg-yellow-400";
                 else if (slot.count >= 2) color = "bg-green-400";
                 return (
@@ -124,7 +184,7 @@ export function DayTimeline({
                     key={slot.hour}
                     className={`absolute w-full ${color}`}
                     style={{ top, height: HOUR_HEIGHT }}
-                    title={`${slot.hour}h: ${slot.count} employé(s)`}
+                    title={`${slot.hour}h: ${slot.count} employé(s)${!isDuringOpen ? ' (fermé)' : ''}`}
                   />
                 );
               })}
@@ -133,8 +193,9 @@ export function DayTimeline({
 
           {/* Shift area */}
           <div
+            ref={gridRef}
             className="flex-1 relative"
-            style={{ height: gridHeight }}
+            style={{ height: gridHeight, touchAction: "pan-y" }}
             onClick={handleBgClick}
           >
             {/* Hour grid lines */}
@@ -157,6 +218,38 @@ export function DayTimeline({
               />
             ))}
 
+            {/* Store hours overlay (grey zones for closed hours) */}
+            {isOpen && (
+              <>
+                {openMin > gridStartMin && (
+                  <div
+                    className="absolute left-0 right-0 pointer-events-none z-[5]"
+                    style={{ ...closedStyle, top: 0, height: ((openMin - gridStartMin) / (totalHours * 60)) * gridHeight }}
+                  />
+                )}
+                {closeMin < gridEndMin && (
+                  <div
+                    className="absolute left-0 right-0 pointer-events-none z-[5]"
+                    style={{ ...closedStyle, top: ((closeMin - gridStartMin) / (totalHours * 60)) * gridHeight, height: ((gridEndMin - closeMin) / (totalHours * 60)) * gridHeight }}
+                  />
+                )}
+                {/* Opening line (green dashed) */}
+                {openMin >= gridStartMin && openMin <= gridEndMin && (
+                  <div
+                    className="absolute left-0 right-0 border-t-[1.5px] border-dashed border-green-400 pointer-events-none z-[6]"
+                    style={{ top: ((openMin - gridStartMin) / (totalHours * 60)) * gridHeight }}
+                  />
+                )}
+                {/* Closing line (red dashed) */}
+                {closeMin >= gridStartMin && closeMin <= gridEndMin && (
+                  <div
+                    className="absolute left-0 right-0 border-t-[1.5px] border-dashed border-red-400 pointer-events-none z-[6]"
+                    style={{ top: ((closeMin - gridStartMin) / (totalHours * 60)) * gridHeight }}
+                  />
+                )}
+              </>
+            )}
+
             {/* Clickable background */}
             <div className="absolute inset-0 cursor-pointer" data-bg-cell="true" />
 
@@ -168,45 +261,116 @@ export function DayTimeline({
               const height =
                 ((shift.endMinutes - shift.startMinutes) / (totalHours * 60)) *
                 gridHeight;
-              const padding = mode === "store" ? 0 : 0;
               const laneWidth = 100 / shift.totalLanes;
               const left = shift.lane * laneWidth;
               const colors = getEmployeeColor(shift.employeeId);
+              const shiftHours = (shift.endMinutes - shift.startMinutes) / 60;
+              const isBeingDragged = dragState?.shiftId === shift.id && dragState.isDragging;
 
               return (
                 <button
                   key={shift.id}
-                  className={`absolute rounded border ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} transition-colors overflow-hidden z-10 cursor-pointer text-left shadow-sm`}
+                  className={`absolute rounded border ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} transition-colors overflow-hidden z-10 text-left shadow-sm ${
+                    onShiftPointerDown ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+                  }`}
                   style={{
                     top: Math.max(top, 0),
                     height: Math.max(height, 24),
                     left: `calc(${left}% + 4px)`,
                     width: `calc(${laneWidth}% - 8px)`,
+                    opacity: isBeingDragged ? 0.3 : 1,
+                    touchAction: onShiftPointerDown ? "none" : undefined,
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (didDrag) {
+                      clearDidDrag?.();
+                      return;
+                    }
                     onShiftClick(shift);
                   }}
-                  title={`${shift.employee.firstName} ${shift.employee.lastName}\n${shift.startTime} - ${shift.endTime}${shift.note ? `\n${shift.note}` : ""}`}
+                  onPointerDown={
+                    onShiftPointerDown
+                      ? (e) => {
+                          onShiftPointerDown(
+                            e,
+                            shift.id,
+                            shift.startMinutes,
+                            shift.endMinutes,
+                            date,
+                            shift.lane,
+                            shift.totalLanes,
+                            shift.employeeId
+                          );
+                        }
+                      : undefined
+                  }
+                  title={`${shift.employee ? `${shift.employee.firstName} ${shift.employee.lastName}` : "NON ASSIGNÉ"}\n${shift.startTime} - ${shift.endTime}${shift.note ? `\n${shift.note}` : ""}`}
                 >
+                  {/* Resize handle: top */}
+                  {onShiftPointerDown && (
+                    <div className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize z-20 flex items-start justify-center">
+                      <div className="w-8 h-1 bg-current opacity-20 rounded-full mt-0.5" />
+                    </div>
+                  )}
                   <div className="px-2 py-1 leading-tight">
                     <div className="text-sm font-bold truncate">
                       {mode === "store"
-                        ? `${shift.employee.firstName} ${shift.employee.lastName}`
+                        ? shift.employee
+                          ? `${shift.employee.firstName} ${shift.employee.lastName}`
+                          : "NON ASSIGNÉ"
                         : shift.store.name}
                     </div>
                     <div className="text-xs opacity-80">
                       {shift.startTime} - {shift.endTime}
                     </div>
-                    {shift.note && height > 60 && (
+                    {(() => {
+                      const violations = detectShiftViolations(shift, dayShifts, scheduleForDay);
+                      if (violations.length === 0 || height <= 40) return null;
+                      return (
+                        <div className="text-[9px] font-bold text-red-600 bg-red-100 rounded px-1 mt-0.5 inline-block truncate">
+                          {violations[0].message}
+                        </div>
+                      );
+                    })()}
+                    {multiStore && height > 40 && (
+                      <div className="text-[10px] opacity-60 truncate">
+                        {shift.store.name}
+                      </div>
+                    )}
+                    {shiftHours > 6 && height > 50 && (
+                      <div className="text-[10px] opacity-50 truncate">
+                        pause 30min
+                      </div>
+                    )}
+                    {shift.note && height > 70 && (
                       <div className="text-[11px] opacity-60 truncate mt-1 italic">
                         {shift.note}
                       </div>
                     )}
                   </div>
+                  {/* Resize handle: bottom */}
+                  {onShiftPointerDown && (
+                    <div className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize z-20 flex items-end justify-center">
+                      <div className="w-8 h-1 bg-current opacity-20 rounded-full mb-0.5" />
+                    </div>
+                  )}
                 </button>
               );
             })}
+
+            {/* Drag ghost */}
+            {dragState?.isDragging && dragState.previewDate === date && (
+              <ShiftDragGhost
+                startMinutes={dragState.previewStartMinutes}
+                endMinutes={dragState.previewEndMinutes}
+                gridStartHour={gridStartHour}
+                gridEndHour={gridEndHour}
+                gridHeight={gridHeight}
+                lane={dragState.lane}
+                totalLanes={dragState.totalLanes}
+              />
+            )}
 
             {/* Current time indicator */}
             {today && nowInRange && (
@@ -257,7 +421,7 @@ export function DayTimeline({
             {employeeSummary.length > 0 ? (
               <div className="space-y-2">
                 {employeeSummary.map((emp) => {
-                  const colors = getEmployeeColor(emp.id);
+                  const colors = getEmployeeColor(emp.id === "__unassigned__" ? null : emp.id);
                   const hours = (emp.totalMinutes / 60).toFixed(1);
                   return (
                     <div
@@ -297,9 +461,15 @@ export function DayTimeline({
             </h4>
             <div className="space-y-0.5">
               {coverage.map((slot) => {
+                const slotMin = slot.hour * 60;
+                const isDuringOpen = !scheduleForDay || (isOpen && slotMin >= openMin && slotMin < closeMin);
+
                 let barColor = "bg-gray-200";
                 let textColor = "text-gray-400";
-                if (slot.count === 0) {
+                if (!isDuringOpen) {
+                  barColor = "bg-gray-200";
+                  textColor = "text-gray-300";
+                } else if (slot.count === 0) {
                   barColor = "bg-red-400";
                   textColor = "text-red-700";
                 } else if (slot.count === 1) {
@@ -311,7 +481,7 @@ export function DayTimeline({
                 }
 
                 return (
-                  <div key={slot.hour} className="flex items-center gap-2 text-[11px]">
+                  <div key={slot.hour} className={`flex items-center gap-2 text-[11px] ${!isDuringOpen ? 'opacity-40' : ''}`}>
                     <span className="w-10 text-gray-400 text-right font-mono">
                       {slot.hour.toString().padStart(2, "0")}h
                     </span>
@@ -319,12 +489,12 @@ export function DayTimeline({
                       <div
                         className={`h-full ${barColor} transition-all`}
                         style={{
-                          width: `${Math.min(slot.count * 25, 100)}%`,
+                          width: isDuringOpen ? `${Math.min(slot.count * 25, 100)}%` : '0%',
                         }}
                       />
                     </div>
                     <span className={`w-4 text-right font-bold ${textColor}`}>
-                      {slot.count}
+                      {isDuringOpen ? slot.count : '–'}
                     </span>
                   </div>
                 );

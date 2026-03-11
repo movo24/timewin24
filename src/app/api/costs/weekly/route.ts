@@ -51,6 +51,25 @@ export async function GET(req: NextRequest) {
   let totalHours = 0;
 
   const shiftCosts = shifts.map((shift) => {
+    // Handle unassigned shifts (no employee)
+    if (!shift.employee) {
+      const [sh, sm] = shift.startTime.split(":").map(Number);
+      const [eh, em] = shift.endTime.split(":").map(Number);
+      const hours = (eh * 60 + em - (sh * 60 + sm)) / 60;
+      totalHours += hours;
+      return {
+        shiftId: shift.id,
+        date: shift.date,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        employeeId: null,
+        employeeName: "NON ASSIGNÉ",
+        hours: Math.round(hours * 100) / 100,
+        configured: false,
+        cost: null,
+      };
+    }
+
     const costConfig = shift.employee.costConfig;
 
     if (!costConfig) {

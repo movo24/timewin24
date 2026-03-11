@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
+import { requireAdmin, requireManagerOrAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 
 // GET /api/costs/countries - List all country configs
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const countries = await prisma.countryConfig.findMany({

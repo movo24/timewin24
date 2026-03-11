@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { duplicateWeekSchema } from "@/lib/validations";
 import { findOverlappingShift } from "@/lib/shifts";
 import { logAudit } from "@/lib/audit";
 import { getWeekBounds, toUTCDate } from "@/lib/utils";
+import { dispatchNotificationAsync } from "@/lib/notifications/dispatcher";
 
 // POST /api/shifts/duplicate - Duplicate a week of shifts
 export async function POST(req: NextRequest) {
-  const { session, error } = await requireAdmin();
+  const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const body = await req.json();
@@ -86,6 +87,26 @@ export async function POST(req: NextRequest) {
     created,
     skipped,
   });
+
+  // Notify assigned employees about the new planning
+  if (created > 0) {
+    const employeeIds = [...new Set(
+      sourceShifts.filter((s) => s.employeeId).map((s) => s.employeeId!)
+    )];
+    if (employeeIds.length > 0) {
+      const empUsers = await prisma.user.findMany({
+        where: { employeeId: { in: employeeIds }, active: true },
+        select: { id: true },
+      });
+      if (empUsers.length > 0) {
+        dispatchNotificationAsync({
+          userIds: empUsers.map((u) => u.id),
+          eventType: "PLANNING_PUBLISHED",
+          context: { weekStart: targetWeekStart },
+        });
+      }
+    }
+  }
 
   return successResponse({
     created,

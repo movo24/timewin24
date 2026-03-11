@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireAdmin, requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { storeCreateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 
 // GET /api/stores - List stores with pagination and search
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -29,7 +29,10 @@ export async function GET(req: NextRequest) {
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { name: "asc" },
-      include: { _count: { select: { employees: true, shifts: true } } },
+      include: {
+        schedules: { orderBy: { dayOfWeek: "asc" } },
+        _count: { select: { employees: true, shifts: true } },
+      },
     }),
     prisma.store.count({ where }),
   ]);

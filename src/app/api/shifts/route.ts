@@ -2,12 +2,12 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   getSessionOrUnauthorized,
-  requireAdmin,
+  requireManagerOrAdmin,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
 import { shiftCreateSchema } from "@/lib/validations";
-import { findOverlappingShift, calculateWeeklyHours } from "@/lib/shifts";
+import { findOverlappingShift, findStoreOverlapViolation, findStoreHoursViolation, findMaxEmployeesViolation, findMaxSimultaneousViolation, calculateWeeklyHours } from "@/lib/shifts";
 import { logAudit } from "@/lib/audit";
 import { getWeekBounds, toUTCDate } from "@/lib/utils";
 
@@ -35,7 +35,16 @@ export async function GET(req: NextRequest) {
         date: { gte: start, lte: end },
       },
       include: {
-        store: { select: { id: true, name: true } },
+        store: {
+          select: {
+            id: true,
+            name: true,
+            schedules: {
+              select: { dayOfWeek: true, closed: true, openTime: true, closeTime: true, minEmployees: true, maxEmployees: true },
+              orderBy: { dayOfWeek: "asc" as const },
+            },
+          },
+        },
         employee: { select: { id: true, firstName: true, lastName: true } },
       },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
@@ -55,7 +64,16 @@ export async function GET(req: NextRequest) {
   const shifts = await prisma.shift.findMany({
     where,
     include: {
-      store: { select: { id: true, name: true } },
+      store: {
+        select: {
+          id: true,
+          name: true,
+          schedules: {
+            select: { dayOfWeek: true, closed: true, openTime: true, closeTime: true, minEmployees: true, maxEmployees: true },
+            orderBy: { dayOfWeek: "asc" as const },
+          },
+        },
+      },
       employee: {
         select: {
           id: true,
@@ -73,7 +91,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/shifts - Create a shift
 export async function POST(req: NextRequest) {
-  const { session, error } = await requireAdmin();
+  const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const body = await req.json();
@@ -84,26 +102,64 @@ export async function POST(req: NextRequest) {
 
   const { storeId, employeeId, date, startTime, endTime, note } = parsed.data;
 
-  // Check overlap
-  const overlap = await findOverlappingShift(employeeId, date, startTime, endTime);
-  if (overlap) {
+  // Check overlap (only if employee is assigned)
+  if (employeeId) {
+    const overlap = await findOverlappingShift(employeeId, date, startTime, endTime);
+    if (overlap) {
+      return errorResponse(
+        `Conflit: cet employé travaille déjà de ${overlap.startTime} à ${overlap.endTime} chez "${overlap.store.name}" ce jour-là`,
+        409
+      );
+    }
+  }
+
+  // Check store-level overlap policy
+  const storeOverlap = await findStoreOverlapViolation(storeId, employeeId, date, startTime, endTime);
+  if (storeOverlap) {
     return errorResponse(
-      `Conflit: cet employé travaille déjà de ${overlap.startTime} à ${overlap.endTime} chez "${overlap.store.name}" ce jour-là`,
+      `Chevauchement interdit dans ce magasin (${storeOverlap.overlapMinutes} min avec un autre employé)`,
       409
     );
+  }
+
+  // Check store hours
+  const hoursViolation = await findStoreHoursViolation(storeId, date, startTime, endTime);
+  if (hoursViolation) {
+    return errorResponse(hoursViolation.reason, 400);
+  }
+
+  // Check max employees per day
+  const maxEmpViolation = await findMaxEmployeesViolation(storeId, date, employeeId);
+  if (maxEmpViolation) {
+    return errorResponse(maxEmpViolation.reason, 409);
+  }
+
+  // Check max simultaneous employees
+  const simViolation = await findMaxSimultaneousViolation(storeId, date, startTime, endTime);
+  if (simViolation) {
+    return errorResponse(simViolation.reason, 409);
   }
 
   const shift = await prisma.shift.create({
     data: {
       storeId,
-      employeeId,
+      employeeId: employeeId || null,
       date: toUTCDate(date),
       startTime,
       endTime,
       note: note || null,
     },
     include: {
-      store: { select: { id: true, name: true } },
+      store: {
+        select: {
+          id: true,
+          name: true,
+          schedules: {
+            select: { dayOfWeek: true, closed: true, openTime: true, closeTime: true, minEmployees: true, maxEmployees: true },
+            orderBy: { dayOfWeek: "asc" as const },
+          },
+        },
+      },
       employee: {
         select: {
           id: true,
@@ -117,9 +173,9 @@ export async function POST(req: NextRequest) {
 
   await logAudit(session!.user.id, "CREATE", "Shift", shift.id, parsed.data);
 
-  // Check weekly hours warning
+  // Check weekly hours warning (only if employee is assigned)
   let weeklyHoursWarning: string | null = null;
-  if (shift.employee.weeklyHours) {
+  if (employeeId && shift.employee?.weeklyHours) {
     const { weekStart, weekEnd } = getWeekBounds(date);
     const totalHours = await calculateWeeklyHours(employeeId, weekStart, weekEnd);
     if (totalHours > shift.employee.weeklyHours) {

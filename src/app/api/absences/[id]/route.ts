@@ -1,0 +1,112 @@
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import {
+  requireManagerOrAdmin,
+  successResponse,
+  errorResponse,
+} from "@/lib/api-helpers";
+import { AbsenceStatus } from "@/generated/prisma/client";
+import { createReplacementOffers } from "@/lib/replacement";
+
+// PATCH /api/absences/[id] — Manager approves or rejects
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { session, error } = await requireManagerOrAdmin();
+    if (error) return error;
+
+    const { id } = await params;
+    const body = await req.json();
+    const { status, managerResponse } = body as {
+      status: string;
+      managerResponse?: string;
+    };
+
+    if (!status || !["APPROVED", "REJECTED"].includes(status)) {
+      return errorResponse("Statut invalide (APPROVED ou REJECTED attendu)");
+    }
+
+    // Find the declaration
+    const declaration = await prisma.absenceDeclaration.findUnique({
+      where: { id },
+    });
+    if (!declaration) {
+      return errorResponse("Déclaration non trouvée", 404);
+    }
+    if (declaration.status !== "PENDING") {
+      return errorResponse("Cette déclaration a déjà été traitée");
+    }
+
+    const user = session!.user as { id: string };
+
+    // Update declaration
+    const updated = await prisma.absenceDeclaration.update({
+      where: { id },
+      data: {
+        status: status as AbsenceStatus,
+        managerId: user.id,
+        managerResponse: managerResponse || null,
+        processedAt: new Date(),
+      },
+      include: {
+        employee: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
+    // If approved, create unavailabilities for each day in the range
+    if (status === "APPROVED") {
+      const start = new Date(declaration.startDate);
+      const end = new Date(declaration.endDate);
+      const current = new Date(start);
+
+      while (current <= end) {
+        const dateStr = current.toISOString().split("T")[0];
+        // Check if unavailability already exists for this date
+        const existing = await prisma.unavailability.findFirst({
+          where: {
+            employeeId: declaration.employeeId,
+            type: "VARIABLE",
+            date: new Date(dateStr),
+          },
+        });
+
+        if (!existing) {
+          await prisma.unavailability.create({
+            data: {
+              employeeId: declaration.employeeId,
+              type: "VARIABLE",
+              date: new Date(dateStr),
+              reason: `Absence: ${declaration.type}${declaration.reason ? ` — ${declaration.reason}` : ""}`,
+            },
+          });
+        }
+
+        current.setDate(current.getDate() + 1);
+      }
+
+      // Create replacement offers for affected shifts
+      const offersCreated = await createReplacementOffers({
+        id: declaration.id,
+        employeeId: declaration.employeeId,
+        startDate: declaration.startDate,
+        endDate: declaration.endDate,
+      });
+
+      console.log(
+        `[PATCH /api/absences/${id}] APPROVED — Created unavailabilities + ${offersCreated} replacement offers`
+      );
+    } else {
+      console.log(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
+    }
+
+    return successResponse(updated);
+  } catch (err) {
+    console.error("[PATCH /api/absences] Error:", err);
+    return errorResponse(
+      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      500
+    );
+  }
+}

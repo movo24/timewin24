@@ -17,6 +17,7 @@ export async function GET(
     where: { id },
     include: {
       stores: { include: { store: { select: { id: true, name: true } } } },
+      unavailabilities: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -63,9 +64,15 @@ export async function PUT(
       }
     }
 
+    // Normalize email: empty string → null
+    if (data.email === "") data.email = null;
+
     return tx.employee.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        email: data.email !== undefined ? (data.email ?? null) : undefined,
+      },
       include: {
         stores: { include: { store: { select: { id: true, name: true } } } },
       },

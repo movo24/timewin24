@@ -12,22 +12,77 @@ import {
   Menu,
   X,
   Euro,
+  Shield,
+  Plug,
+  MessageSquare,
+  Megaphone,
+  Newspaper,
+  ScanLine,
+  AlertTriangle,
+  UserCheck,
+  ArrowLeftRight,
+  ShoppingBag,
+  BookOpen,
+  Bell,
+  BellRing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
 
 const adminLinks = [
   { href: "/planning", label: "Planning", icon: Calendar },
+  { href: "/pointages", label: "Pointages", icon: ScanLine },
+  { href: "/journal", label: "Journal", icon: BookOpen },
+  { href: "/alertes", label: "Alertes", icon: Bell },
+  { href: "/absences", label: "Absences", icon: AlertTriangle },
+  { href: "/remplacements", label: "Remplacements", icon: UserCheck },
+  { href: "/echanges", label: "Échanges", icon: ArrowLeftRight },
   { href: "/stores", label: "Magasins", icon: Store },
   { href: "/employees", label: "Employés", icon: Users },
+  { href: "/accounts", label: "Comptes", icon: Shield },
+  { href: "/messages", label: "Messages RH", icon: MessageSquare },
+  { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper },
+  { href: "/annonces", label: "Annonces", icon: Megaphone },
+  { href: "/notifications", label: "Notifications", icon: BellRing },
+  { href: "/integrations", label: "Intégrations", icon: Plug },
   { href: "/costs", label: "Coûts", icon: Euro },
   { href: "/audit", label: "Audit", icon: FileText },
 ];
 
-const employeeLinks = [
-  { href: "/planning", label: "Mon Planning", icon: Calendar },
+const managerLinks = [
+  { href: "/planning", label: "Planning", icon: Calendar },
+  { href: "/pointages", label: "Pointages", icon: ScanLine },
+  { href: "/journal", label: "Journal", icon: BookOpen },
+  { href: "/alertes", label: "Alertes", icon: Bell },
+  { href: "/absences", label: "Absences", icon: AlertTriangle },
+  { href: "/remplacements", label: "Remplacements", icon: UserCheck },
+  { href: "/echanges", label: "Échanges", icon: ArrowLeftRight },
+  { href: "/employees", label: "Employés", icon: Users },
+  { href: "/messages", label: "Messages RH", icon: MessageSquare },
+  { href: "/notifications", label: "Notifications", icon: BellRing },
+  { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper },
+  { href: "/annonces", label: "Annonces", icon: Megaphone },
 ];
+
+const employeeLinks = [
+  { href: "/mon-planning", label: "Mon Planning", icon: Calendar },
+  { href: "/pointage", label: "Pointage", icon: ScanLine },
+  { href: "/mes-absences", label: "Mes Absences", icon: AlertTriangle },
+  { href: "/mes-remplacements", label: "Remplacements", icon: UserCheck },
+  { href: "/marche-shifts", label: "Marché Shifts", icon: ShoppingBag },
+  { href: "/mes-messages", label: "Mes Messages", icon: MessageSquare },
+  { href: "/mes-notifications", label: "Notifications", icon: BellRing },
+  { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper },
+  { href: "/annonces", label: "Annonces", icon: Megaphone },
+];
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: "Administrateur",
+  MANAGER: "Manager",
+  EMPLOYEE: "Employé",
+};
 
 export function Sidebar() {
   const { data: session } = useSession();
@@ -36,14 +91,24 @@ export function Sidebar() {
 
   if (!session) return null;
 
-  const isAdmin = session.user.role === "ADMIN";
-  const links = isAdmin ? adminLinks : employeeLinks;
+  const role = session.user.role;
+  const links =
+    role === "ADMIN"
+      ? adminLinks
+      : role === "MANAGER"
+      ? managerLinks
+      : employeeLinks;
 
   const nav = (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200">
-        <h1 className="text-lg font-bold text-gray-900">TimeWin</h1>
-        <p className="text-xs text-gray-500 mt-0.5">The Wesley — Gestion RH</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">TimeWin</h1>
+            <p className="text-xs text-gray-500 mt-0.5">The Wesley — Gestion RH</p>
+          </div>
+          {(role === "ADMIN" || role === "MANAGER") && <NotificationBell />}
+        </div>
       </div>
 
       <nav className="flex-1 p-3 space-y-1">
@@ -74,7 +139,7 @@ export function Sidebar() {
           <p className="font-medium text-gray-900">{session.user.name}</p>
           <p className="text-xs text-gray-500">{session.user.email}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            {isAdmin ? "Administrateur" : "Employé"}
+            {ROLE_LABELS[role] || role}
           </p>
         </div>
         <Button

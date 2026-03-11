@@ -1,17 +1,18 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { shiftUpdateSchema } from "@/lib/validations";
-import { findOverlappingShift, calculateWeeklyHours } from "@/lib/shifts";
+import { findOverlappingShift, findStoreOverlapViolation, findStoreHoursViolation, findMaxEmployeesViolation, findMaxSimultaneousViolation, calculateWeeklyHours } from "@/lib/shifts";
 import { logAudit } from "@/lib/audit";
 import { getWeekBounds, toUTCDate } from "@/lib/utils";
+import { dispatchNotificationAsync } from "@/lib/notifications/dispatcher";
 
 // PUT /api/shifts/[id]
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAdmin();
+  const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const { id } = await params;
@@ -26,26 +27,55 @@ export async function PUT(
 
   const { storeId, employeeId, date, startTime, endTime, note } = parsed.data;
 
-  // Check overlap (exclude self)
-  const overlap = await findOverlappingShift(
-    employeeId,
-    date,
-    startTime,
-    endTime,
-    id
-  );
-  if (overlap) {
+  // Check overlap (only if employee is assigned, exclude self)
+  if (employeeId) {
+    const overlap = await findOverlappingShift(
+      employeeId,
+      date,
+      startTime,
+      endTime,
+      id
+    );
+    if (overlap) {
+      return errorResponse(
+        `Conflit: cet employé travaille déjà de ${overlap.startTime} à ${overlap.endTime} chez "${overlap.store.name}" ce jour-là`,
+        409
+      );
+    }
+  }
+
+  // Check store-level overlap policy
+  const storeOverlap = await findStoreOverlapViolation(storeId, employeeId, date, startTime, endTime, id);
+  if (storeOverlap) {
     return errorResponse(
-      `Conflit: cet employé travaille déjà de ${overlap.startTime} à ${overlap.endTime} chez "${overlap.store.name}" ce jour-là`,
+      `Chevauchement interdit dans ce magasin (${storeOverlap.overlapMinutes} min avec un autre employé)`,
       409
     );
+  }
+
+  // Check store hours
+  const hoursViolation = await findStoreHoursViolation(storeId, date, startTime, endTime);
+  if (hoursViolation) {
+    return errorResponse(hoursViolation.reason, 400);
+  }
+
+  // Check max employees per day
+  const maxEmpViolation = await findMaxEmployeesViolation(storeId, date, employeeId, id);
+  if (maxEmpViolation) {
+    return errorResponse(maxEmpViolation.reason, 409);
+  }
+
+  // Check max simultaneous employees
+  const simViolation = await findMaxSimultaneousViolation(storeId, date, startTime, endTime, id);
+  if (simViolation) {
+    return errorResponse(simViolation.reason, 409);
   }
 
   const shift = await prisma.shift.update({
     where: { id },
     data: {
       storeId,
-      employeeId,
+      employeeId: employeeId || null,
       date: toUTCDate(date),
       startTime,
       endTime,
@@ -69,13 +99,33 @@ export async function PUT(
     after: shift,
   });
 
-  // Check weekly hours warning
+  // Check weekly hours warning (only if employee is assigned)
   let weeklyHoursWarning: string | null = null;
-  if (shift.employee.weeklyHours) {
+  if (employeeId && shift.employee?.weeklyHours) {
     const { weekStart, weekEnd } = getWeekBounds(date);
     const totalHours = await calculateWeeklyHours(employeeId, weekStart, weekEnd);
     if (totalHours > shift.employee.weeklyHours) {
       weeklyHoursWarning = `Attention: ${shift.employee.firstName} ${shift.employee.lastName} totalise ${totalHours.toFixed(1)}h cette semaine (max: ${shift.employee.weeklyHours}h)`;
+    }
+  }
+
+  // Notify employee if their shift was modified
+  if (shift.employeeId) {
+    const empUser = await prisma.user.findFirst({
+      where: { employeeId: shift.employeeId, active: true },
+      select: { id: true },
+    });
+    if (empUser) {
+      dispatchNotificationAsync({
+        userIds: [empUser.id],
+        eventType: "PLANNING_MODIFIED",
+        context: {
+          storeName: shift.store.name,
+          date,
+          startTime,
+          endTime,
+        },
+      });
     }
   }
 
@@ -87,7 +137,7 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { session, error } = await requireAdmin();
+  const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const { id } = await params;

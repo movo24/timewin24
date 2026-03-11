@@ -3,21 +3,31 @@
  * Computes lane assignment for overlapping shifts so they render side-by-side.
  */
 
+export interface StoreScheduleInfo {
+  dayOfWeek: number; // 0=Sun, 1=Mon...6=Sat
+  closed: boolean;
+  openTime: string;
+  closeTime: string;
+  minEmployees: number;
+  maxEmployees: number | null;
+  maxSimultaneous: number | null;
+}
+
 export interface TimelineShift {
   id: string;
   storeId: string;
-  employeeId: string;
+  employeeId: string | null;
   date: string;
   startTime: string; // "HH:mm"
   endTime: string;   // "HH:mm"
   note: string | null;
-  store: { id: string; name: string };
+  store: { id: string; name: string; schedules?: StoreScheduleInfo[] };
   employee: {
     id: string;
     firstName: string;
     lastName: string;
     weeklyHours?: number | null;
-  };
+  } | null;
 }
 
 export interface PositionedShift extends TimelineShift {
@@ -167,7 +177,94 @@ const EMPLOYEE_COLORS = [
   { bg: "bg-fuchsia-100", border: "border-fuchsia-300", text: "text-fuchsia-900", hoverBg: "hover:bg-fuchsia-200" },
 ];
 
-export function getEmployeeColor(employeeId: string) {
+/** Fixed color for unassigned shifts */
+const UNASSIGNED_COLOR = {
+  bg: "bg-amber-200",
+  border: "border-amber-500",
+  text: "text-amber-900",
+  hoverBg: "hover:bg-amber-300",
+};
+
+/** Snap minutes to nearest interval (default 15) */
+export function snapMinutes(minutes: number, interval = 15): number {
+  return Math.round(minutes / interval) * interval;
+}
+
+/** Clamp minutes within grid bounds */
+export function clampMinutes(min: number, gridStart: number, gridEnd: number): number {
+  return Math.max(gridStart * 60, Math.min(gridEnd * 60, min));
+}
+
+// ─── Violation Detection ──────────────────────────
+
+export interface ShiftViolation {
+  type: "outside_hours" | "store_closed" | "max_employees" | "max_simultaneous";
+  message: string;
+}
+
+/**
+ * Detect violations for a shift based on the store schedule for that day.
+ * Used client-side to render red badges on shift blocks.
+ */
+export function detectShiftViolations(
+  shift: TimelineShift,
+  allShiftsForDay: TimelineShift[],
+  schedule: StoreScheduleInfo | null
+): ShiftViolation[] {
+  const violations: ShiftViolation[] = [];
+  if (!schedule) return violations;
+
+  if (schedule.closed) {
+    violations.push({ type: "store_closed", message: "Magasin fermé" });
+    return violations;
+  }
+
+  // Outside store hours
+  if (shift.startTime < schedule.openTime || shift.endTime > schedule.closeTime) {
+    violations.push({ type: "outside_hours", message: "Hors horaires" });
+  }
+
+  // Max employees exceeded
+  if (schedule.maxEmployees !== null && shift.employeeId) {
+    const distinctEmployees = new Set<string>();
+    for (const s of allShiftsForDay) {
+      if (s.employeeId) distinctEmployees.add(s.employeeId);
+    }
+    if (distinctEmployees.size > schedule.maxEmployees) {
+      violations.push({
+        type: "max_employees",
+        message: `${distinctEmployees.size}/${schedule.maxEmployees} emp.`,
+      });
+    }
+  }
+
+  // Max simultaneous employees exceeded (sweep-line)
+  if (schedule.maxSimultaneous !== null && schedule.maxSimultaneous !== undefined) {
+    const events: { time: number; delta: number }[] = [];
+    for (const s of allShiftsForDay) {
+      if (!s.employeeId) continue;
+      events.push({ time: timeToMinutes(s.startTime), delta: 1 });
+      events.push({ time: timeToMinutes(s.endTime), delta: -1 });
+    }
+    events.sort((a, b) => a.time - b.time || a.delta - b.delta);
+    let concurrent = 0, peak = 0;
+    for (const e of events) {
+      concurrent += e.delta;
+      peak = Math.max(peak, concurrent);
+    }
+    if (peak > schedule.maxSimultaneous) {
+      violations.push({
+        type: "max_simultaneous",
+        message: `${peak}/${schedule.maxSimultaneous} simul.`,
+      });
+    }
+  }
+
+  return violations;
+}
+
+export function getEmployeeColor(employeeId: string | null) {
+  if (!employeeId) return UNASSIGNED_COLOR;
   // Simple hash from ID
   let hash = 0;
   for (let i = 0; i < employeeId.length; i++) {

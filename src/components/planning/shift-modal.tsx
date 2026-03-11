@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,11 @@ interface Employee {
   lastName: string;
 }
 
+interface StoreOption {
+  id: string;
+  name: string;
+}
+
 interface ShiftData {
   id?: string;
   storeId: string;
@@ -26,6 +31,13 @@ interface ShiftData {
   startTime: string;
   endTime: string;
   note: string;
+}
+
+interface StoreScheduleInfo {
+  dayOfWeek: number;
+  closed: boolean;
+  openTime: string;
+  closeTime: string;
 }
 
 interface ShiftModalProps {
@@ -37,6 +49,8 @@ interface ShiftModalProps {
   defaultDate?: string;
   defaultStartTime?: string;
   employees: Employee[];
+  stores?: StoreOption[];
+  storeSchedules?: StoreScheduleInfo[];
 }
 
 export function ShiftModal({
@@ -47,7 +61,9 @@ export function ShiftModal({
   shift,
   defaultDate,
   defaultStartTime = "09:00",
-  employees,
+  employees: initialEmployees,
+  stores,
+  storeSchedules,
 }: ShiftModalProps) {
   const [form, setForm] = useState<ShiftData>({
     storeId,
@@ -60,6 +76,13 @@ export function ShiftModal({
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+
+  // Sync employees when prop changes
+  useEffect(() => {
+    setEmployees(initialEmployees);
+  }, [initialEmployees]);
 
   useEffect(() => {
     if (shift) {
@@ -71,7 +94,7 @@ export function ShiftModal({
       const endTime = `${endH.toString().padStart(2, "0")}:${(sm || 0).toString().padStart(2, "0")}`;
       setForm({
         storeId,
-        employeeId: employees.length > 0 ? employees[0].id : "",
+        employeeId: "",
         date: defaultDate || "",
         startTime: defaultStartTime || "09:00",
         endTime,
@@ -80,7 +103,60 @@ export function ShiftModal({
     }
     setError("");
     setWarning("");
-  }, [shift, storeId, defaultDate, defaultStartTime, employees, open]);
+  }, [shift, storeId, defaultDate, defaultStartTime, initialEmployees, open]);
+
+  // When store changes in the modal, load employees for that store
+  function handleStoreChange(newStoreId: string) {
+    setForm((prev) => ({ ...prev, storeId: newStoreId, employeeId: "" }));
+    if (newStoreId && newStoreId !== storeId) {
+      setLoadingEmployees(true);
+      fetch(`/api/employees?storeId=${newStoreId}&active=true&limit=100`)
+        .then((r) => r.json())
+        .then((data) => {
+          setEmployees(data.employees || []);
+          if (data.employees?.length > 0) {
+            setForm((prev) => ({ ...prev, employeeId: data.employees[0].id }));
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingEmployees(false));
+    } else if (newStoreId === storeId) {
+      // Reset to initial employees
+      setEmployees(initialEmployees);
+      if (initialEmployees.length > 0) {
+        setForm((prev) => ({ ...prev, employeeId: initialEmployees[0].id }));
+      }
+    }
+  }
+
+  // Compute shift duration for info display
+  const shiftHours = (() => {
+    if (!form.startTime || !form.endTime) return 0;
+    const [sh, sm] = form.startTime.split(":").map(Number);
+    const [eh, em] = form.endTime.split(":").map(Number);
+    return (eh * 60 + em - (sh * 60 + sm)) / 60;
+  })();
+
+  const clientWarnings = useMemo(() => {
+    const warns: string[] = [];
+    if (!storeSchedules || !form.date || !form.startTime || !form.endTime) return warns;
+    const [y, m, d] = form.date.split("-").map(Number);
+    if (!y || !m || !d) return warns;
+    const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    const sched = storeSchedules.find(s => s.dayOfWeek === dayOfWeek);
+    if (!sched) return warns;
+    if (sched.closed) {
+      warns.push("Le magasin est fermé ce jour-là");
+      return warns;
+    }
+    if (sched.openTime && form.startTime < sched.openTime) {
+      warns.push(`Début avant ouverture (${sched.openTime})`);
+    }
+    if (sched.closeTime && form.endTime > sched.closeTime) {
+      warns.push(`Fin après fermeture (${sched.closeTime})`);
+    }
+    return warns;
+  }, [form.date, form.startTime, form.endTime, storeSchedules]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,7 +170,10 @@ export function ShiftModal({
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        employeeId: form.employeeId || null,
+      }),
     });
 
     const data = await res.json();
@@ -129,6 +208,8 @@ export function ShiftModal({
     onClose();
   }
 
+  const showStoreSelector = stores && stores.length > 1;
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
@@ -139,15 +220,37 @@ export function ShiftModal({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Store selector (multi-store mode) */}
+          {showStoreSelector && (
+            <div className="space-y-2">
+              <Label>Magasin *</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm"
+                value={form.storeId}
+                onChange={(e) => handleStoreChange(e.target.value)}
+                required
+              >
+                <option value="">Sélectionner un magasin...</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label>Employé *</Label>
+            <Label>Employé</Label>
             <select
               className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-1 text-sm"
               value={form.employeeId}
               onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-              required
+              disabled={loadingEmployees}
             >
-              <option value="">Sélectionner...</option>
+              <option value="">
+                {loadingEmployees ? "Chargement..." : "Non assigné"}
+              </option>
               {employees.map((emp) => (
                 <option key={emp.id} value={emp.id}>
                   {emp.firstName} {emp.lastName}
@@ -187,6 +290,16 @@ export function ShiftModal({
             </div>
           </div>
 
+          {/* Shift duration info + break */}
+          {shiftHours > 0 && (
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <span>Durée : {shiftHours.toFixed(1)}h</span>
+              {shiftHours > 6 && (
+                <span className="text-amber-600 font-medium">— pause 30min recommandée</span>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Note</Label>
             <Input
@@ -196,6 +309,11 @@ export function ShiftModal({
             />
           </div>
 
+          {clientWarnings.map((w, i) => (
+            <p key={i} className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+              {w}
+            </p>
+          ))}
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
               {error}

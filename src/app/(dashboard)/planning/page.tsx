@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { StoreSearch } from "@/components/store-search";
 import { WeekTimeline } from "@/components/planning/week-timeline";
 import { DayTimeline } from "@/components/planning/day-timeline";
 import { ShiftModal } from "@/components/planning/shift-modal";
+import { useShiftDrag } from "@/hooks/useShiftDrag";
+import { AutoPlanModal } from "@/components/planning/auto-plan-modal";
+import { ManagerIABar } from "@/components/planning/manager-ia-bar";
+import { PlanningHealth } from "@/components/planning/planning-health";
+import { ShiftExchangePanel } from "@/components/planning/shift-exchange-panel";
 import { getMondayOfWeek, formatDate, getDayNameFr, getWeekDays } from "@/lib/utils";
+import type { StoreScheduleInfo } from "@/lib/timeline-utils";
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,25 +24,35 @@ import {
   CalendarDays,
   Clock,
   User,
+  Zap,
   ZoomIn,
+  Store,
+  Eye,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 
 interface Shift {
   id: string;
   storeId: string;
-  employeeId: string;
+  employeeId: string | null;
   date: string;
   startTime: string;
   endTime: string;
   note: string | null;
-  store: { id: string; name: string };
+  store: { id: string; name: string; schedules?: StoreScheduleInfo[] };
   employee: {
     id: string;
     firstName: string;
     lastName: string;
     weeklyHours?: number | null;
-  };
+  } | null;
+}
+
+interface StoreWithSchedules {
+  id: string;
+  name: string;
+  schedules: StoreScheduleInfo[];
 }
 
 interface EmployeeForShift {
@@ -59,7 +75,8 @@ const ZOOM_PRESETS = [
 
 export default function PlanningPage() {
   const { data: session } = useSession();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const role = session?.user?.role;
+  const isAdmin = role === "ADMIN" || role === "MANAGER";
   const employeeId = (session?.user as { employeeId?: string })?.employeeId;
 
   const [storeId, setStoreId] = useState("");
@@ -72,15 +89,65 @@ export default function PlanningPage() {
   const [defaultStartTime, setDefaultStartTime] = useState("09:00");
   const [duplicating, setDuplicating] = useState(false);
   const [duplicateMsg, setDuplicateMsg] = useState("");
+  const [autoPlanOpen, setAutoPlanOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [shiftsVersion, setShiftsVersion] = useState(0);
+
+  // Multi-store state
+  const [allStores, setAllStores] = useState<StoreWithSchedules[]>([]);
+  const [shiftModalStoreId, setShiftModalStoreId] = useState("");
 
   // View mode: week or day
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
 
-  // Zoom: grid hours
-  const [gridStartHour, setGridStartHour] = useState(6);
-  const [gridEndHour, setGridEndHour] = useState(22);
+  // Zoom: grid hours — "auto" mode fits to store schedules
+  const [manualGrid, setManualGrid] = useState<{ start: number; end: number } | null>(null);
   const [showZoomMenu, setShowZoomMenu] = useState(false);
+
+  const isMultiStore = isAdmin && !storeId;
+
+  // Compute auto grid bounds from visible stores' schedules
+  const autoGrid = useMemo(() => {
+    const stores = isMultiStore ? allStores : (storeId ? allStores.filter(s => s.id === storeId) : []);
+    if (stores.length === 0) return { start: 6, end: 22 };
+    let earliest = 24, latest = 0;
+    for (const store of stores) {
+      for (const sched of store.schedules) {
+        if (sched.closed) continue;
+        const open = parseInt(sched.openTime?.split(":")[0] || "6", 10);
+        const closeH = parseInt(sched.closeTime?.split(":")[0] || "22", 10);
+        const closeM = parseInt(sched.closeTime?.split(":")[1] || "0", 10);
+        const close = closeM > 0 ? closeH + 1 : closeH; // round up
+        if (open < earliest) earliest = open;
+        if (close > latest) latest = close;
+      }
+    }
+    if (earliest >= latest) return { start: 6, end: 22 };
+    // Add 1h margin before, keep end as-is (already rounded up)
+    return { start: Math.max(0, earliest - 1), end: Math.min(24, latest) };
+  }, [isMultiStore, storeId, allStores]);
+
+  const gridStartHour = manualGrid ? manualGrid.start : autoGrid.start;
+  const gridEndHour = manualGrid ? manualGrid.end : autoGrid.end;
+
+  // Drag-and-drop (refs + state declared here, hook after loadShifts)
+  const gridRef = useRef<HTMLDivElement>(null);
+  const dayDates = useMemo(
+    () => getWeekDays(weekStart).map((d) => formatDate(d)),
+    [weekStart]
+  );
+  const [dragError, setDragError] = useState("");
+
+  // Load all stores (for multi-store view)
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch("/api/stores?limit=50")
+      .then((r) => r.json())
+      .then((data) => setAllStores(data.stores || []))
+      .catch(() => {});
+    fetch("/api/alerts/generate", { method: "POST" }).catch(() => {});
+  }, [isAdmin]);
 
   const loadShifts = useCallback(async () => {
     if (!isAdmin && !employeeId) return;
@@ -96,6 +163,7 @@ export default function PlanningPage() {
     if (res.ok) {
       const data = await res.json();
       setShifts(data.shifts || []);
+      setShiftsVersion((v) => v + 1);
     }
   }, [weekStart, storeId, isAdmin, employeeId]);
 
@@ -103,17 +171,94 @@ export default function PlanningPage() {
     loadShifts();
   }, [loadShifts]);
 
-  // Load employees for the selected store (for shift creation)
+  // Drag-and-drop hook (after loadShifts)
+  const handleDragEnd = useCallback(
+    async (
+      shiftId: string,
+      newDate: string,
+      newStartTime: string,
+      newEndTime: string
+    ) => {
+      const shift = shifts.find((s) => s.id === shiftId);
+      if (!shift) return;
+
+      const oldDate =
+        typeof shift.date === "string" ? shift.date.split("T")[0] : formatDate(new Date(shift.date));
+
+      if (
+        oldDate === newDate &&
+        shift.startTime === newStartTime &&
+        shift.endTime === newEndTime
+      ) {
+        return;
+      }
+
+      const previousShifts = [...shifts];
+
+      // Optimistic update
+      setShifts((prev) =>
+        prev.map((s) =>
+          s.id === shiftId
+            ? { ...s, date: newDate, startTime: newStartTime, endTime: newEndTime }
+            : s
+        )
+      );
+
+      try {
+        const res = await fetch(`/api/shifts/${shiftId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            storeId: shift.storeId,
+            employeeId: shift.employeeId || "",
+            date: newDate,
+            startTime: newStartTime,
+            endTime: newEndTime,
+            note: shift.note || "",
+          }),
+        });
+
+        if (!res.ok) {
+          setShifts(previousShifts);
+          const data = await res.json();
+          setDragError(data.error || "Erreur lors du déplacement");
+          setTimeout(() => setDragError(""), 4000);
+        } else {
+          loadShifts();
+        }
+      } catch {
+        setShifts(previousShifts);
+        setDragError("Erreur réseau");
+        setTimeout(() => setDragError(""), 4000);
+      }
+    },
+    [shifts, loadShifts]
+  );
+
+  const { dragState, handleShiftPointerDown, didDrag, clearDidDrag } =
+    useShiftDrag({
+      hourHeight: viewMode === "week" ? 60 : 64,
+      gridStartHour,
+      gridEndHour,
+      viewMode,
+      dayDates,
+      gridRef,
+      onDragEnd: handleDragEnd,
+      enabled: isAdmin,
+    });
+
+  // Load employees for shift creation (use modal store or selected store)
+  const activeStoreForEmployees = storeId || shiftModalStoreId;
   useEffect(() => {
-    if (!isAdmin || !storeId) {
+    if (!isAdmin || !activeStoreForEmployees) {
       setEmployees([]);
       return;
     }
-    fetch(`/api/employees?storeId=${storeId}&active=true&limit=100`)
+    fetch(`/api/employees?storeId=${activeStoreForEmployees}&active=true&limit=100`)
       .then((r) => r.json())
       .then((data) => setEmployees(data.employees || []))
       .catch(() => {});
-  }, [storeId, isAdmin]);
+  }, [activeStoreForEmployees, isAdmin]);
 
   function navigateWeek(direction: number) {
     const d = new Date(weekStart);
@@ -130,15 +275,21 @@ export default function PlanningPage() {
 
   function handleShiftClick(shift: Shift) {
     if (!isAdmin) return;
-    setEditingShift(shift as Shift);
+    if (didDrag) {
+      clearDidDrag();
+      return;
+    }
+    setEditingShift(shift);
+    setShiftModalStoreId(shift.storeId);
     setDefaultDate("");
     setDefaultStartTime("09:00");
     setShiftModalOpen(true);
   }
 
-  function handleAddShift(date: string, time?: string) {
+  function handleAddShift(date: string, time?: string, forStoreId?: string) {
     if (!isAdmin) return;
     setEditingShift(null);
+    if (forStoreId) setShiftModalStoreId(forStoreId);
     setDefaultDate(date);
     setDefaultStartTime(time || "09:00");
     setShiftModalOpen(true);
@@ -193,6 +344,49 @@ export default function PlanningPage() {
     );
   }
 
+  async function handleCancelWeek() {
+    const target = storeId ? "ce magasin" : "TOUS les magasins";
+    const shiftCount = shifts.length;
+    if (shiftCount === 0) {
+      alert("Aucun shift à supprimer cette semaine");
+      return;
+    }
+    if (
+      !confirm(
+        `Supprimer les ${shiftCount} shift(s) de la semaine pour ${target} ?\n\nCette action est irréversible.`
+      )
+    )
+      return;
+
+    setCancelling(true);
+    setDuplicateMsg("");
+
+    try {
+      const res = await fetch("/api/shifts/cancel-week", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          weekStart,
+          storeId: storeId || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setDuplicateMsg(`Erreur: ${data.error}`);
+      } else {
+        setDuplicateMsg(`${data.deleted} shift(s) supprimé(s)`);
+        loadShifts();
+      }
+    } catch {
+      setDuplicateMsg("Erreur réseau");
+    } finally {
+      setCancelling(false);
+      setTimeout(() => setDuplicateMsg(""), 5000);
+    }
+  }
+
   // Selected day for day view
   const weekDays = getWeekDays(weekStart);
   const selectedDay = weekDays[selectedDayIndex];
@@ -224,6 +418,16 @@ export default function PlanningPage() {
     return key === selectedDateStr;
   }).length;
 
+  // Get store schedules for single-store mode (from first shift or allStores)
+  const singleStoreSchedules = storeId
+    ? (allStores.find((s) => s.id === storeId)?.schedules ||
+       shifts[0]?.store?.schedules ||
+       undefined)
+    : undefined;
+
+  // Effective storeId for the shift modal
+  const modalStoreId = shiftModalStoreId || storeId;
+
   return (
     <div>
       {/* Top bar */}
@@ -234,13 +438,31 @@ export default function PlanningPage() {
 
         {isAdmin && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating}>
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => setAutoPlanOpen(true)}
+            >
+              <Zap className="h-4 w-4 mr-1.5" />
+              {storeId ? "Auto-planifier" : "Auto-planifier (tous)"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating || !storeId}>
               <Copy className="h-4 w-4 mr-1.5" />
               {duplicating ? "Duplication..." : "Dupliquer semaine"}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={!storeId}>
               <Download className="h-4 w-4 mr-1.5" />
               Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              onClick={handleCancelWeek}
+              disabled={cancelling || shifts.length === 0}
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              {cancelling ? "Suppression..." : "Annuler semaine"}
             </Button>
           </div>
         )}
@@ -249,12 +471,25 @@ export default function PlanningPage() {
       {/* Filters + controls */}
       <div className="space-y-3 mb-4">
         {isAdmin && (
-          <div className="w-full lg:w-72">
-            <StoreSearch
-              value={storeId}
-              onChange={setStoreId}
-              placeholder="Sélectionner une boutique..."
-            />
+          <div className="flex items-center gap-2">
+            <div className="w-full lg:w-72">
+              <StoreSearch
+                value={storeId}
+                onChange={setStoreId}
+                placeholder="Filtrer par magasin..."
+              />
+            </div>
+            {storeId && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setStoreId("")}
+              >
+                <Eye className="h-3.5 w-3.5 mr-1" />
+                Voir tous
+              </Button>
+            )}
           </div>
         )}
 
@@ -321,17 +556,31 @@ export default function PlanningPage() {
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowZoomMenu(false)} />
                 <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-40 py-1 min-w-[180px]">
+                  {/* Auto preset — fits to store hours */}
+                  <button
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                      !manualGrid
+                        ? "bg-blue-50 text-blue-700 font-medium"
+                        : "text-gray-700"
+                    }`}
+                    onClick={() => {
+                      setManualGrid(null);
+                      setShowZoomMenu(false);
+                    }}
+                  >
+                    Auto (horaires magasin)
+                  </button>
+                  <div className="border-t border-gray-100 my-1" />
                   {ZOOM_PRESETS.map((preset) => (
                     <button
                       key={preset.label}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
-                        gridStartHour === preset.start && gridEndHour === preset.end
+                        manualGrid && gridStartHour === preset.start && gridEndHour === preset.end
                           ? "bg-blue-50 text-blue-700 font-medium"
                           : "text-gray-700"
                       }`}
                       onClick={() => {
-                        setGridStartHour(preset.start);
-                        setGridEndHour(preset.end);
+                        setManualGrid({ start: preset.start, end: preset.end });
                         setShowZoomMenu(false);
                       }}
                     >
@@ -394,21 +643,113 @@ export default function PlanningPage() {
         </div>
       )}
 
+      {dragError && (
+        <div className="mb-4 text-sm bg-red-50 border border-red-200 text-red-700 rounded-md p-3">
+          {dragError}
+        </div>
+      )}
+
+      {/* Planning Health Widget */}
+      {isAdmin && shifts.length > 0 && (
+        <PlanningHealth
+          weekStart={weekStart}
+          storeId={storeId || undefined}
+          shiftsVersion={shiftsVersion}
+        />
+      )}
+
+      {/* Shift Exchanges */}
+      {isAdmin && (
+        <ShiftExchangePanel
+          employeeId={employeeId || ""}
+          role={role as "ADMIN" | "MANAGER"}
+        />
+      )}
+
       {/* Main content */}
-      {isAdmin && !storeId ? (
+      {isMultiStore ? (
+        /* ═══ Multi-store view: all stores stacked ═══ */
+        allStores.length > 0 ? (
+          <div className="space-y-6">
+            {allStores.map((store) => {
+              const storeShifts = shifts.filter((s) => s.storeId === store.id);
+              return (
+                <div key={store.id}>
+                  {/* Store header */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Store className="h-4 w-4 text-gray-400" />
+                    <h3 className="text-sm font-bold text-gray-800">{store.name}</h3>
+                    <span className="text-xs text-gray-400">
+                      {storeShifts.length} shift{storeShifts.length !== 1 ? "s" : ""}
+                    </span>
+                    <button
+                      className="ml-auto text-xs text-blue-600 hover:underline"
+                      onClick={() => setStoreId(store.id)}
+                    >
+                      Voir seul
+                    </button>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="overflow-x-auto">
+                    {viewMode === "week" ? (
+                      <WeekTimeline
+                        weekStart={weekStart}
+                        shifts={storeShifts}
+                        onShiftClick={handleShiftClick}
+                        onAddShift={(date, time) => handleAddShift(date, time, store.id)}
+                        mode="store"
+                        gridStartHour={gridStartHour}
+                        gridEndHour={gridEndHour}
+                        storeSchedules={store.schedules}
+                        dragState={dragState}
+                        onShiftPointerDown={handleShiftPointerDown}
+                        didDrag={didDrag}
+                        clearDidDrag={clearDidDrag}
+                      />
+                    ) : (
+                      <DayTimeline
+                        date={selectedDateStr}
+                        shifts={storeShifts}
+                        onShiftClick={handleShiftClick}
+                        onAddShift={(date, time) => handleAddShift(date, time, store.id)}
+                        mode="store"
+                        gridStartHour={gridStartHour}
+                        gridEndHour={gridEndHour}
+                        storeSchedules={store.schedules}
+                        dragState={dragState}
+                        onShiftPointerDown={handleShiftPointerDown}
+                        didDrag={didDrag}
+                        clearDidDrag={clearDidDrag}
+                      />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Quick stats (multi-store) */}
+            <div className="flex gap-4 text-sm text-gray-500">
+              <span>{shifts.length} shift(s) cette semaine</span>
+              <span>
+                {new Set(shifts.filter(s => s.employeeId).map((s) => s.employeeId)).size} employé(s)
+              </span>
+              <span>{allStores.length} magasin(s)</span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+            <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Chargement des magasins...</p>
+          </div>
+        )
+      ) : !isAdmin && !employeeId ? (
         <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
           <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 mb-2">
-            Sélectionnez une boutique pour afficher le planning
-          </p>
-          <p className="text-sm text-gray-400">
-            Ou consultez le{" "}
-            <Link href="/employees" className="text-blue-600 hover:underline">
-              planning par employé
-            </Link>
-          </p>
+          <p className="text-gray-500">Aucun profil employé lié à ce compte</p>
         </div>
       ) : (
+        /* ═══ Single-store view (or employee view) ═══ */
         <>
           {/* Timeline view */}
           <div className="overflow-x-auto">
@@ -421,6 +762,12 @@ export default function PlanningPage() {
                 mode={isAdmin ? "store" : "employee"}
                 gridStartHour={gridStartHour}
                 gridEndHour={gridEndHour}
+                storeSchedules={singleStoreSchedules}
+                dragState={isAdmin ? dragState : undefined}
+                onShiftPointerDown={isAdmin ? handleShiftPointerDown : undefined}
+                didDrag={didDrag}
+                clearDidDrag={clearDidDrag}
+                gridRef={gridRef}
               />
             ) : (
               <DayTimeline
@@ -431,6 +778,12 @@ export default function PlanningPage() {
                 mode={isAdmin ? "store" : "employee"}
                 gridStartHour={gridStartHour}
                 gridEndHour={gridEndHour}
+                storeSchedules={singleStoreSchedules}
+                dragState={isAdmin ? dragState : undefined}
+                onShiftPointerDown={isAdmin ? handleShiftPointerDown : undefined}
+                didDrag={didDrag}
+                clearDidDrag={clearDidDrag}
+                gridRef={gridRef}
               />
             )}
           </div>
@@ -442,7 +795,7 @@ export default function PlanningPage() {
                 <span>{shifts.length} shift(s) cette semaine</span>
                 {isAdmin && (
                   <span>
-                    {new Set(shifts.map((s) => s.employeeId)).size} employé(s)
+                    {new Set(shifts.filter(s => s.employeeId).map((s) => s.employeeId)).size} employé(s)
                   </span>
                 )}
               </>
@@ -465,10 +818,12 @@ export default function PlanningPage() {
               <div className="flex flex-wrap gap-2">
                 {Array.from(
                   new Map(
-                    shifts.map((s) => [
-                      s.employeeId,
-                      s.employee,
-                    ])
+                    shifts
+                      .filter((s) => s.employee && s.employeeId)
+                      .map((s) => [
+                        s.employeeId,
+                        s.employee!,
+                      ])
                   ).values()
                 ).map((emp) => (
                   <Link
@@ -490,15 +845,18 @@ export default function PlanningPage() {
       {isAdmin && (
         <ShiftModal
           open={shiftModalOpen}
-          onClose={() => setShiftModalOpen(false)}
+          onClose={() => {
+            setShiftModalOpen(false);
+            setShiftModalStoreId("");
+          }}
           onSaved={loadShifts}
-          storeId={storeId}
+          storeId={modalStoreId}
           shift={
             editingShift
               ? {
                   id: editingShift.id,
                   storeId: editingShift.storeId,
-                  employeeId: editingShift.employeeId,
+                  employeeId: editingShift.employeeId || "",
                   date: editingShift.date.split("T")[0],
                   startTime: editingShift.startTime,
                   endTime: editingShift.endTime,
@@ -509,10 +867,34 @@ export default function PlanningPage() {
           defaultDate={defaultDate}
           defaultStartTime={defaultStartTime}
           employees={employees}
+          stores={allStores.length > 1 ? allStores.map(s => ({ id: s.id, name: s.name })) : undefined}
+          storeSchedules={allStores.find(s => s.id === modalStoreId)?.schedules}
         />
       )}
 
-      {/* Floating add button for mobile (admin only) */}
+      {/* Auto-plan modal */}
+      {isAdmin && (
+        <AutoPlanModal
+          open={autoPlanOpen}
+          onClose={() => setAutoPlanOpen(false)}
+          onSaved={() => {
+            loadShifts();
+          }}
+          storeId={storeId || undefined}
+          weekStart={weekStart}
+        />
+      )}
+
+      {/* Manager IA command bar */}
+      {isAdmin && (
+        <ManagerIABar
+          weekStart={weekStart}
+          storeId={storeId}
+          onApplied={() => loadShifts()}
+        />
+      )}
+
+      {/* Floating add button for mobile (admin only, single store) */}
       {isAdmin && storeId && (
         <button
           onClick={() => {

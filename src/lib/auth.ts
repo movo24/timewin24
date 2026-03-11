@@ -28,6 +28,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Identifiants invalides");
         }
 
+        // Check if account is active
+        if (!user.active) {
+          throw new Error("Compte désactivé. Contactez votre administrateur.");
+        }
+
         // Check if account is locked
         if (user.lockedUntil && user.lockedUntil > new Date()) {
           const minutesLeft = Math.ceil(
@@ -61,13 +66,16 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Identifiants invalides");
         }
 
-        // Reset failed attempts on successful login
-        if (user.failedAttempts > 0) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { failedAttempts: 0, lockedUntil: null },
-          });
-        }
+        // Reset failed attempts + update login audit on successful login
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedAttempts: 0,
+            lockedUntil: null,
+            lastLoginAt: new Date(),
+            loginCount: { increment: 1 },
+          },
+        });
 
         return {
           id: user.id,
@@ -75,6 +83,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           employeeId: user.employeeId,
+          mustChangePassword: user.mustChangePassword,
         };
       },
     }),
@@ -82,17 +91,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role: string }).role;
-        token.employeeId = (user as { employeeId: string | null }).employeeId;
+        token.role = user.role;
+        token.employeeId = user.employeeId;
+        token.mustChangePassword = user.mustChangePassword;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id: string }).id = token.sub!;
-        (session.user as { role: string }).role = token.role as string;
-        (session.user as { employeeId: string | null }).employeeId =
-          token.employeeId as string | null;
+        session.user.id = token.sub!;
+        session.user.role = token.role;
+        session.user.employeeId = token.employeeId;
+        session.user.mustChangePassword = token.mustChangePassword;
       }
       return session;
     },

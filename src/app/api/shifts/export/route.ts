@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, errorResponse } from "@/lib/api-helpers";
 import { getWeekBounds } from "@/lib/utils";
 
 // GET /api/shifts/export?storeId=xxx&weekStart=yyyy-mm-dd
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireManagerOrAdmin();
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -39,9 +39,12 @@ export async function GET(req: NextRequest) {
     const d = new Date(s.date);
     const dateStr = d.toISOString().split("T")[0];
     const dayName = dayNames[d.getDay()];
-    const name = `${s.employee.firstName} ${s.employee.lastName}`;
+    const name = s.employee
+      ? `${s.employee.firstName} ${s.employee.lastName}`
+      : "NON ASSIGNÉ";
+    const email = s.employee?.email || "";
     const note = (s.note || "").replace(/"/g, '""');
-    return `${dateStr},${dayName},${s.startTime},${s.endTime},"${name}",${s.employee.email},"${note}"`;
+    return `${dateStr},${dayName},${s.startTime},${s.endTime},"${name}",${email},"${note}"`;
   });
 
   const csv = [header, ...rows].join("\n");

@@ -9,6 +9,7 @@ datasource db {
 
 enum Role {
   ADMIN
+  MANAGER
   EMPLOYEE
 }
 
@@ -18,50 +19,174 @@ model User {
   passwordHash String
   name         String
   role         Role       @default(EMPLOYEE)
+  active       Boolean    @default(true) // Désactivation quand l'employé quitte la boîte
   employeeId   String?    @unique
   employee     Employee?  @relation(fields: [employeeId], references: [id])
   auditLogs    AuditLog[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  // Première connexion : forcer changement de mot de passe
+  mustChangePassword Boolean @default(false)
+
   // Rate limiting: track failed login attempts
   failedAttempts Int      @default(0)
   lockedUntil    DateTime?
 
+  // Login audit
+  lastLoginAt    DateTime?
+  lastLoginIp    String?
+  loginCount     Int      @default(0)
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
+
+  // Messages RH
+  hrMessagesSent     HrMessage[]  @relation("MessageSender")
+  hrMessagesReceived HrMessage[]  @relation("MessageHandler")
+
+  // Feed & Broadcasts
+  feedPosts      FeedPost[]
+  feedComments   FeedComment[]
+  broadcasts     Broadcast[]
+
+  // Notifications
+  phone                   String?
+  pushSubscriptions       PushSubscription[]
+  notificationPreferences NotificationPreference[]
+  notificationLogs        NotificationLog[]
+
   @@index([email])
+  @@index([passwordResetToken])
 }
 
 model Store {
-  id        String          @id @default(cuid())
-  name      String
-  city      String?
-  address   String?
-  timezone  String?         @default("Europe/Paris")
-  employees StoreEmployee[]
-  shifts    Shift[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  name          String
+  city          String?
+  address       String?
+  timezone      String?         @default("Europe/Paris")
+  latitude      Float?          // Latitude GPS du magasin (pour pointage géolocalisé)
+  longitude     Float?          // Longitude GPS du magasin (pour pointage géolocalisé)
+  minEmployees  Int?            @default(1) // Nb minimum employés par créneau
+  maxEmployees  Int?            // Max employés par jour (null = illimité)
+  needsManager      Boolean         @default(false) // Manager obligatoire ?
+  allowOverlap      Boolean         @default(false) // Autoriser chevauchement entre employés ?
+  maxOverlapMinutes Int             @default(0)     // Durée max chevauchement (0/15/30/60 min)
+  maxSimultaneous   Int             @default(1)     // Max employés présents en même temps (1 = pas de chevauchement)
+  employees       StoreEmployee[]
+  shifts          Shift[]
+  schedules       StoreSchedule[]
+  broadcastStores   BroadcastStore[]
+  clockIns          ClockIn[]
+  replacementOffers ReplacementOffer[]
+  managerAlerts     ManagerAlert[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([name])
   @@index([city])
 }
 
+// Horaires d'ouverture par jour de la semaine
+model StoreSchedule {
+  id           String  @id @default(cuid())
+  store        Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId      String
+  dayOfWeek    Int     // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam
+  closed       Boolean @default(false) // Fermé ce jour ?
+  openTime     String? @default("09:00") // "HH:mm"
+  closeTime    String? @default("20:00") // "HH:mm"
+  minEmployees Int?    // Override du min employés pour ce jour (null = utilise le défaut du magasin)
+  maxEmployees Int?    // Override du max employés pour ce jour (null = utilise le défaut du magasin)
+  maxSimultaneous Int? // Override du max simultané pour ce jour (null = utilise le défaut du magasin)
+
+  @@unique([storeId, dayOfWeek])
+  @@index([storeId])
+}
+
+enum ContractType {
+  CDI
+  CDD
+  INTERIM
+  EXTRA
+  STAGE
+}
+
+enum ShiftPreference {
+  MATIN       // Matin uniquement
+  APRES_MIDI  // Après-midi uniquement
+  JOURNEE     // Journée complète (défaut)
+}
+
+enum SkillType {
+  CAISSE
+  OUVERTURE
+  FERMETURE
+  GESTION
+  MANAGER
+  CONSEIL
+  STOCK
+  SAV
+}
+
 model Employee {
-  id          String          @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String          @unique
-  active      Boolean         @default(true)
-  weeklyHours Float?
-  stores      StoreEmployee[]
-  shifts      Shift[]
-  user        User?
-  costConfig  EmployeeCost?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id               String           @id @default(cuid())
+  employeeCode     String           @unique @default(cuid()) // EmployeeID interne immuable (ex: EMP-001)
+  firstName        String
+  lastName         String
+  email            String?          @unique
+  active           Boolean          @default(true)
+  weeklyHours      Float?           // Heures contractuelles / semaine (ex: 35)
+  contractType     ContractType?    // CDI, CDD, INTERIM, EXTRA, STAGE
+  priority         Int              @default(1) // 1=haute (CDI), 2=moyenne, 3=basse (extra)
+  maxHoursPerDay   Float?           @default(11) // Max heures par jour
+  maxHoursPerWeek  Float?           @default(48) // Max heures par semaine (légal FR)
+  minRestBetween   Float?           @default(11) // Min repos entre 2 shifts (h) — légal FR = 11h
+  skills           SkillType[]      // Compétences
+  preferredStoreId String?          // ID magasin préféré
+  shiftPreference  ShiftPreference  @default(JOURNEE) // Matin, Après-midi ou Journée complète
+  stores           StoreEmployee[]
+  shifts           Shift[]
+  user             User?
+  costConfig       EmployeeCost?
+  unavailabilities      Unavailability[]
+  clockIns              ClockIn[]
+  absenceDeclarations   AbsenceDeclaration[]
+  replacementCandidates ReplacementCandidate[]
+  reliabilityScore    Int?
+  scoreUpdatedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([email])
+  @@index([employeeCode])
   @@index([lastName, firstName])
+  @@index([contractType])
+}
+
+// ─── Employee Unavailabilities ─────────────────────
+// Fixed (recurring weekly) or variable (specific dates)
+
+enum UnavailabilityType {
+  FIXED    // Récurrent chaque semaine (ex: mardi + mercredi)
+  VARIABLE // Date spécifique (ex: 15/03/2026)
+}
+
+model Unavailability {
+  id         String             @id @default(cuid())
+  employee   Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  type       UnavailabilityType
+  dayOfWeek  Int?               // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam (FIXED)
+  date       DateTime?  @db.Date // Date spécifique (VARIABLE)
+  startTime  String?            // "HH:mm" — si null = journée entière
+  endTime    String?            // "HH:mm"
+  reason     String?            // Raison (optionnel)
+  createdAt  DateTime           @default(now())
+
+  @@index([employeeId])
+  @@index([employeeId, type])
+  @@index([date])
 }
 
 model StoreEmployee {
@@ -77,17 +202,19 @@ model StoreEmployee {
 }
 
 model Shift {
-  id         String   @id @default(cuid())
-  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  store      Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   storeId    String
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId String
-  date       DateTime @db.Date
-  startTime  String   // "HH:mm" format
-  endTime    String   // "HH:mm" format
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId String?
+  date       DateTime  @db.Date
+  startTime  String    // "HH:mm" format
+  endTime    String    // "HH:mm" format
   note       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  clockIn          ClockIn?
+  replacementOffer ReplacementOffer?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([storeId, date])
   @@index([employeeId, date])
@@ -155,5 +282,770 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// ─── POS Bridge Layer ────────────────────────────────
+// Architecture générique : un adaptateur par fournisseur POS
+// TimeWin ←→ [POS Bridge] ←→ Lightspeed / Square / Zelty / Custom
+
+enum PosProviderType {
+  LIGHTSPEED
+  SQUARE
+  ZELTY
+  SUMUP
+  CUSTOM_API   // API custom (webhook entrant)
+}
+
+enum PosSyncStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  PARTIAL    // Certains éléments échoués
+}
+
+enum PosSyncDirection {
+  PUSH       // TimeWin → POS
+  PULL       // POS → TimeWin
+  BOTH       // Bidirectionnel
+}
+
+// Configuration d'un fournisseur POS (un par enseigne/société)
+model PosProvider {
+  id             String          @id @default(cuid())
+  name           String          // "Lightspeed - The Wesley", "Square Main"
+  type           PosProviderType
+  active         Boolean         @default(true)
+
+  // Authentification POS (stockée chiffrée en prod)
+  apiUrl         String?         // Base URL de l'API POS
+  apiKey         String?         // Clé API / Client ID
+  apiSecret      String?         // Secret API / Client Secret
+  accessToken    String?         // Token OAuth (si applicable)
+  refreshToken   String?         // Refresh token OAuth
+  tokenExpiresAt DateTime?       // Expiration du token
+
+  // Configuration de sync
+  syncEmployees  Boolean         @default(true)  // Synchro employés TimeWin → POS
+  syncTimeClock  Boolean         @default(true)  // Import pointages POS → TimeWin
+  syncSales      Boolean         @default(false) // Import ventes POS → TimeWin
+  syncInterval   Int             @default(60)    // Minutes entre chaque sync auto (0 = manuel)
+
+  // Webhooks entrants
+  webhookSecret  String?         @unique // Secret pour valider les webhooks POS entrants
+
+  // Métadonnées
+  lastSyncAt     DateTime?
+  config         String?         // JSON libre pour params spécifiques au POS
+  notes          String?
+
+  // Relations
+  storeLinks     PosStoreLink[]
+  employeeLinks  PosEmployeeLink[]
+  timeClocks     PosTimeClock[]
+  salesData      PosSalesData[]
+  syncLogs       PosSyncLog[]
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([type])
+  @@index([active])
+}
+
+// Liaison magasin TimeWin ↔ identifiant côté POS
+model PosStoreLink {
+  id             String      @id @default(cuid())
+  provider       PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId     String
+  storeId        String      // FK vers Store.id de TimeWin
+  posStoreId     String      // ID du magasin côté POS
+  posStoreName   String?     // Nom côté POS (pour vérification)
+  active         Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+
+  @@unique([providerId, storeId])    // Un magasin TimeWin ne peut être lié qu'une fois par provider
+  @@unique([providerId, posStoreId]) // Un magasin POS ne peut être lié qu'une fois par provider
+  @@index([storeId])
+}
+
+// Liaison employé TimeWin ↔ identifiant côté POS
+model PosEmployeeLink {
+  id              String      @id @default(cuid())
+  provider        PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId      String
+  employeeId      String      // FK vers Employee.id de TimeWin
+  posEmployeeId   String      // ID de l'employé côté POS
+  posEmployeeName String?     // Nom côté POS (pour vérification)
+  active          Boolean     @default(true)
+  syncedAt        DateTime?   // Dernière synchro réussie
+  createdAt       DateTime    @default(now())
+
+  @@unique([providerId, employeeId])
+  @@unique([providerId, posEmployeeId])
+  @@index([employeeId])
+}
+
+// Pointages réels importés du POS
+// Comparés aux shifts planifiés pour détecter retards, absences, heures sup
+model PosTimeClock {
+  id             String      @id @default(cuid())
+  provider       PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId     String
+  employeeId     String      // FK vers Employee.id de TimeWin
+  storeId        String      // FK vers Store.id de TimeWin
+  posRecordId    String?     // ID unique côté POS (pour dédoublonnage)
+
+  date           DateTime    @db.Date
+  clockIn        String      // "HH:mm" — heure réelle d'arrivée
+  clockOut       String?     // "HH:mm" — heure réelle de départ (null = encore en cours)
+  breakMinutes   Int         @default(0)  // Minutes de pause
+  workedHours    Float?      // Heures effectives calculées (clockOut - clockIn - pause)
+
+  // Comparaison avec le planning
+  shiftId        String?     // FK vers Shift.id (si matchable)
+  deltaMinutes   Int?        // Écart en minutes vs shift planifié (négatif = retard, positif = avance)
+  status         String?     // "on_time", "late", "early", "no_show", "extra"
+
+  importedAt     DateTime    @default(now())
+
+  @@unique([providerId, posRecordId]) // Pas de doublon d'import
+  @@index([employeeId, date])
+  @@index([storeId, date])
+  @@index([date])
+}
+
+// Données de vente importées du POS
+// Agrégées par créneau horaire pour analyse de productivité
+model PosSalesData {
+  id             String      @id @default(cuid())
+  provider       PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId     String
+  storeId        String      // FK vers Store.id
+  posRecordId    String?     // ID unique côté POS
+
+  date           DateTime    @db.Date
+  hourSlot       Int         // 0-23 : créneau horaire (ex: 14 = 14h00-14h59)
+  revenue        Float       // CA en € pour ce créneau
+  transactions   Int         @default(0) // Nombre de transactions
+  itemsSold      Int         @default(0) // Nombre d'articles vendus
+
+  importedAt     DateTime    @default(now())
+
+  @@unique([providerId, storeId, date, hourSlot]) // Un seul enregistrement par créneau
+  @@index([storeId, date])
+  @@index([date])
+}
+
+// Journal de synchronisation (audit trail)
+model PosSyncLog {
+  id             String           @id @default(cuid())
+  provider       PosProvider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId     String
+  direction      PosSyncDirection
+  status         PosSyncStatus
+  entityType     String           // "employees", "timeclock", "sales", "stores"
+
+  // Stats
+  totalRecords   Int              @default(0)
+  created        Int              @default(0)
+  updated        Int              @default(0)
+  skipped        Int              @default(0)
+  failed         Int              @default(0)
+
+  // Détails
+  errorMessage   String?
+  details        String?          // JSON détaillé des erreurs individuelles
+  durationMs     Int?             // Temps d'exécution en ms
+
+  startedAt      DateTime         @default(now())
+  completedAt    DateTime?
+
+  @@index([providerId, startedAt])
+  @@index([status])
+}
+
+// ─── Échanges de Shifts entre Employés ─────────────
+// Un employé propose un échange, l'autre accepte/refuse, puis le manager valide
+
+enum ShiftExchangeStatus {
+  PENDING_PEER     // En attente d'acceptation du collègue
+  PENDING_MANAGER  // Collègue accepté, en attente du manager
+  APPROVED         // Validé par le manager → shifts échangés
+  REJECTED_PEER    // Refusé par le collègue
+  REJECTED_MANAGER // Refusé par le manager
+  CANCELLED        // Annulé par l'initiateur
+  EXPIRED          // Expiré (non répondu dans le délai)
+}
+
+model ShiftExchange {
+  id               String              @id @default(cuid())
+
+  // Initiateur
+  requesterId      String              // FK vers Employee.id
+  requesterShiftId String              // FK vers Shift.id — shift proposé à l'échange
+
+  // Destinataire
+  targetId         String              // FK vers Employee.id
+  targetShiftId    String?             // FK vers Shift.id — shift du collègue (null = propose de prendre sans échange)
+
+  // Statut
+  status           ShiftExchangeStatus @default(PENDING_PEER)
+  message          String?             // Message de l'initiateur
+  peerResponse     String?             // Message du collègue
+  managerResponse  String?             // Message du manager
+
+  // Traçabilité
+  peerRespondedAt    DateTime?
+  managerRespondedAt DateTime?
+  managerId          String?           // FK vers User.id du manager qui a validé/refusé
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  expiresAt        DateTime?           // Date d'expiration automatique
+
+  @@index([requesterId])
+  @@index([targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── Messagerie RH ────────────────────────────────
+// Communication Employé → RH (pas entre employés)
+
+enum HrMessageStatus {
+  NEW        // Nouveau message non lu
+  IN_PROGRESS // En cours de traitement
+  RESOLVED   // Traité / Résolu
+  CLOSED     // Fermé
+}
+
+enum HrMessageCategory {
+  GENERAL       // Question générale
+  PLANNING      // Demande liée au planning
+  CONGE         // Demande de congé
+  ABSENCE       // Signalement d'absence
+  ADMINISTRATIF // Documents, contrats, fiches de paie
+  RECLAMATION   // Réclamation
+  AUTRE         // Autre
+}
+
+model HrMessage {
+  id          String            @id @default(cuid())
+
+  // Expéditeur (employé)
+  sender      User              @relation("MessageSender", fields: [senderId], references: [id])
+  senderId    String
+  employeeId  String            // FK vers Employee.id (dénormalisé pour filtrage rapide par employé)
+  storeId     String?           // FK vers Store.id (dénormalisé pour filtrage par magasin)
+
+  // Contenu
+  subject     String
+  body        String
+  category    HrMessageCategory @default(GENERAL)
+
+  // Statut & traitement
+  status      HrMessageStatus   @default(NEW)
+  handler     User?             @relation("MessageHandler", fields: [handlerId], references: [id])
+  handlerId   String?           // Admin/Manager qui traite le message
+
+  // Thread de réponses
+  parentId    String?           // ID du message parent (null = message initial)
+  parent      HrMessage?        @relation("MessageThread", fields: [parentId], references: [id])
+  replies     HrMessage[]       @relation("MessageThread")
+
+  // Métadonnées
+  readAt      DateTime?         // Date de lecture par RH
+  resolvedAt  DateTime?         // Date de résolution
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([senderId])
+  @@index([employeeId])
+  @@index([storeId])
+  @@index([status])
+  @@index([parentId])
+  @@index([createdAt])
+  @@index([category, status])
+}
+
+// ─── Pièces Jointes (Polymorphe) ──────────────────
+// Liées à HrMessage ou FeedPost via entityType/entityId
+
+model MessageAttachment {
+  id         String   @id @default(cuid())
+  filename   String   // Nom original du fichier
+  path       String   // Chemin stockage (uploads/xxx)
+  mimeType   String   // image/jpeg, video/mp4, etc.
+  size       Int      // Taille en bytes
+
+  // Polymorphe
+  entityType String   // "hr_message" | "feed_post"
+  entityId   String
+
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// ─── Feed / Mur Employés ──────────────────────────
+// Communication ouverte entre tous les employés
+
+model FeedPost {
+  id        String        @id @default(cuid())
+  author    User          @relation(fields: [authorId], references: [id])
+  authorId  String
+  content   String        // Texte du post
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  comments  FeedComment[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model FeedComment {
+  id        String   @id @default(cuid())
+  post      FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+// ─── Annonces RH (Broadcasts) ─────────────────────
+// Admin/Manager diffuse des infos ciblées par magasin
+
+enum BroadcastScope {
+  ALL       // Tous les magasins
+  SELECTED  // Magasins sélectionnés
+}
+
+model Broadcast {
+  id        String         @id @default(cuid())
+  author    User           @relation(fields: [authorId], references: [id])
+  authorId  String
+  title     String
+  body      String
+  scope     BroadcastScope @default(ALL)
+  createdAt DateTime       @default(now())
+
+  stores    BroadcastStore[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model BroadcastStore {
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  broadcastId String
+  store       Store     @relation(fields: [storeId], references: [id])
+  storeId     String
+
+  @@id([broadcastId, storeId])
+}
+
+// ─── Remplacement Automatique d'Employé Absent ──────
+// Quand une absence est approuvée, des offres de remplacement sont créées
+
+enum ReplacementOfferStatus {
+  OPEN          // En cours — en attente de candidats
+  FILLED        // Un employé a accepté, shift réassigné
+  EXPIRED       // Personne n'a accepté dans le délai
+  CANCELLED     // Annulé
+}
+
+enum ReplacementCandidateStatus {
+  PENDING       // Offre envoyée, pas encore de réponse
+  ACCEPTED      // L'employé a accepté
+  DECLINED      // L'employé a refusé
+  EXPIRED       // L'offre a expiré avant réponse
+}
+
+model ReplacementOffer {
+  id                 String                   @id @default(cuid())
+
+  // Shift à remplacer
+  shift              Shift                    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId            String                   @unique // Un shift ne peut avoir qu'une offre active
+  store              Store                    @relation(fields: [storeId], references: [id])
+  storeId            String
+
+  // Employé absent
+  absentEmployeeId   String
+
+  // Lien vers la déclaration d'absence
+  absenceId          String?
+
+  // Statut
+  status             ReplacementOfferStatus   @default(OPEN)
+  filledByEmployeeId String?                  // Employé qui a accepté
+
+  // Expiration
+  expiresAt          DateTime
+
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  candidates         ReplacementCandidate[]
+
+  @@index([status])
+  @@index([storeId])
+  @@index([expiresAt])
+}
+
+model ReplacementCandidate {
+  id          String                       @id @default(cuid())
+  offer       ReplacementOffer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offerId     String
+  employee    Employee                     @relation(fields: [employeeId], references: [id])
+  employeeId  String
+
+  status      ReplacementCandidateStatus   @default(PENDING)
+  respondedAt DateTime?
+
+  createdAt   DateTime                     @default(now())
+
+  @@unique([offerId, employeeId])
+  @@index([employeeId, status])
+  @@index([offerId])
+}
+
+// ─── Déclarations d'Absence / Arrêt Maladie ──────
+// Un employé signale une absence, le manager approuve/rejette
+
+enum AbsenceType {
+  MALADIE       // Arrêt maladie
+  CONGE         // Congé (payé, sans solde, etc.)
+  PERSONNEL     // Raison personnelle
+  ACCIDENT      // Accident du travail
+  AUTRE         // Autre motif
+}
+
+enum AbsenceStatus {
+  PENDING       // En attente de validation manager
+  APPROVED      // Approuvée par le manager
+  REJECTED      // Refusée par le manager
+}
+
+model AbsenceDeclaration {
+  id            String        @id @default(cuid())
+
+  // Employé déclarant
+  employee      Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId    String
+
+  // Type et motif
+  type          AbsenceType
+  reason        String?       // Message de l'employé (explication)
+
+  // Période
+  startDate     DateTime      @db.Date  // Premier jour d'absence
+  endDate       DateTime      @db.Date  // Dernier jour d'absence (peut être = startDate)
+
+  // Document médical (via upload)
+  documentPath  String?       // Chemin fichier (uploads/xxx)
+  documentName  String?       // Nom original du fichier
+  documentMime  String?       // MIME type
+
+  // Statut et traitement
+  status        AbsenceStatus @default(PENDING)
+  managerId     String?       // ID du manager qui a traité
+  managerResponse String?     // Réponse du manager
+  processedAt   DateTime?     // Date de traitement
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([createdAt])
+}
+
+// ─── Pointage Employé avec Preuve Photo ──────────
+// Clock-in/out avec vérification GPS et photo du magasin
+
+enum ClockInStatus {
+  ON_TIME   // À l'heure
+  LATE      // En retard
+  ABSENT    // Absence (généré par détection)
+}
+
+model ClockIn {
+  id              String        @id @default(cuid())
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId      String
+  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId         String
+  shift           Shift?        @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  shiftId         String?       @unique // Un shift ne peut avoir qu'un seul pointage
+
+  clockInAt       DateTime      // Timestamp serveur de l'arrivée
+  clockOutAt      DateTime?     // Timestamp serveur du départ (null = encore présent)
+
+  // Preuve photo
+  photoPath       String        // Chemin stocké (UUID dans /uploads/)
+  photoMimeType   String        // "image/jpeg", "image/png"
+
+  // Géolocalisation employé au moment du pointage
+  latitude        Float
+  longitude       Float
+  accuracy        Float?        // Précision GPS en mètres
+  distanceMeters  Float         // Distance calculée entre employé et magasin
+
+  // Statut
+  status          ClockInStatus @default(ON_TIME)
+  lateMinutes     Int           @default(0) // Minutes de retard (0 si à l'heure)
+
+  createdAt       DateTime      @default(now())
+
+  @@index([employeeId, clockInAt])
+  @@index([storeId, clockInAt])
+}
+
+// ─── Marché Interne d'Échange de Shifts ─────────
+// Un employé publie un shift sur le marché ouvert. Tout collègue éligible peut le réclamer.
+
+enum MarketListingStatus {
+  OPEN              // Publié, en attente de réclamation
+  CLAIMED           // Réclamé, en attente validation manager
+  APPROVED          // Manager a validé — shift réassigné
+  REJECTED          // Manager a refusé
+  CANCELLED         // Annulé par le posteur
+  EXPIRED           // Expiré sans réclamation
+}
+
+model ShiftMarketListing {
+  id                 String               @id @default(cuid())
+
+  // Posteur (employé qui cède son shift)
+  posterId           String
+
+  // Shift proposé
+  shiftId            String
+  storeId            String               // Dénormalisé depuis Shift pour filtrage rapide
+
+  // Réclamant (employé qui veut prendre le shift)
+  claimantId         String?
+
+  // Statut
+  status             MarketListingStatus  @default(OPEN)
+  posterMessage      String?              // Message du posteur
+  claimantMessage    String?              // Message du réclamant
+  managerResponse    String?              // Réponse du manager
+
+  // Résultats de validation automatique (JSON stocké lors de la réclamation)
+  constraintChecks   String?              // JSON: { overlapOk, weeklyHoursOk, dailyHoursOk, restOk, availabilityOk }
+
+  // Traçabilité
+  claimedAt          DateTime?
+  managerRespondedAt DateTime?
+  managerId          String?              // ID du manager qui a traité
+
+  // Expiration automatique
+  expiresAt          DateTime
+
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([status])
+  @@index([storeId, status])
+  @@index([posterId])
+  @@index([claimantId])
+  @@index([expiresAt])
+}
+
+// ─── Score de Fiabilité Employé ──────────────────
+// Historique des scores calculés automatiquement
+
+model ReliabilityScoreHistory {
+  id                String   @id @default(cuid())
+  employeeId        String
+  score             Int      // 0-100
+
+  punctualityScore  Int      // /30
+  attendanceScore   Int      // /30
+  replacementScore  Int      // /20
+  planningScore     Int      // /15
+  transparencyScore Int      // /5
+
+  periodStart       DateTime
+  periodEnd         DateTime
+  metrics           String?  // JSON détaillé
+
+  createdAt         DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
+  @@unique([employeeId, periodStart])
+}
+
+// ─── Journal Quotidien du Magasin ────────────────
+// Entrées manuelles (incidents, notes, observations) par le manager
+
+enum JournalEntryType {
+  INCIDENT
+  NOTE
+  OBSERVATION
+}
+
+enum JournalSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model JournalEntry {
+  id          String            @id @default(cuid())
+  storeId     String
+  date        DateTime          @db.Date
+  type        JournalEntryType
+  severity    JournalSeverity   @default(LOW)
+  title       String
+  description String?
+  authorId    String            // User.id du manager
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([storeId, date])
+  @@index([date])
+}
+
+// ─── Alertes Manager Automatiques ───────────────
+
+enum ManagerAlertType {
+  STORE_NOT_OPENED
+  ABSENCE_NOT_REPLACED
+  SIGNIFICANT_LATENESS
+  INCOMPLETE_TEAM
+}
+
+enum ManagerAlertStatus {
+  UNREAD
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+enum ManagerAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model ManagerAlert {
+  id             String               @id @default(cuid())
+  type           ManagerAlertType
+  severity       ManagerAlertSeverity  @default(WARNING)
+  status         ManagerAlertStatus    @default(UNREAD)
+  store          Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId        String
+  date           DateTime              @db.Date
+  time           String?
+  title          String
+  details        String?
+  contextKey     String
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@unique([type, storeId, date, contextKey])
+  @@index([storeId, date])
+  @@index([status])
+  @@index([type, status])
+  @@index([createdAt])
+}
+
+// ─── Notifications ──────────────────────────────────────────
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+  SMS
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  IMPORTANT
+  CRITICAL
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum NotificationEventType {
+  PLANNING_PUBLISHED
+  PLANNING_MODIFIED
+  NEW_MESSAGE
+  ABSENCE_REPORTED
+  SHIFT_AVAILABLE
+  REPLACEMENT_NEEDED
+  STORE_NOT_OPENED
+  MANAGER_ALERT
+  BROADCAST
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model NotificationPreference {
+  id        String                @id @default(cuid())
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  eventType NotificationEventType
+  push      Boolean               @default(true)
+  email     Boolean               @default(true)
+  sms       Boolean               @default(false)
+
+  @@unique([userId, eventType])
+  @@index([userId])
+}
+
+model NotificationLog {
+  id        String                     @id @default(cuid())
+  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  eventType NotificationEventType
+  channel   NotificationChannel
+  priority  NotificationPriority
+  status    NotificationDeliveryStatus @default(PENDING)
+  title     String
+  body      String
+  data      String?
+  url       String?
+  error     String?
+  sentAt    DateTime?
+  clickedAt DateTime?
+  createdAt DateTime                   @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([eventType])
   @@index([createdAt])
 }
