@@ -11,7 +11,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
+  if (!session) redirect("/admin-login");
 
   // Forcer le changement de mot de passe à la première connexion
   if (session.user.mustChangePassword) redirect("/changer-mot-de-passe");

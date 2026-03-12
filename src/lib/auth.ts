@@ -14,11 +14,15 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
+        loginPortal: { label: "Portal", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email et mot de passe requis");
         }
+
+        const loginPortal = credentials.loginPortal || "employee";
+        console.log(`[AUTH] Login attempt — portal: ${loginPortal}, email: ${credentials.email}`);
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -67,6 +71,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Mot de passe incorrect");
         }
 
+        // Portal-role validation: block wrong role on wrong portal
+        console.log(`[AUTH] Password OK — role: ${user.role}, portal: ${loginPortal}`);
+        if (loginPortal === "admin" && user.role === "EMPLOYEE") {
+          console.log(`[AUTH] BLOCKED: Employee on admin portal`);
+          throw new Error("Accès réservé aux administrateurs. Utilisez la page de connexion employés.");
+        }
+        if (loginPortal === "employee" && user.role !== "EMPLOYEE") {
+          console.log(`[AUTH] BLOCKED: ${user.role} on employee portal`);
+          throw new Error("Espace réservé aux employés. Utilisez la page de connexion administrateur.");
+        }
+
         // Reset failed attempts + update login audit on successful login
         await prisma.user.update({
           where: { id: user.id },
@@ -78,6 +93,7 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
+        console.log(`[AUTH] SUCCESS — user: ${user.email}, role: ${user.role}`);
         return {
           id: user.id,
           email: user.email,
@@ -97,22 +113,34 @@ export const authOptions: NextAuthOptions = {
         token.employeeId = user.employeeId;
         token.mustChangePassword = user.mustChangePassword;
         token.passwordChangedAt = user.passwordChangedAt;
+        console.log(`[JWT] Fresh token created — role: ${user.role}, email: ${user.email}`);
       }
 
       // On token refresh (no user), verify user is still active and password hasn't changed
       if (!user && token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { passwordChangedAt: true, active: true },
+          select: { passwordChangedAt: true, active: true, role: true },
         });
-        if (!dbUser || !dbUser.active) return {} as JWT;
+        if (!dbUser || !dbUser.active) {
+          console.log(`[JWT] INVALIDATED — user ${token.sub} not found or inactive`);
+          return {} as JWT;
+        }
         const dbPwdAt = dbUser.passwordChangedAt?.toISOString() || null;
         const tokenPwdAt = token.passwordChangedAt
           ? (typeof token.passwordChangedAt === "string"
               ? token.passwordChangedAt
               : (token.passwordChangedAt as Date).toISOString())
           : null;
-        if (dbPwdAt !== tokenPwdAt) return {} as JWT;
+        if (dbPwdAt !== tokenPwdAt) {
+          console.log(`[JWT] INVALIDATED — password changed. DB: ${dbPwdAt}, Token: ${tokenPwdAt}`);
+          return {} as JWT;
+        }
+        // Also sync role in case it changed in DB
+        if (dbUser.role !== token.role) {
+          console.log(`[JWT] Role synced: ${token.role} → ${dbUser.role}`);
+          token.role = dbUser.role;
+        }
       }
 
       return token;

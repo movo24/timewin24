@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff, Check } from "lucide-react";
 
 export default function ChangePasswordPage() {
+  const { data: session } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,6 +18,9 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Redirect to the correct login page based on role
+  const callbackUrl = session?.user?.role === "EMPLOYEE" ? "/login" : "/admin-login";
 
   // Validation rules
   const hasMinLength = newPassword.length >= 8;
@@ -48,9 +52,9 @@ export default function ChangePasswordPage() {
       }
 
       setSuccess(true);
-      // Rediriger vers le login après 2 secondes pour que la session se rafraîchisse
+      // Rediriger vers le login approprié après 2 secondes
       setTimeout(() => {
-        signOut({ callbackUrl: "/login" });
+        signOut({ callbackUrl });
       }, 2000);
     } catch {
       setError("Erreur réseau");

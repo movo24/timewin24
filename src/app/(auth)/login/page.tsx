@@ -23,27 +23,36 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
+      loginPortal: "employee",
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
+      console.log("[EMP-LOGIN] Auth error:", result.error);
       setError(result.error);
     } else {
+      console.log("[EMP-LOGIN] Auth success, fetching session...");
       try {
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
+        console.log("[EMP-LOGIN] Session data:", JSON.stringify({
+          role: sessionData?.user?.role,
+          email: sessionData?.user?.email,
+          mustChangePassword: sessionData?.user?.mustChangePassword,
+        }));
 
         if (sessionData?.user?.mustChangePassword) {
+          console.log("[EMP-LOGIN] Must change password → /changer-mot-de-passe");
           router.push("/changer-mot-de-passe");
-        } else if (sessionData?.user?.role === "EMPLOYEE") {
-          router.push("/mon-planning");
         } else {
-          router.push("/planning");
+          console.log("[EMP-LOGIN] Redirecting → /mon-planning");
+          router.push("/mon-planning");
         }
-      } catch {
-        router.push("/planning");
+      } catch (err) {
+        console.error("[EMP-LOGIN] Session fetch failed:", err);
+        router.push("/mon-planning");
       }
     }
   }
@@ -65,36 +74,38 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Formulaire - champs uniques pour eviter le melange Safari autofill */}
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="employee_email" className="text-sm font-medium text-gray-700">
                 Adresse email
               </Label>
               <Input
-                id="email"
+                id="employee_email"
+                name="employee_email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="prenom.nom@entreprise.fr"
                 required
-                autoComplete="email"
+                autoComplete="section-employee username"
                 className="h-11"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="employee_password" className="text-sm font-medium text-gray-700">
                 Mot de passe
               </Label>
               <Input
-                id="password"
+                id="employee_password"
+                name="employee_password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
                 required
-                autoComplete="current-password"
+                autoComplete="section-employee current-password"
                 className="h-11"
               />
             </div>

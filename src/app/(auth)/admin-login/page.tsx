@@ -23,36 +23,36 @@ export default function AdminLoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
+      loginPortal: "admin",
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
+      console.log("[ADMIN-LOGIN] Auth error:", result.error);
       setError(result.error);
     } else {
+      console.log("[ADMIN-LOGIN] Auth success, fetching session...");
       try {
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
+        console.log("[ADMIN-LOGIN] Session data:", JSON.stringify({
+          role: sessionData?.user?.role,
+          email: sessionData?.user?.email,
+          mustChangePassword: sessionData?.user?.mustChangePassword,
+        }));
 
         if (sessionData?.user?.mustChangePassword) {
+          console.log("[ADMIN-LOGIN] Must change password → /changer-mot-de-passe");
           router.push("/changer-mot-de-passe");
           return;
         }
 
-        // Vérifier que c'est bien un admin ou manager
-        const role = sessionData?.user?.role;
-        if (role === "EMPLOYEE") {
-          // Un employé ne devrait pas se connecter ici
-          setError("Acc\u00e8s r\u00e9serv\u00e9 aux administrateurs. Utilisez la page de connexion employ\u00e9s.");
-          // Déconnecter
-          await fetch("/api/auth/signout", { method: "POST" });
-          setLoading(false);
-          return;
-        }
-
+        console.log("[ADMIN-LOGIN] Redirecting → /planning");
         router.push("/planning");
-      } catch {
+      } catch (err) {
+        console.error("[ADMIN-LOGIN] Session fetch failed:", err);
         router.push("/planning");
       }
     }
@@ -75,36 +75,38 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Formulaire - champs uniques pour eviter le melange Safari autofill */}
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-300">
+              <Label htmlFor="admin_email" className="text-sm font-medium text-gray-300">
                 Email administrateur
               </Label>
               <Input
-                id="email"
+                id="admin_email"
+                name="admin_email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@entreprise.fr"
                 required
-                autoComplete="email"
+                autoComplete="section-admin username"
                 className="h-11 bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-amber-500 focus:ring-amber-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-300">
+              <Label htmlFor="admin_password" className="text-sm font-medium text-gray-300">
                 Mot de passe
               </Label>
               <Input
-                id="password"
+                id="admin_password"
+                name="admin_password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
                 required
-                autoComplete="current-password"
+                autoComplete="section-admin current-password"
                 className="h-11 bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-amber-500 focus:ring-amber-500"
               />
             </div>
