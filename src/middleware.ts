@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = !!(token && role);
   const isEmployeeRole = role === "EMPLOYEE";
 
-  console.log(`[MW] path=${pathname} token=${!!token} role=${role} auth=${isAuthenticated}`);
+  console.log(`[MW] path=${pathname} token=${!!token} role=${role} auth=${isAuthenticated} secret=${!!process.env.NEXTAUTH_SECRET} tokenKeys=${token ? Object.keys(token).join(',') : 'null'}`);
 
   // --- Login pages: redirect already-authenticated users to their dashboard ---
   if (LOGIN_PAGES.some((r) => pathname === r)) {
@@ -59,6 +59,7 @@ export async function middleware(req: NextRequest) {
 
   // --- No valid session → redirect to correct login page ---
   if (!isAuthenticated) {
+    console.log(`[MW] NOT AUTHENTICATED — token: ${JSON.stringify(token)}, secret set: ${!!process.env.NEXTAUTH_SECRET}, cookies: ${req.cookies.getAll().map(c => c.name).join(',')}`);
     const isAdminRoute = ADMIN_ROUTES.some((r) => pathname.startsWith(r));
     const loginPath = isAdminRoute ? "/admin-login" : "/login";
     const loginUrl = new URL(loginPath, req.url);
