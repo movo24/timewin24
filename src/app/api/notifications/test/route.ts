@@ -32,7 +32,7 @@ export async function POST() {
   } catch (err) {
     console.error("POST /api/notifications/test error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

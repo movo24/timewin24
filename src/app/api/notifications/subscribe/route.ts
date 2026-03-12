@@ -26,6 +26,14 @@ export async function POST(req: NextRequest) {
       return errorResponse("Subscription incomplète (endpoint, p256dh, auth requis)");
     }
 
+    // Validate endpoint is a valid HTTPS URL
+    try {
+      const url = new URL(endpoint);
+      if (url.protocol !== "https:") throw new Error();
+    } catch {
+      return errorResponse("URL endpoint invalide");
+    }
+
     const user = session!.user as { id: string };
 
     const subscription = await prisma.pushSubscription.upsert({
@@ -49,7 +57,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("POST /api/notifications/subscribe error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }
@@ -61,7 +69,7 @@ export async function POST(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const { error } = await requireAuthenticated();
+    const { session, error } = await requireAuthenticated();
     if (error) return error;
 
     const body = await req.json();
@@ -71,15 +79,18 @@ export async function DELETE(req: NextRequest) {
       return errorResponse("Endpoint requis");
     }
 
+    const user = session!.user as { id: string };
+
+    // Only delete subscriptions owned by the current user
     await prisma.pushSubscription
-      .delete({ where: { endpoint } })
+      .deleteMany({ where: { endpoint, userId: user.id } })
       .catch(() => {});
 
     return successResponse({ deleted: true });
   } catch (err) {
     console.error("DELETE /api/notifications/subscribe error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

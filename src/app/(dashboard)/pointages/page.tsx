@@ -68,22 +68,27 @@ export default function PointagesPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const storeParam = storeId !== "all" ? `&storeId=${storeId}` : "";
+    try {
+      const storeParam = storeId !== "all" ? `&storeId=${storeId}` : "";
 
-    const [clockInRes, absenceRes] = await Promise.all([
-      fetch(`/api/clock-in?date=${date}${storeParam}`),
-      fetch(`/api/clock-in/absences?date=${date}${storeParam}`),
-    ]);
+      const [clockInRes, absenceRes] = await Promise.all([
+        fetch(`/api/clock-in?date=${date}${storeParam}`),
+        fetch(`/api/clock-in/absences?date=${date}${storeParam}`),
+      ]);
 
-    if (clockInRes.ok) {
-      const data = await clockInRes.json();
-      setClockIns(data.clockIns || []);
+      if (clockInRes.ok) {
+        const data = await clockInRes.json();
+        setClockIns(data.clockIns || []);
+      }
+      if (absenceRes.ok) {
+        const data = await absenceRes.json();
+        setAbsences(data.absences || []);
+      }
+    } catch {
+      console.error("Erreur chargement pointages");
+    } finally {
+      setLoading(false);
     }
-    if (absenceRes.ok) {
-      const data = await absenceRes.json();
-      setAbsences(data.absences || []);
-    }
-    setLoading(false);
   }, [date, storeId]);
 
   useEffect(() => {

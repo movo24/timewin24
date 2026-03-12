@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
     }
 
-    const { storeId, weekStart, mode, shiftDurationHours, shiftGranularity, useScenarios, idealShiftRange } = parsed.data;
+    const { storeId, weekStart, mode, shiftDurationHours, shiftGranularity, useScenarios, idealShiftRange, useManagerBrain } = parsed.data;
 
     let result: SolverResult;
     let scenarioResult: ScenarioResult | null = null;
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
           return errorResponse("Aucun jour ouvert cette semaine.", 400);
         }
 
-        scenarioResult = solveWithScenarios(solverInput, config);
+        scenarioResult = solveWithScenarios(solverInput, config, useManagerBrain);
       } else {
         const allInputs = await loadAllStoresSolverInput(weekStart, {
           mode, shiftDurationHours, shiftGranularity,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           return errorResponse("Aucun magasin avec des employés assignés.", 400);
         }
 
-        scenarioResult = solveMultiStoreWithScenarios(allInputs, config);
+        scenarioResult = solveMultiStoreWithScenarios(allInputs, config, useManagerBrain);
 
         // Generate cross-store suggestions
         const suggestions = generateCrossStoreSuggestions(
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
           return errorResponse("Aucun jour ouvert cette semaine.", 400);
         }
 
-        result = solve(solverInput);
+        result = solve(solverInput, { useManagerBrain });
       } else {
         const allInputs = await loadAllStoresSolverInput(weekStart, {
           mode, shiftDurationHours, shiftGranularity,
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           return errorResponse("Aucun magasin avec des employés assignés.", 400);
         }
 
-        result = solveMultiStore(allInputs);
+        result = solveMultiStore(allInputs, { useManagerBrain });
       }
     }
 
@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
             note: s.employeeId
               ? `Auto-planifié — ${s.storeName}`
               : `Auto-planifié — ${s.storeName} — NON ASSIGNÉ`,
+            assignmentReason: s.assignmentReason || null,
           },
         })
       )
@@ -147,6 +148,7 @@ export async function POST(req: NextRequest) {
       weekStart,
       multiStore: !storeId,
       useScenarios,
+      useManagerBrain,
       shiftCount: createdShifts.length,
       totalHours: result.stats.totalHoursGenerated,
       ...(scenarioResult ? { scenarioScore: scenarioResult.best.score.total } : {}),
@@ -159,6 +161,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("POST /api/planning/generate error:", err);
-    return errorResponse("Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"), 500);
+    return errorResponse("Erreur serveur", 500);
   }
 }

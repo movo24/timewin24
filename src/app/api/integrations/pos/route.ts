@@ -19,6 +19,7 @@ const createProviderSchema = z.object({
 
 // GET /api/integrations/pos — Liste des providers POS
 export async function GET() {
+  try {
   const { error } = await requireAdmin();
   if (error) return error;
 
@@ -52,11 +53,27 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  return successResponse({ providers });
+  // Strip sensitive fields from each provider before returning
+  const safeProviders = providers.map((p: any) => {
+    const { apiKey, apiSecret, accessToken, refreshToken, ...safe } = p;
+    return {
+      ...safe,
+      hasApiKey: !!apiKey,
+      hasApiSecret: !!apiSecret,
+      hasAccessToken: !!accessToken,
+    };
+  });
+
+  return successResponse({ providers: safeProviders });
+  } catch (err) {
+    console.error("GET /api/integrations/pos error:", err);
+    return errorResponse("Erreur serveur", 500);
+  }
 }
 
 // POST /api/integrations/pos — Créer un provider POS
 export async function POST(req: NextRequest) {
+  try {
   const { session, error } = await requireAdmin();
   if (error) return error;
 
@@ -86,5 +103,16 @@ export async function POST(req: NextRequest) {
     type: provider.type,
   });
 
-  return successResponse(provider, 201);
+  // Strip sensitive fields before returning (BUG 2)
+  const { apiKey, apiSecret, accessToken, refreshToken, ...safeProvider } = provider as any;
+  return successResponse({
+    ...safeProvider,
+    hasApiKey: !!apiKey,
+    hasApiSecret: !!apiSecret,
+    hasAccessToken: !!accessToken,
+  }, 201);
+  } catch (err) {
+    console.error("POST /api/integrations/pos error:", err);
+    return errorResponse("Erreur serveur", 500);
+  }
 }

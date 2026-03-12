@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
       return errorResponse("weekStart est obligatoire");
     }
 
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+      return errorResponse("Format de date invalide (YYYY-MM-DD attendu)");
+    }
+
     // Calculate week bounds (Monday → Sunday)
     const monday = toUTCDate(weekStart);
     const sunday = new Date(monday);
@@ -76,10 +80,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("POST /api/shifts/cancel-week error:", err);
-    return errorResponse(
-      "Erreur serveur: " +
-        (err instanceof Error ? err.message : "inconnue"),
-      500
-    );
+    return errorResponse("Erreur serveur", 500);
   }
 }

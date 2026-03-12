@@ -83,21 +83,26 @@ export default function AbsencesManagerPage() {
 
   async function handleDecision(id: string, status: "APPROVED" | "REJECTED") {
     setProcessing(true);
-    const res = await fetch(`/api/absences/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status,
-        managerResponse: responseText || null,
-      }),
-    });
+    try {
+      const res = await fetch(`/api/absences/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          managerResponse: responseText || null,
+        }),
+      });
 
-    if (res.ok) {
-      setSelectedDeclaration(null);
-      setResponseText("");
-      await loadDeclarations();
+      if (res.ok) {
+        setSelectedDeclaration(null);
+        setResponseText("");
+        await loadDeclarations();
+      }
+    } catch {
+      alert("Erreur réseau");
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   }
 
   const pendingCount = declarations.filter((d) => d.status === "PENDING").length;

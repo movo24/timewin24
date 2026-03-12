@@ -31,27 +31,30 @@ export default function AdminLoginPage() {
     if (result?.error) {
       setError(result.error);
     } else {
-      const sessionRes = await fetch("/api/auth/session");
-      const sessionData = await sessionRes.json();
+      try {
+        const sessionRes = await fetch("/api/auth/session");
+        const sessionData = await sessionRes.json();
 
-      if (sessionData?.user?.mustChangePassword) {
-        router.push("/changer-mot-de-passe");
-        return;
+        if (sessionData?.user?.mustChangePassword) {
+          router.push("/changer-mot-de-passe");
+          return;
+        }
+
+        // Vérifier que c'est bien un admin ou manager
+        const role = sessionData?.user?.role;
+        if (role === "EMPLOYEE") {
+          // Un employé ne devrait pas se connecter ici
+          setError("Acc\u00e8s r\u00e9serv\u00e9 aux administrateurs. Utilisez la page de connexion employ\u00e9s.");
+          // Déconnecter
+          await fetch("/api/auth/signout", { method: "POST" });
+          setLoading(false);
+          return;
+        }
+
+        router.push("/planning");
+      } catch {
+        router.push("/planning");
       }
-
-      // Vérifier que c'est bien un admin ou manager
-      const role = sessionData?.user?.role;
-      if (role === "EMPLOYEE") {
-        // Un employé ne devrait pas se connecter ici
-        setError("Acc\u00e8s r\u00e9serv\u00e9 aux administrateurs. Utilisez la page de connexion employ\u00e9s.");
-        // Déconnecter
-        await fetch("/api/auth/signout", { method: "POST" });
-        setLoading(false);
-        return;
-      }
-
-      router.push("/planning");
-      router.refresh();
     }
   }
 

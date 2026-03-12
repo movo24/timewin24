@@ -10,7 +10,7 @@ type SessionUser = {
   employeeId: string | null;
 };
 
-export async function getSessionOrUnauthorized() {
+export async function getSessionOrUnauthorized(options?: { skipMustChange?: boolean }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return {
@@ -18,6 +18,18 @@ export async function getSessionOrUnauthorized() {
       error: NextResponse.json({ error: "Non authentifié" }, { status: 401 }),
     };
   }
+
+  // Enforce password change unless explicitly skipped
+  if (!options?.skipMustChange && (session.user as any).mustChangePassword) {
+    return {
+      session: null,
+      error: NextResponse.json(
+        { error: "Changement de mot de passe requis" },
+        { status: 403 }
+      ),
+    };
+  }
+
   return { session, error: null };
 }
 
@@ -52,8 +64,8 @@ export async function requireManagerOrAdmin() {
  * Require any authenticated user (ADMIN, MANAGER, or EMPLOYEE).
  * Returns the session with typed user.
  */
-export async function requireAuthenticated() {
-  const { session, error } = await getSessionOrUnauthorized();
+export async function requireAuthenticated(options?: { skipMustChange?: boolean }) {
+  const { session, error } = await getSessionOrUnauthorized(options);
   if (error) return { session: null, error };
   return { session: session!, error: null };
 }

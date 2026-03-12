@@ -159,13 +159,17 @@ export default function StoresPage() {
   const [loading, setLoading] = useState(false);
 
   const loadStores = useCallback(async () => {
-    const res = await fetch(
-      `/api/stores?page=${page}&limit=20&search=${encodeURIComponent(search)}`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      setStores(data.stores);
-      setTotalPages(data.pagination.totalPages);
+    try {
+      const res = await fetch(
+        `/api/stores?page=${page}&limit=20&search=${encodeURIComponent(search)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setStores(data.stores || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+      }
+    } catch {
+      console.error("Erreur chargement magasins");
     }
   }, [page, search]);
 
@@ -292,8 +296,17 @@ export default function StoresPage() {
   async function handleDelete(store: Store) {
     if (!confirm(`Supprimer le magasin "${store.name}" ? Cette action est irréversible.`))
       return;
-    await fetch(`/api/stores/${store.id}`, { method: "DELETE" });
-    loadStores();
+    try {
+      const res = await fetch(`/api/stores/${store.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur lors de la suppression");
+        return;
+      }
+      loadStores();
+    } catch {
+      alert("Erreur réseau");
+    }
   }
 
   return (

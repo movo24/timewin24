@@ -13,36 +13,41 @@ import { recalculateAndSave } from "@/lib/reliability-score";
  * Filterable by ?storeId=
  */
 export async function GET(req: NextRequest) {
-  const { error } = await requireManagerOrAdmin();
-  if (error) return error;
+  try {
+    const { error } = await requireManagerOrAdmin();
+    if (error) return error;
 
-  const { searchParams } = new URL(req.url);
-  const storeId = searchParams.get("storeId");
+    const { searchParams } = new URL(req.url);
+    const storeId = searchParams.get("storeId");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = { active: true };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { active: true };
 
-  if (storeId) {
-    where.stores = { some: { storeId } };
-  }
+    if (storeId) {
+      where.stores = { some: { storeId } };
+    }
 
-  const employees = await prisma.employee.findMany({
-    where,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      reliabilityScore: true,
-      scoreUpdatedAt: true,
-      contractType: true,
-      stores: {
-        select: { store: { select: { id: true, name: true } } },
+    const employees = await prisma.employee.findMany({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        reliabilityScore: true,
+        scoreUpdatedAt: true,
+        contractType: true,
+        stores: {
+          select: { store: { select: { id: true, name: true } } },
+        },
       },
-    },
-    orderBy: { lastName: "asc" },
-  });
+      orderBy: { lastName: "asc" },
+    });
 
-  return successResponse({ employees });
+    return successResponse({ employees });
+  } catch (err) {
+    console.error("GET /api/employees/reliability error:", err);
+    return errorResponse("Erreur serveur", 500);
+  }
 }
 
 /**
@@ -82,9 +87,9 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (err) {
-    console.error("[POST /api/employees/reliability] Error:", err);
+    console.error("POST /api/employees/reliability error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

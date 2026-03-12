@@ -14,6 +14,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
   const { session, error } = await requireAuthenticated();
   if (error) return error;
 
@@ -201,5 +202,9 @@ export async function PATCH(
 
     default:
       return errorResponse("Action non reconnue.");
+  }
+  } catch (err) {
+    console.error("PATCH /api/shift-exchanges/[id] error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
 }

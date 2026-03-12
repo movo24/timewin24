@@ -44,7 +44,9 @@ const skillTypes = ["CAISSE", "OUVERTURE", "FERMETURE", "GESTION", "MANAGER", "C
 export const employeeCreateSchema = z.object({
   firstName: z.string().min(1, "Le prénom est obligatoire").max(50),
   lastName: z.string().min(1, "Le nom est obligatoire").max(50),
-  email: z.preprocess(emptyToNull, z.string().email("Email invalide").nullable()),
+  email: z.string().min(1, "L'email est obligatoire").email("Email invalide"),
+  password: z.string().min(8, "Mot de passe min. 8 caractères").optional(),
+  role: z.enum(["EMPLOYEE", "MANAGER"]).optional().default("EMPLOYEE"),
   active: z.boolean().optional().default(true),
   weeklyHours: z.preprocess(emptyToNull, z.number().min(0).max(168).nullable()).optional(),
   contractType: z.preprocess(emptyToNull, z.enum(contractTypes).nullable()).optional(),
@@ -116,6 +118,8 @@ export const autoGenerateSchema = z.object({
   // Multi-scenario solver options
   useScenarios: z.boolean().optional().default(false),
   idealShiftRange: z.tuple([z.number().min(2).max(12), z.number().min(2).max(12)]).optional(),
+  // Manager Brain: intelligent placement based on employee profiles
+  useManagerBrain: z.boolean().optional().default(true),
 });
 
 // Types

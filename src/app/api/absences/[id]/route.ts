@@ -41,52 +41,57 @@ export async function PATCH(
 
     const user = session!.user as { id: string };
 
-    // Update declaration
-    const updated = await prisma.absenceDeclaration.update({
-      where: { id },
-      data: {
-        status: status as AbsenceStatus,
-        managerId: user.id,
-        managerResponse: managerResponse || null,
-        processedAt: new Date(),
-      },
-      include: {
-        employee: { select: { id: true, firstName: true, lastName: true } },
-      },
-    });
-
-    // If approved, create unavailabilities for each day in the range
     if (status === "APPROVED") {
-      const start = new Date(declaration.startDate);
-      const end = new Date(declaration.endDate);
-      const current = new Date(start);
-
-      while (current <= end) {
-        const dateStr = current.toISOString().split("T")[0];
-        // Check if unavailability already exists for this date
-        const existing = await prisma.unavailability.findFirst({
-          where: {
-            employeeId: declaration.employeeId,
-            type: "VARIABLE",
-            date: new Date(dateStr),
+      // Wrap status update AND unavailability creation in a single atomic transaction
+      const updated = await prisma.$transaction(async (tx) => {
+        // Update declaration
+        const result = await tx.absenceDeclaration.update({
+          where: { id },
+          data: {
+            status: status as AbsenceStatus,
+            managerId: user.id,
+            managerResponse: managerResponse || null,
+            processedAt: new Date(),
+          },
+          include: {
+            employee: { select: { id: true, firstName: true, lastName: true } },
           },
         });
 
-        if (!existing) {
-          await prisma.unavailability.create({
-            data: {
+        // Create unavailabilities for each day in the range
+        const start = new Date(declaration.startDate);
+        const end = new Date(declaration.endDate);
+        const current = new Date(start);
+
+        while (current <= end) {
+          const dateStr = current.toISOString().split("T")[0];
+          // Check if unavailability already exists for this date
+          const existing = await tx.unavailability.findFirst({
+            where: {
               employeeId: declaration.employeeId,
               type: "VARIABLE",
               date: new Date(dateStr),
-              reason: `Absence: ${declaration.type}${declaration.reason ? ` — ${declaration.reason}` : ""}`,
             },
           });
+
+          if (!existing) {
+            await tx.unavailability.create({
+              data: {
+                employeeId: declaration.employeeId,
+                type: "VARIABLE",
+                date: new Date(dateStr),
+                reason: `Absence: ${declaration.type}${declaration.reason ? ` — ${declaration.reason}` : ""}`,
+              },
+            });
+          }
+
+          current.setDate(current.getDate() + 1);
         }
 
-        current.setDate(current.getDate() + 1);
-      }
+        return result;
+      });
 
-      // Create replacement offers for affected shifts
+      // Create replacement offers for affected shifts (outside transaction — non-critical)
       const offersCreated = await createReplacementOffers({
         id: declaration.id,
         employeeId: declaration.employeeId,
@@ -97,15 +102,30 @@ export async function PATCH(
       console.log(
         `[PATCH /api/absences/${id}] APPROVED — Created unavailabilities + ${offersCreated} replacement offers`
       );
-    } else {
-      console.log(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
-    }
 
-    return successResponse(updated);
+      return successResponse(updated);
+    } else {
+      // Rejection: simple update, no transaction needed
+      const updated = await prisma.absenceDeclaration.update({
+        where: { id },
+        data: {
+          status: status as AbsenceStatus,
+          managerId: user.id,
+          managerResponse: managerResponse || null,
+          processedAt: new Date(),
+        },
+        include: {
+          employee: { select: { id: true, firstName: true, lastName: true } },
+        },
+      });
+
+      console.log(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
+      return successResponse(updated);
+    }
   } catch (err) {
     console.error("[PATCH /api/absences] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

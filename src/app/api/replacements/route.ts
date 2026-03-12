@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("[GET /api/replacements] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

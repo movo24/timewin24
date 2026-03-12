@@ -9,6 +9,7 @@ import type {
   SolverExistingShift,
   SolverShift,
   EmployeeState,
+  SlotPhase,
 } from "./types";
 
 /**
@@ -23,15 +24,17 @@ export function isNoOverlap(
   existingShifts: SolverExistingShift[],
   generatedShifts: SolverShift[]
 ): boolean {
+  const startMin = timeToMinutes(startTime);
+  const endMin = timeToMinutes(endTime);
   // Check existing shifts
   for (const s of existingShifts) {
     if (s.employeeId !== employeeId || s.date !== date) continue;
-    if (startTime < s.endTime && s.startTime < endTime) return false;
+    if (startMin < timeToMinutes(s.endTime) && timeToMinutes(s.startTime) < endMin) return false;
   }
   // Check generated shifts
   for (const s of generatedShifts) {
     if (s.employeeId !== employeeId || s.date !== date) continue;
-    if (startTime < s.endTime && s.startTime < endTime) return false;
+    if (startMin < timeToMinutes(s.endTime) && timeToMinutes(s.startTime) < endMin) return false;
   }
   return true;
 }
@@ -47,16 +50,18 @@ export function isAvailable(
   startTime: string,
   endTime: string
 ): boolean {
+  const startMin = timeToMinutes(startTime);
+  const endMin = timeToMinutes(endTime);
   for (const u of unavailabilities) {
     // FIXED: recurring weekly day
     if (u.type === "FIXED" && u.dayOfWeek === dayOfWeek) {
       if (!u.startTime || !u.endTime) return false; // full day unavailable
-      if (startTime < u.endTime && u.startTime < endTime) return false; // partial overlap
+      if (startMin < timeToMinutes(u.endTime) && timeToMinutes(u.startTime) < endMin) return false; // partial overlap
     }
     // VARIABLE: specific date
     if (u.type === "VARIABLE" && u.date === date) {
       if (!u.startTime || !u.endTime) return false; // full day unavailable
-      if (startTime < u.endTime && u.startTime < endTime) return false;
+      if (startMin < timeToMinutes(u.endTime) && timeToMinutes(u.startTime) < endMin) return false;
     }
   }
   return true;
@@ -95,18 +100,17 @@ export function hasEnoughRest(
   state: EmployeeState,
   date: string,
   startTime: string,
+  endTime: string,
   minRestHours: number
 ): boolean {
   for (const s of state.shifts) {
-    // Only check shifts that are close in time (same day or adjacent days)
-    const gapHours = calculateGapHours(s.date, s.endTime, date, startTime);
-    // If the proposed shift starts AFTER an existing shift ends
-    if (gapHours >= 0 && gapHours < minRestHours) return false;
+    // Forward: existing shift ends → proposed shift starts
+    const forwardGap = calculateGapHours(s.date, s.endTime, date, startTime);
+    if (forwardGap >= 0 && forwardGap < minRestHours) return false;
 
-    // Also check reverse: proposed shift ends before existing shift starts
-    const reverseGap = calculateGapHours(date, getShiftEndForRest(startTime, date), s.date, s.startTime);
-    // Not needed — we only generate one shift per employee per day,
-    // and we process days in order. So we only check forward rest.
+    // Reverse: proposed shift ends → existing shift starts
+    const reverseGap = calculateGapHours(date, endTime, s.date, s.startTime);
+    if (reverseGap >= 0 && reverseGap < minRestHours) return false;
   }
   return true;
 }
@@ -132,11 +136,6 @@ function calculateGapHours(
   const diffMs = bMs - aMs;
   if (diffMs < 0) return -1; // B is before A
   return diffMs / (1000 * 60 * 60);
-}
-
-// Not used but kept for completeness
-function getShiftEndForRest(_startTime: string, _date: string): string {
-  return _startTime; // placeholder
 }
 
 // ─── Time helpers ──────────────────────────────
@@ -216,7 +215,7 @@ export function isStoreOverlapCompliant(
 
   // Check generated shifts from other employees at same store/day
   for (const s of generatedShifts) {
-    if (s.date !== date) continue;
+    if (s.storeId !== storeId || s.date !== date) continue;
     if (!s.employeeId || s.employeeId === employeeId) continue;
     const sStart = timeToMinutes(s.startTime);
     const sEnd = timeToMinutes(s.endTime);
@@ -248,7 +247,7 @@ export function isUnderMaxDistinctEmployees(
     }
   }
   for (const s of generatedShifts) {
-    if (s.date === date && s.employeeId) {
+    if (s.storeId === storeId && s.date === date && s.employeeId) {
       ids.add(s.employeeId);
     }
   }
@@ -288,9 +287,9 @@ export function isUnderMaxSimultaneous(
     }
   }
 
-  // Generated shifts on this date (same store implied by solver context)
+  // Generated shifts on this date at this store
   for (const s of generatedShifts) {
-    if (s.date === date && s.employeeId) {
+    if (s.storeId === storeId && s.date === date && s.employeeId) {
       events.push({ time: toMin(s.startTime), delta: 1 });
       events.push({ time: toMin(s.endTime), delta: -1 });
     }
@@ -314,6 +313,32 @@ export function isUnderMaxSimultaneous(
 }
 
 /**
+ * Manager Brain constraint: Check if employee profile is safe for this slot.
+ * Profile C employees cannot be alone at openings, critical stores, or with only other Cs.
+ */
+export function isProfileSafeForSlot(
+  employee: SolverEmployee,
+  slotPhase: SlotPhase,
+  storeImportance: number,
+  coworkersOnSlot: SolverEmployee[],
+): boolean {
+  const profile = employee.profileCategory || "B"; // default B if unknown
+
+  if (profile === "C") {
+    // C alone at opening = BLOCKED
+    if (slotPhase === "OUVERTURE" && coworkersOnSlot.length === 0) return false;
+    // C alone at closing = BLOCKED
+    if (slotPhase === "FERMETURE" && coworkersOnSlot.length === 0) return false;
+    // C alone at critical store = BLOCKED
+    if (storeImportance === 1 && coworkersOnSlot.length === 0) return false;
+    // C only with other Cs = BLOCKED
+    if (coworkersOnSlot.length > 0 && coworkersOnSlot.every(cw => (cw.profileCategory || "B") === "C")) return false;
+  }
+
+  return true;
+}
+
+/**
  * Combined check: does assigning this shift pass ALL hard constraints?
  */
 export function passesAllHardConstraints(
@@ -331,7 +356,11 @@ export function passesAllHardConstraints(
   storeId?: string,
   storeMaxOverlapMinutes?: number | null,
   storeMaxEmployees?: number | null,
-  storeMaxSimultaneous?: number
+  storeMaxSimultaneous?: number,
+  // Manager Brain optional params
+  slotPhase?: SlotPhase,
+  storeImportance?: number,
+  coworkersOnSlot?: SolverEmployee[],
 ): boolean {
   if (!isNoOverlap(employee.id, date, startTime, endTime, existingShifts, generatedShifts))
     return false;
@@ -341,7 +370,7 @@ export function passesAllHardConstraints(
     return false;
   if (!isUnderWeeklyMax(state, shiftHours, employee.maxHoursPerWeek))
     return false;
-  if (!hasEnoughRest(state, date, startTime, employee.minRestBetween))
+  if (!hasEnoughRest(state, date, startTime, endTime, employee.minRestBetween))
     return false;
   if (!isShiftPreferenceCompatible(
     employee.shiftPreference,
@@ -361,6 +390,11 @@ export function passesAllHardConstraints(
   }
   if (storeId != null && storeMaxSimultaneous !== undefined) {
     if (!isUnderMaxSimultaneous(storeId, date, startTime, endTime, storeMaxSimultaneous, existingShifts, generatedShifts))
+      return false;
+  }
+  // Manager Brain: profile safety check
+  if (slotPhase !== undefined && storeImportance !== undefined && coworkersOnSlot !== undefined) {
+    if (!isProfileSafeForSlot(employee, slotPhase, storeImportance, coworkersOnSlot))
       return false;
   }
   return true;

@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuthenticated, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 
 // POST /api/market-listings/expired — Expire stale OPEN listings
 // Called on page load (same pattern as /api/replacements/expired)
 export async function POST() {
   try {
-    const { error } = await requireAuthenticated();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const now = new Date();
@@ -26,7 +26,7 @@ export async function POST() {
   } catch (err) {
     console.error("[POST /api/market-listings/expired] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

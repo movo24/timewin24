@@ -26,6 +26,11 @@ import {
   X,
   RefreshCw,
   BarChart3,
+  Eye,
+  EyeOff,
+  Copy,
+  KeyRound,
+  CheckCircle2,
 } from "lucide-react";
 import { ScoreBadge, ScoreBar, ScoreBreakdownPanel } from "@/components/reliability-score";
 
@@ -111,6 +116,7 @@ interface Employee {
   costConfig: CostConfig | null;
   unavailabilities: Unavailability[];
   reliabilityScore: number | null;
+  profileCategory: string | null;
   scoreUpdatedAt: string | null;
 }
 
@@ -169,6 +175,8 @@ export default function EmployeesPage() {
     firstName: "",
     lastName: "",
     email: "",
+    password: "",
+    role: "EMPLOYEE" as string,
     active: true,
     weeklyHours: "",
     contractType: "" as string,
@@ -186,12 +194,24 @@ export default function EmployeesPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [resetPasswordEmployeeId, setResetPasswordEmployeeId] = useState<string | null>(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
   const [scoreLoading, setScoreLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [scoreBreakdown, setScoreBreakdown] = useState<any>(null);
   const [scoreEmployee, setScoreEmployee] = useState<{ firstName: string; lastName: string } | null>(null);
   const [recalculating, setRecalculating] = useState(false);
+  // Password success dialog state
+  const [passwordSuccessOpen, setPasswordSuccessOpen] = useState(false);
+  const [passwordSuccessValue, setPasswordSuccessValue] = useState("");
+  const [passwordSuccessName, setPasswordSuccessName] = useState("");
+  const [passwordSuccessMode, setPasswordSuccessMode] = useState<"create" | "reset">("create");
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   const loadEmployees = useCallback(async () => {
     const res = await fetch(
@@ -210,10 +230,19 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetch("/api/stores?limit=100")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((data) => setAllStores(data.stores || []))
       .catch(() => {});
   }, []);
+
+  function generatePassword(length = 10): string {
+    const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!@#$";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
 
   function openCreate() {
     setEditing(null);
@@ -221,6 +250,8 @@ export default function EmployeesPage() {
       firstName: "",
       lastName: "",
       email: "",
+      password: generatePassword(),
+      role: "EMPLOYEE",
       active: true,
       weeklyHours: "",
       contractType: "",
@@ -235,6 +266,7 @@ export default function EmployeesPage() {
       hourlyRateGross: "",
       fixedMissionCost: "",
     });
+    setShowPassword(true);
     setError("");
     setDialogOpen(true);
   }
@@ -245,6 +277,8 @@ export default function EmployeesPage() {
       firstName: emp.firstName,
       lastName: emp.lastName,
       email: emp.email || "",
+      password: "",
+      role: "EMPLOYEE",
       active: emp.active,
       weeklyHours: emp.weeklyHours?.toString() || "",
       contractType: emp.contractType || "",
@@ -259,6 +293,7 @@ export default function EmployeesPage() {
       hourlyRateGross: emp.costConfig?.hourlyRateGross?.toString() || "",
       fixedMissionCost: emp.costConfig?.fixedMissionCost?.toString() || "",
     });
+    setShowPassword(false);
     setError("");
     setDialogOpen(true);
   }
@@ -277,10 +312,11 @@ export default function EmployeesPage() {
     setLoading(true);
     setError("");
 
-    const payload = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload: any = {
       firstName: form.firstName,
       lastName: form.lastName,
-      email: form.email.trim() || null,
+      email: form.email.trim(),
       active: form.active,
       weeklyHours: form.weeklyHours ? parseFloat(form.weeklyHours) : null,
       contractType: form.contractType || null,
@@ -293,6 +329,12 @@ export default function EmployeesPage() {
       shiftPreference: form.shiftPreference || "JOURNEE",
       storeIds: form.storeIds,
     };
+
+    // Add password and role only for creation (not edit)
+    if (!editing) {
+      payload.password = form.password;
+      payload.role = form.role;
+    }
 
     const url = editing ? `/api/employees/${editing.id}` : "/api/employees";
     const method = editing ? "PUT" : "POST";
@@ -342,6 +384,16 @@ export default function EmployeesPage() {
 
     setLoading(false);
     setDialogOpen(false);
+
+    // Show password success dialog after creation (not edit)
+    if (!editing) {
+      setPasswordSuccessValue(form.password);
+      setPasswordSuccessName(`${form.firstName} ${form.lastName}`);
+      setPasswordSuccessMode("create");
+      setPasswordCopied(false);
+      setPasswordSuccessOpen(true);
+    }
+
     loadEmployees();
   }
 
@@ -352,8 +404,17 @@ export default function EmployeesPage() {
       )
     )
       return;
-    await fetch(`/api/employees/${emp.id}`, { method: "DELETE" });
-    loadEmployees();
+    try {
+      const res = await fetch(`/api/employees/${emp.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur lors de la suppression");
+        return;
+      }
+      loadEmployees();
+    } catch {
+      alert("Erreur réseau");
+    }
   }
 
   function toggleStore(storeId: string) {
@@ -498,7 +559,7 @@ export default function EmployeesPage() {
                   className="bg-gray-50 rounded px-2 py-1.5 hover:bg-gray-100 transition-colors text-left"
                 >
                   <span className="text-gray-400 block">Fiabilité</span>
-                  <ScoreBadge score={emp.reliabilityScore} />
+                  <ScoreBadge score={emp.reliabilityScore} profile={emp.profileCategory as "A" | "B" | "C" | null} />
                 </button>
               </div>
 
@@ -698,14 +759,88 @@ export default function EmployeesPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>Email *</Label>
               <Input
-                type="text"
-                placeholder="optionnel"
+                type="email"
+                placeholder="email@exemple.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
               />
             </div>
+
+            {/* Account section - only for creation */}
+            {!editing && (
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <KeyRound className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    Compte d&apos;accès
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Rôle</Label>
+                    <select
+                      value={form.role}
+                      onChange={(e) => setForm({ ...form, role: e.target.value })}
+                      className="w-full h-9 rounded-md border border-gray-200 bg-white px-3 text-sm"
+                    >
+                      <option value="EMPLOYEE">Employé</option>
+                      <option value="MANAGER">Manager</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Mot de passe initial *</Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          value={form.password}
+                          onChange={(e) => setForm({ ...form, password: e.target.value })}
+                          required
+                          minLength={6}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                        title="Copier"
+                        onClick={() => {
+                          navigator.clipboard.writeText(form.password);
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 text-xs"
+                        onClick={() => setForm({ ...form, password: generatePassword() })}
+                      >
+                        Générer
+                      </Button>
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      Communiquez ce mot de passe à l&apos;employé. Il devra le changer à la première connexion.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Heures/semaine</Label>
@@ -1142,6 +1277,33 @@ export default function EmployeesPage() {
               </div>
             )}
 
+            {/* Reset password button - edit mode only */}
+            {editing && (
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <KeyRound className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    Compte d&apos;accès
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => {
+                    setResetPasswordEmployeeId(editing.id);
+                    setResetPasswordValue(generatePassword());
+                    setShowResetPassword(true);
+                    setResetPasswordOpen(true);
+                  }}
+                >
+                  <KeyRound className="h-3.5 w-3.5 mr-1.5" />
+                  Réinitialiser le mot de passe
+                </Button>
+              </div>
+            )}
+
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button
@@ -1184,6 +1346,163 @@ export default function EmployeesPage() {
               Aucune donnée disponible. Cliquez sur &quot;Scores fiabilité&quot; pour calculer.
             </p>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset password dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent className="max-w-sm mx-2 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4" />
+              Réinitialiser le mot de passe
+            </DialogTitle>
+            <DialogDescription>
+              L&apos;employé devra changer ce mot de passe à sa prochaine connexion.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nouveau mot de passe</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type={showResetPassword ? "text" : "password"}
+                    value={resetPasswordValue}
+                    onChange={(e) => setResetPasswordValue(e.target.value)}
+                    minLength={6}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  title="Copier"
+                  onClick={() => {
+                    navigator.clipboard.writeText(resetPasswordValue);
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-xs"
+                  onClick={() => setResetPasswordValue(generatePassword())}
+                >
+                  Générer
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setResetPasswordOpen(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                disabled={resetPasswordLoading || resetPasswordValue.length < 6}
+                onClick={async () => {
+                  if (!resetPasswordEmployeeId) return;
+                  setResetPasswordLoading(true);
+                  try {
+                    const res = await fetch(`/api/employees/${resetPasswordEmployeeId}/reset-password`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ newPassword: resetPasswordValue }),
+                    });
+                    if (res.ok) {
+                      setResetPasswordOpen(false);
+                      // Show password success dialog
+                      const empName = editing
+                        ? `${editing.firstName} ${editing.lastName}`
+                        : "l'employé";
+                      setPasswordSuccessValue(resetPasswordValue);
+                      setPasswordSuccessName(empName);
+                      setPasswordSuccessMode("reset");
+                      setPasswordCopied(false);
+                      setPasswordSuccessOpen(true);
+                    } else {
+                      const data = await res.json();
+                      setError(data.error || "Erreur lors de la réinitialisation");
+                    }
+                  } catch {
+                    setError("Erreur réseau");
+                  }
+                  setResetPasswordLoading(false);
+                }}
+              >
+                {resetPasswordLoading ? "..." : "Réinitialiser"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password success dialog — shown after creation or reset */}
+      <Dialog open={passwordSuccessOpen} onOpenChange={setPasswordSuccessOpen}>
+        <DialogContent className="max-w-sm mx-2 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="h-5 w-5" />
+              {passwordSuccessMode === "create"
+                ? "Employé créé avec succès"
+                : "Mot de passe réinitialisé"}
+            </DialogTitle>
+            <DialogDescription>
+              {passwordSuccessMode === "create"
+                ? `Le compte de ${passwordSuccessName} a été créé.`
+                : `Le mot de passe de ${passwordSuccessName} a été réinitialisé.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-4 space-y-3">
+              <p className="text-sm font-semibold text-amber-800">
+                Mot de passe à communiquer :
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-lg font-mono font-bold text-gray-900 bg-white rounded px-3 py-2 border border-amber-200 select-all text-center tracking-wider">
+                  {passwordSuccessValue}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className={`shrink-0 ${passwordCopied ? "border-green-400 text-green-600" : ""}`}
+                  title="Copier le mot de passe"
+                  onClick={() => {
+                    navigator.clipboard.writeText(passwordSuccessValue);
+                    setPasswordCopied(true);
+                    setTimeout(() => setPasswordCopied(false), 2000);
+                  }}
+                >
+                  {passwordCopied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-amber-700">
+                Ce mot de passe ne sera plus affiché après fermeture.
+                L&apos;employé devra le changer à sa première connexion.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => setPasswordSuccessOpen(false)}>
+                Compris
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

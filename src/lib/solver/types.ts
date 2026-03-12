@@ -30,6 +30,8 @@ export interface SolverEmployee {
   shiftPreference: "MATIN" | "APRES_MIDI" | "JOURNEE"; // shift time preference
   costPerHour: number | null; // pre-computed employer cost/hour
   unavailabilities: SolverUnavailability[];
+  reliabilityScore: number | null; // 0-100 (Manager Brain)
+  profileCategory: "A" | "B" | "C" | null; // derived from reliability score
 }
 
 export interface SolverStoreSchedule {
@@ -52,6 +54,7 @@ export interface SolverStore {
   maxOverlapMinutes: number;
   maxSimultaneous: number; // default 1
   schedules: Map<number, SolverStoreSchedule>;
+  importance: number; // 1=critique, 2=standard, 3=secondaire (Manager Brain)
 }
 
 export interface SolverExistingShift {
@@ -67,6 +70,7 @@ export interface SolverExistingShift {
 
 export interface SolverShift {
   employeeId: string | null;
+  storeId: string; // needed for multi-store constraint filtering
   date: string;
   startTime: string;
   endTime: string;
@@ -100,6 +104,24 @@ export interface SolverInput {
   options: SolverOptions;
 }
 
+// ─── Slot Phase (Manager Brain) ──────────────────
+
+export type SlotPhase = "OUVERTURE" | "FERMETURE" | "MILIEU";
+
+export interface ClassifiedSlot {
+  startTime: string;
+  endTime: string;
+  hours: number;
+  breakMinutes: number;
+  label: string;
+  phase: SlotPhase;
+  storeId: string;
+  storeImportance: number;
+  date: string;
+  dayOfWeek: number;
+  priority: number; // lower = filled first
+}
+
 // ─── Solver Output ───────────────────────────────
 
 export interface GeneratedShift {
@@ -113,6 +135,8 @@ export interface GeneratedShift {
   hours: number;
   breakMinutes: number; // 30 if shift > 6h, 0 otherwise
   warnings: string[];
+  assignmentReason: string | null; // Manager Brain: reason for this assignment
+  slotPhase: SlotPhase; // Manager Brain: slot classification
 }
 
 export interface SolverResult {
@@ -144,7 +168,7 @@ export const DEFAULT_SCENARIO_CONFIG: ScenarioConfig = {
   durationsToTry: [4, 5, 6, 7, 8],
   maxScenarios: 12,
   idealShiftHours: [4, 6],
-  acceptableShiftHours: [6, 8],
+  acceptableShiftHours: [3, 9],
 };
 
 export interface ScenarioScoreBreakdown {
@@ -154,6 +178,7 @@ export interface ScenarioScoreBreakdown {
   constraintRespect: number; // 0-100
   costEfficiency: number; // 0-100
   breakQuality: number; // 0-100
+  profilePlacementQuality: number; // 0-100 (Manager Brain)
 }
 
 export interface ScenarioScore {

@@ -9,15 +9,16 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin();
-  if (error) return error;
-
-  const { id } = await params;
-
-  const provider = await prisma.posProvider.findUnique({ where: { id } });
-  if (!provider) return errorResponse("Provider introuvable", 404);
-
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
+    const { id } = await params;
+
+    const provider = await prisma.posProvider.findUnique({ where: { id } });
+    if (!provider) return errorResponse("Provider introuvable", 404);
+
+    try {
     const config: PosProviderConfig = {
       id: provider.id,
       type: provider.type,
@@ -61,10 +62,14 @@ export async function POST(
       posStores,
       posEmployees,
     });
+    } catch (err) {
+      return successResponse({
+        connected: false,
+        error: "Erreur de connexion",
+      });
+    }
   } catch (err) {
-    return successResponse({
-      connected: false,
-      error: err instanceof Error ? err.message : "Erreur de connexion",
-    });
+    console.error("POST /api/integrations/pos/[id]/test error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
 }

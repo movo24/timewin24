@@ -104,13 +104,17 @@ export default function AccountsPage() {
   const [resetLoading, setResetLoading] = useState(false);
 
   const loadAccounts = useCallback(async () => {
-    const res = await fetch(
-      `/api/accounts?page=${page}&limit=20&search=${encodeURIComponent(search)}`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      setAccounts(data.accounts);
-      setTotalPages(data.pagination.totalPages);
+    try {
+      const res = await fetch(
+        `/api/accounts?page=${page}&limit=20&search=${encodeURIComponent(search)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setAccounts(data.accounts || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+      }
+    } catch {
+      console.error("Erreur chargement comptes");
     }
   }, [page, search]);
 
@@ -120,14 +124,18 @@ export default function AccountsPage() {
 
   // Load employees without accounts for create dialog
   async function loadEmployeesWithoutAccount() {
-    const res = await fetch("/api/employees?limit=200&active=true");
-    if (res.ok) {
-      const data = await res.json();
-      // Filter employees that don't have a user account yet
-      const withoutAccount = (data.employees || []).filter(
-        (e: EmployeeOption) => !e.user
-      );
-      setEmployees(withoutAccount);
+    try {
+      const res = await fetch("/api/employees?limit=200&active=true");
+      if (res.ok) {
+        const data = await res.json();
+        // Filter employees that don't have a user account yet
+        const withoutAccount = (data.employees || []).filter(
+          (e: EmployeeOption) => !e.user
+        );
+        setEmployees(withoutAccount);
+      }
+    } catch {
+      console.error("Erreur chargement employés");
     }
   }
 
@@ -204,17 +212,35 @@ export default function AccountsPage() {
     if (!confirm(`Voulez-vous ${action} le compte de ${account.name} ?`))
       return;
 
-    await fetch(`/api/accounts/${account.id}/toggle`, { method: "POST" });
-    loadAccounts();
+    try {
+      const res = await fetch(`/api/accounts/${account.id}/toggle`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur");
+        return;
+      }
+      loadAccounts();
+    } catch {
+      alert("Erreur réseau");
+    }
   }
 
   async function changeRole(account: Account, newRole: string) {
-    await fetch(`/api/accounts/${account.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: newRole }),
-    });
-    loadAccounts();
+    try {
+      const res = await fetch(`/api/accounts/${account.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur");
+        return;
+      }
+      loadAccounts();
+    } catch {
+      alert("Erreur réseau");
+    }
   }
 
   async function deleteAccount(account: Account) {
@@ -225,8 +251,17 @@ export default function AccountsPage() {
     )
       return;
 
-    await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
-    loadAccounts();
+    try {
+      const res = await fetch(`/api/accounts/${account.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Erreur");
+        return;
+      }
+      loadAccounts();
+    } catch {
+      alert("Erreur réseau");
+    }
   }
 
   function copyToClipboard(text: string) {

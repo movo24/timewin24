@@ -40,8 +40,8 @@ export default function AuditPage() {
     const res = await fetch(`/api/audit?${params}`);
     if (res.ok) {
       const data = await res.json();
-      setLogs(data.logs);
-      setTotalPages(data.pagination.totalPages);
+      setLogs(data.logs || []);
+      setTotalPages(data.pagination?.totalPages || 1);
     }
   }, [page, entityFilter]);
 

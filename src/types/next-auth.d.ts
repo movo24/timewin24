@@ -5,6 +5,7 @@ declare module "next-auth" {
     role: string;
     employeeId: string | null;
     mustChangePassword: boolean;
+    passwordChangedAt: Date | null;
   }
 
   interface Session {
@@ -24,5 +25,6 @@ declare module "next-auth/jwt" {
     role: string;
     employeeId: string | null;
     mustChangePassword: boolean;
+    passwordChangedAt: Date | null;
   }
 }

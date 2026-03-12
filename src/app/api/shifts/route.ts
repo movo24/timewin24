@@ -13,27 +13,57 @@ import { getWeekBounds, toUTCDate } from "@/lib/utils";
 
 // GET /api/shifts - Fetch shifts by store+week or employee+week
 export async function GET(req: NextRequest) {
-  const { session, error } = await getSessionOrUnauthorized();
-  if (error) return error;
+  try {
+    const { session, error } = await getSessionOrUnauthorized();
+    if (error) return error;
 
-  const user = session!.user as { id: string; role: string; employeeId: string | null };
-  const { searchParams } = new URL(req.url);
-  const storeId = searchParams.get("storeId");
-  const employeeId = searchParams.get("employeeId");
-  const weekStart = searchParams.get("weekStart");
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const { searchParams } = new URL(req.url);
+    const storeId = searchParams.get("storeId");
+    const employeeId = searchParams.get("employeeId");
+    const weekStart = searchParams.get("weekStart");
 
-  if (!weekStart) return errorResponse("weekStart est requis");
+    if (!weekStart) return errorResponse("weekStart est requis");
 
-  // Employee can only see their own shifts
-  if (user.role === "EMPLOYEE") {
-    if (!user.employeeId) return errorResponse("Aucun profil employé lié");
+    // Employee can only see their own shifts
+    if (user.role === "EMPLOYEE") {
+      if (!user.employeeId) return errorResponse("Aucun profil employé lié");
 
+      const { weekStart: start, weekEnd: end } = getWeekBounds(weekStart);
+      const shifts = await prisma.shift.findMany({
+        where: {
+          employeeId: user.employeeId,
+          date: { gte: start, lte: end },
+        },
+        include: {
+          store: {
+            select: {
+              id: true,
+              name: true,
+              schedules: {
+                select: { dayOfWeek: true, closed: true, openTime: true, closeTime: true, minEmployees: true, maxEmployees: true },
+                orderBy: { dayOfWeek: "asc" as const },
+              },
+            },
+          },
+          employee: { select: { id: true, firstName: true, lastName: true } },
+        },
+        orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      });
+
+      return successResponse({ shifts });
+    }
+
+    // Admin: filter by store or employee
     const { weekStart: start, weekEnd: end } = getWeekBounds(weekStart);
+    const where: Record<string, unknown> = {
+      date: { gte: start, lte: end },
+    };
+    if (storeId) where.storeId = storeId;
+    if (employeeId) where.employeeId = employeeId;
+
     const shifts = await prisma.shift.findMany({
-      where: {
-        employeeId: user.employeeId,
-        date: { gte: start, lte: end },
-      },
+      where,
       include: {
         store: {
           select: {
@@ -45,52 +75,28 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        employee: { select: { id: true, firstName: true, lastName: true } },
+        employee: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            weeklyHours: true,
+          },
+        },
       },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
     });
 
     return successResponse({ shifts });
+  } catch (err) {
+    console.error("GET /api/shifts error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
-
-  // Admin: filter by store or employee
-  const { weekStart: start, weekEnd: end } = getWeekBounds(weekStart);
-  const where: Record<string, unknown> = {
-    date: { gte: start, lte: end },
-  };
-  if (storeId) where.storeId = storeId;
-  if (employeeId) where.employeeId = employeeId;
-
-  const shifts = await prisma.shift.findMany({
-    where,
-    include: {
-      store: {
-        select: {
-          id: true,
-          name: true,
-          schedules: {
-            select: { dayOfWeek: true, closed: true, openTime: true, closeTime: true, minEmployees: true, maxEmployees: true },
-            orderBy: { dayOfWeek: "asc" as const },
-          },
-        },
-      },
-      employee: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          weeklyHours: true,
-        },
-      },
-    },
-    orderBy: [{ date: "asc" }, { startTime: "asc" }],
-  });
-
-  return successResponse({ shifts });
 }
 
 // POST /api/shifts - Create a shift
 export async function POST(req: NextRequest) {
+  try {
   const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
@@ -184,4 +190,8 @@ export async function POST(req: NextRequest) {
   }
 
   return successResponse({ shift, weeklyHoursWarning }, 201);
+  } catch (err) {
+    console.error("POST /api/shifts error:", err);
+    return errorResponse("Erreur serveur", 500);
+  }
 }

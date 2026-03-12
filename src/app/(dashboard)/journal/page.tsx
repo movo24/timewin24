@@ -122,19 +122,21 @@ export default function JournalPage() {
   const [copied, setCopied] = useState(false);
 
   const loadStores = useCallback(async () => {
-    const res = await fetch("/api/stores?limit=100");
-    if (res.ok) {
-      const data = await res.json();
-      const list = data.stores.map((s: { id: string; name: string }) => ({
-        id: s.id,
-        name: s.name,
-      }));
-      setStores(list);
-      if (list.length > 0 && !storeId) {
-        setStoreId(list[0].id);
+    try {
+      const res = await fetch("/api/stores?limit=100");
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.stores.map((s: { id: string; name: string }) => ({
+          id: s.id,
+          name: s.name,
+        }));
+        setStores(list);
+        setStoreId((prev) => prev || list[0]?.id || "");
       }
+    } catch {
+      console.error("Erreur chargement magasins");
     }
-  }, [storeId]);
+  }, []);
 
   const loadData = useCallback(async () => {
     if (!storeId) return;
@@ -172,31 +174,41 @@ export default function JournalPage() {
     if (!entryTitle.trim() || !storeId) return;
     setSubmitting(true);
 
-    const res = await fetch("/api/journal/daily", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        storeId,
-        date,
-        type: entryType,
-        severity: entrySeverity,
-        title: entryTitle.trim(),
-        description: entryDesc.trim() || null,
-      }),
-    });
+    try {
+      const res = await fetch("/api/journal/daily", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeId,
+          date,
+          type: entryType,
+          severity: entrySeverity,
+          title: entryTitle.trim(),
+          description: entryDesc.trim() || null,
+        }),
+      });
 
-    if (res.ok) {
-      setEntryTitle("");
-      setEntryDesc("");
-      setShowAddForm(false);
-      loadData();
+      if (res.ok) {
+        setEntryTitle("");
+        setEntryDesc("");
+        setShowAddForm(false);
+        loadData();
+      }
+    } catch {
+      alert("Erreur réseau");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleDeleteEntry = async (id: string) => {
-    const res = await fetch(`/api/journal/daily/${id}`, { method: "DELETE" });
-    if (res.ok) loadData();
+    if (!confirm("Supprimer cette entrée ?")) return;
+    try {
+      const res = await fetch(`/api/journal/daily/${id}`, { method: "DELETE" });
+      if (res.ok) loadData();
+    } catch {
+      alert("Erreur réseau");
+    }
   };
 
   const handleGenerateReport = async () => {

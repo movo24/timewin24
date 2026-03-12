@@ -131,6 +131,7 @@ export async function loadSolverInput(
     maxOverlapMinutes: store.maxOverlapMinutes,
     maxSimultaneous: store.maxSimultaneous,
     schedules: schedulesMap,
+    importance: store.importance ?? 2,
   };
 
   // ─── 2. Load Active Employees Assigned to Store ──
@@ -206,6 +207,8 @@ export async function loadSolverInput(
       shiftPreference: (emp.shiftPreference as "MATIN" | "APRES_MIDI" | "JOURNEE") || "JOURNEE",
       costPerHour,
       unavailabilities,
+      reliabilityScore: emp.reliabilityScore ?? null,
+      profileCategory: (emp.profileCategory as "A" | "B" | "C") ?? null,
     });
   }
 
@@ -310,6 +313,9 @@ export async function loadAllStoresSolverInput(
       inputs.push(input);
     }
   }
+
+  // Sort by importance (1=critique first, 3=secondaire last)
+  inputs.sort((a, b) => a.store.importance - b.store.importance);
 
   return inputs;
 }

@@ -22,7 +22,7 @@ export async function GET() {
   } catch (err) {
     console.error("GET /api/alerts/count error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

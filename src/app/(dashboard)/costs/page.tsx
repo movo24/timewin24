@@ -157,11 +157,13 @@ function SimulatorTab() {
         hours: parseFloat(hours),
       }),
     });
+    if (!res.ok) {
+      setLoading(false);
+      return;
+    }
     const data = await res.json();
     setLoading(false);
-    if (res.ok) {
-      setBreakdown(data.breakdown);
-    }
+    setBreakdown(data.breakdown);
   }, [hourlyRate, hours]);
 
   // Auto-simulate on input change
@@ -350,12 +352,14 @@ function WeeklyTab() {
     if (!storeId) return;
     setLoading(true);
     const res = await fetch(`/api/costs/weekly?storeId=${storeId}&weekStart=${weekStart}`);
+    if (!res.ok) {
+      setLoading(false);
+      return;
+    }
     const data = await res.json();
     setLoading(false);
-    if (res.ok) {
-      setShiftCosts(data.shiftCosts || []);
-      setSummary(data.summary || null);
-    }
+    setShiftCosts(data.shiftCosts || []);
+    setSummary(data.summary || null);
   }, [storeId, weekStart]);
 
   useEffect(() => {
@@ -567,9 +571,9 @@ function ConfigTab() {
   const [empSaving, setEmpSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/costs/countries").then((r) => r.json()).then((d) => setCountries(d.countries || []));
-    fetch("/api/costs/employees").then((r) => r.json()).then((d) => setEmployeeConfigs(d.configs || []));
-    fetch("/api/employees?active=true&limit=200").then((r) => r.json()).then((d) => setEmployees(d.employees || []));
+    fetch("/api/costs/countries").then((r) => r.json()).then((d) => setCountries(d.countries || [])).catch(() => {});
+    fetch("/api/costs/employees").then((r) => r.json()).then((d) => setEmployeeConfigs(d.configs || [])).catch(() => {});
+    fetch("/api/employees?active=true&limit=200").then((r) => r.json()).then((d) => setEmployees(d.employees || [])).catch(() => {});
   }, []);
 
   async function saveCountry() {

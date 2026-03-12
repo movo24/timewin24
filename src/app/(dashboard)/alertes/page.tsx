@@ -84,7 +84,7 @@ export default function AlertesPage() {
     if (res.ok) {
       const data = await res.json();
       setStores(
-        data.stores.map((s: { id: string; name: string }) => ({
+        (data.stores || []).map((s: { id: string; name: string }) => ({
           id: s.id,
           name: s.name,
         }))

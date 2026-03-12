@@ -15,46 +15,51 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireManagerOrAdmin();
-  if (error) return error;
+  try {
+    const { error } = await requireManagerOrAdmin();
+    if (error) return error;
 
-  const { id } = await params;
+    const { id } = await params;
 
-  // Verify employee exists
-  const employee = await prisma.employee.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      reliabilityScore: true,
-      scoreUpdatedAt: true,
-    },
-  });
+    // Verify employee exists
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        reliabilityScore: true,
+        scoreUpdatedAt: true,
+      },
+    });
 
-  if (!employee) {
-    return errorResponse("Employé non trouvé", 404);
+    if (!employee) {
+      return errorResponse("Employé non trouvé", 404);
+    }
+
+    // Get current breakdown (recalculate)
+    const breakdown = await recalculateAndSave(id);
+
+    // Get history (last 12 entries)
+    const history = await prisma.reliabilityScoreHistory.findMany({
+      where: { employeeId: id },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    });
+
+    // Parse metrics JSON
+    const historyWithMetrics = history.map((h) => ({
+      ...h,
+      metrics: h.metrics ? JSON.parse(h.metrics) : null,
+    }));
+
+    return successResponse({
+      employee,
+      breakdown,
+      history: historyWithMetrics,
+    });
+  } catch (err) {
+    console.error("GET /api/employees/reliability/[id] error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
-
-  // Get current breakdown (recalculate)
-  const breakdown = await recalculateAndSave(id);
-
-  // Get history (last 12 entries)
-  const history = await prisma.reliabilityScoreHistory.findMany({
-    where: { employeeId: id },
-    orderBy: { createdAt: "desc" },
-    take: 12,
-  });
-
-  // Parse metrics JSON
-  const historyWithMetrics = history.map((h) => ({
-    ...h,
-    metrics: h.metrics ? JSON.parse(h.metrics) : null,
-  }));
-
-  return successResponse({
-    employee,
-    breakdown,
-    history: historyWithMetrics,
-  });
 }

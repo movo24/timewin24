@@ -18,10 +18,10 @@ const MAX_RADIUS_METERS = 50;
  * Body: multipart/form-data { photo, latitude, longitude, accuracy?, storeId }
  */
 export async function POST(req: NextRequest) {
-  const { session, employeeId, error } = await requireEmployee();
-  if (error) return error;
-
   try {
+    const { session, employeeId, error } = await requireEmployee();
+    if (error) return error;
+
     const formData = await req.formData();
     const photo = formData.get("photo") as File | null;
     const latStr = formData.get("latitude") as string | null;
@@ -156,8 +156,8 @@ export async function POST(req: NextRequest) {
 
     return successResponse(clockIn, 201);
   } catch (err) {
-    console.error("Clock-in error:", err);
-    return errorResponse("Erreur lors du pointage", 500);
+    console.error("POST /api/clock-in error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
 }
 
@@ -167,55 +167,60 @@ export async function POST(req: NextRequest) {
  * Manager/Admin: tous, filtrable par ?storeId=&date=
  */
 export async function GET(req: NextRequest) {
-  const { session, error } = await requireAuthenticated();
-  if (error) return error;
+  try {
+    const { session, error } = await requireAuthenticated();
+    if (error) return error;
 
-  const user = session!.user as { id: string; role: string; employeeId: string | null };
-  const { searchParams } = new URL(req.url);
-  const dateStr = searchParams.get("date"); // YYYY-MM-DD
-  const storeId = searchParams.get("storeId");
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const { searchParams } = new URL(req.url);
+    const dateStr = searchParams.get("date"); // YYYY-MM-DD
+    const storeId = searchParams.get("storeId");
 
-  // Build date filter
-  let dateFilter: { gte: Date; lte: Date } | undefined;
-  if (dateStr) {
-    const d = new Date(dateStr + "T00:00:00Z");
-    const dEnd = new Date(dateStr + "T23:59:59.999Z");
-    dateFilter = { gte: d, lte: dEnd };
-  }
+    // Build date filter
+    let dateFilter: { gte: Date; lte: Date } | undefined;
+    if (dateStr) {
+      const d = new Date(dateStr + "T00:00:00Z");
+      const dEnd = new Date(dateStr + "T23:59:59.999Z");
+      dateFilter = { gte: d, lte: dEnd };
+    }
 
-  if (user.role === "EMPLOYEE") {
-    if (!user.employeeId) return successResponse({ clockIns: [] });
+    if (user.role === "EMPLOYEE") {
+      if (!user.employeeId) return successResponse({ clockIns: [] });
 
+      const clockIns = await prisma.clockIn.findMany({
+        where: {
+          employeeId: user.employeeId,
+          ...(dateFilter ? { clockInAt: dateFilter } : {}),
+        },
+        include: {
+          store: { select: { id: true, name: true } },
+          shift: { select: { id: true, startTime: true, endTime: true } },
+        },
+        orderBy: { clockInAt: "desc" },
+        take: 50,
+      });
+
+      return successResponse({ clockIns });
+    }
+
+    // Admin/Manager
     const clockIns = await prisma.clockIn.findMany({
       where: {
-        employeeId: user.employeeId,
+        ...(storeId ? { storeId } : {}),
         ...(dateFilter ? { clockInAt: dateFilter } : {}),
       },
       include: {
+        employee: { select: { id: true, firstName: true, lastName: true } },
         store: { select: { id: true, name: true } },
         shift: { select: { id: true, startTime: true, endTime: true } },
       },
       orderBy: { clockInAt: "desc" },
-      take: 50,
+      take: 200,
     });
 
     return successResponse({ clockIns });
+  } catch (err) {
+    console.error("GET /api/clock-in error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
-
-  // Admin/Manager
-  const clockIns = await prisma.clockIn.findMany({
-    where: {
-      ...(storeId ? { storeId } : {}),
-      ...(dateFilter ? { clockInAt: dateFilter } : {}),
-    },
-    include: {
-      employee: { select: { id: true, firstName: true, lastName: true } },
-      store: { select: { id: true, name: true } },
-      shift: { select: { id: true, startTime: true, endTime: true } },
-    },
-    orderBy: { clockInAt: "desc" },
-    take: 200,
-  });
-
-  return successResponse({ clockIns });
 }

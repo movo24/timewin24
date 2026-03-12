@@ -31,17 +31,20 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error);
     } else {
-      const sessionRes = await fetch("/api/auth/session");
-      const sessionData = await sessionRes.json();
+      try {
+        const sessionRes = await fetch("/api/auth/session");
+        const sessionData = await sessionRes.json();
 
-      if (sessionData?.user?.mustChangePassword) {
-        router.push("/changer-mot-de-passe");
-      } else if (sessionData?.user?.role === "EMPLOYEE") {
-        router.push("/mon-planning");
-      } else {
+        if (sessionData?.user?.mustChangePassword) {
+          router.push("/changer-mot-de-passe");
+        } else if (sessionData?.user?.role === "EMPLOYEE") {
+          router.push("/mon-planning");
+        } else {
+          router.push("/planning");
+        }
+      } catch {
         router.push("/planning");
       }
-      router.refresh();
     }
   }
 

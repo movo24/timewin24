@@ -9,28 +9,33 @@ export async function PATCH(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { employeeId, error } = await requireEmployee();
-  if (error) return error;
+  try {
+    const { employeeId, error } = await requireEmployee();
+    if (error) return error;
 
-  const { id } = await params;
+    const { id } = await params;
 
-  const clockIn = await prisma.clockIn.findUnique({ where: { id } });
-  if (!clockIn) return errorResponse("Pointage non trouvé", 404);
-  if (clockIn.employeeId !== employeeId) {
-    return errorResponse("Ce pointage ne vous appartient pas", 403);
+    const clockIn = await prisma.clockIn.findUnique({ where: { id } });
+    if (!clockIn) return errorResponse("Pointage non trouvé", 404);
+    if (clockIn.employeeId !== employeeId) {
+      return errorResponse("Ce pointage ne vous appartient pas", 403);
+    }
+    if (clockIn.clockOutAt) {
+      return errorResponse("Vous avez déjà pointé votre départ");
+    }
+
+    const updated = await prisma.clockIn.update({
+      where: { id },
+      data: { clockOutAt: new Date() },
+      include: {
+        store: { select: { id: true, name: true } },
+        shift: { select: { id: true, startTime: true, endTime: true } },
+      },
+    });
+
+    return successResponse(updated);
+  } catch (err) {
+    console.error("PATCH /api/clock-in/[id] error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
-  if (clockIn.clockOutAt) {
-    return errorResponse("Vous avez déjà pointé votre départ");
-  }
-
-  const updated = await prisma.clockIn.update({
-    where: { id },
-    data: { clockOutAt: new Date() },
-    include: {
-      store: { select: { id: true, name: true } },
-      shift: { select: { id: true, startTime: true, endTime: true } },
-    },
-  });
-
-  return successResponse(updated);
 }

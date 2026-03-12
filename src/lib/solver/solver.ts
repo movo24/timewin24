@@ -1,5 +1,5 @@
 /**
- * Auto-Planning Solver — Clean 4-step algorithm.
+ * Auto-Planning Solver — Clean 4-step algorithm with Manager Brain.
  *
  * 100% pure TypeScript, no DB access.
  * Receives a denormalized SolverInput and returns SolverResult.
@@ -9,6 +9,12 @@
  *   2. getEligibleEmployees() — filter employees who can work each slot
  *   3. scoreEmployeeForSlot() — simple penalty-based scoring
  *   4. createUnassignedShift() — fallback if nobody fits
+ *
+ * Manager Brain additions:
+ *   - classifySlotPhase() — classify slots as OUVERTURE/FERMETURE/MILIEU
+ *   - Phase-ordered processing: all OUVERTUREs first, then FERMETUREs, then MILIEUs
+ *   - Coworker detection for profile safety constraints
+ *   - Assignment reasons for explainability
  *
  * Rules:
  *   - maxShift = 8h (hard limit)
@@ -32,6 +38,8 @@ import type {
   ScenarioConfig,
   ScenarioResult,
   ScoredScenario,
+  SlotPhase,
+  ClassifiedSlot,
 } from "./types";
 import { DEFAULT_SCENARIO_CONFIG } from "./types";
 import { passesAllHardConstraints } from "./constraints";
@@ -62,6 +70,7 @@ interface TimeRange {
 interface SolveOptions {
   weights?: ScoringWeights;
   assignmentOrder?: "score-desc" | "fairness-first";
+  useManagerBrain?: boolean;
 }
 
 // ─── Time Helpers ───────────────────────────────
@@ -86,6 +95,113 @@ function calculateHoursFromTimes(startTime: string, endTime: string): number {
 }
 
 // ═══════════════════════════════════════════════════
+// MANAGER BRAIN — Slot Classification & Helpers
+// ═══════════════════════════════════════════════════
+
+/**
+ * Classify a slot as OUVERTURE, FERMETURE, or MILIEU based on store hours.
+ */
+function classifySlotPhase(
+  slotStart: string,
+  slotEnd: string,
+  storeOpen: string,
+  storeClose: string,
+): SlotPhase {
+  const start = timeToMinutes(slotStart);
+  const end = timeToMinutes(slotEnd);
+  const open = timeToMinutes(storeOpen);
+  const close = timeToMinutes(storeClose);
+
+  if (start <= open + 30) return "OUVERTURE";
+  if (end >= close - 30) return "FERMETURE";
+  return "MILIEU";
+}
+
+/**
+ * Compute slot priority for global ordering.
+ * OUVERTURE first (0-99), then FERMETURE (1000-1099), then MILIEU (2000-2099).
+ * Within each phase, critical stores (importance=1) come first.
+ */
+function computeSlotPriority(phase: SlotPhase, importance: number): number {
+  const phaseWeight = phase === "OUVERTURE" ? 0 : phase === "FERMETURE" ? 1000 : 2000;
+  return phaseWeight + importance;
+}
+
+/**
+ * Find all employees (from existing + generated shifts) already working
+ * at the same store/date with overlapping times.
+ */
+function getCoworkersOnSlot(
+  storeId: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  existingShifts: SolverExistingShift[],
+  generatedShifts: SolverShift[],
+  employees: SolverEmployee[],
+): SolverEmployee[] {
+  const startMin = timeToMinutes(startTime);
+  const endMin = timeToMinutes(endTime);
+  const coworkerIds = new Set<string>();
+
+  // Check existing shifts
+  for (const s of existingShifts) {
+    if (s.storeId !== storeId || s.date !== date || !s.employeeId) continue;
+    const sStart = timeToMinutes(s.startTime);
+    const sEnd = timeToMinutes(s.endTime);
+    if (startMin < sEnd && sStart < endMin) {
+      coworkerIds.add(s.employeeId);
+    }
+  }
+
+  // Check generated shifts
+  for (const s of generatedShifts) {
+    if (s.storeId !== storeId || s.date !== date || !s.employeeId) continue;
+    const sStart = timeToMinutes(s.startTime);
+    const sEnd = timeToMinutes(s.endTime);
+    if (startMin < sEnd && sStart < endMin) {
+      coworkerIds.add(s.employeeId);
+    }
+  }
+
+  return employees.filter((e) => coworkerIds.has(e.id));
+}
+
+/**
+ * Generate a human-readable reason for assigning an employee to a slot.
+ */
+function generateAssignmentReason(
+  employee: SolverEmployee,
+  slotPhase: SlotPhase,
+  storeImportance: number,
+): string {
+  const parts: string[] = [];
+
+  if (slotPhase === "OUVERTURE" && employee.profileCategory === "A")
+    parts.push("Profil A fiable pour l'ouverture");
+  else if (slotPhase === "OUVERTURE")
+    parts.push("Placé à l'ouverture");
+
+  if (slotPhase === "FERMETURE" && employee.profileCategory === "A")
+    parts.push("Profil A pour la fermeture");
+  else if (slotPhase === "FERMETURE")
+    parts.push("Placé à la fermeture");
+
+  if (storeImportance === 1 && employee.profileCategory === "A")
+    parts.push("Magasin prioritaire sécurisé");
+  else if (storeImportance === 1)
+    parts.push("Magasin prioritaire");
+
+  if (slotPhase === "MILIEU" && employee.profileCategory === "C")
+    parts.push("Profil faible orienté vers le milieu de journée");
+
+  if (employee.profileCategory === "C")
+    parts.push("Accompagné par un profil fort");
+
+  return parts.join(" | ") || "Meilleur candidat disponible";
+}
+
+// ═══════════════════════════════════════════════════
 // STEP 1 — BUILD COVERAGE SLOTS
 // ═══════════════════════════════════════════════════
 
@@ -101,7 +217,6 @@ function findUncoveredRanges(
     return [{ start: openMin, end: closeMin }];
   }
 
-  // Convert existing shifts to time ranges and sort by start
   const covered: TimeRange[] = existingShiftsForDay
     .map((s) => ({
       start: Math.max(openMin, timeToMinutes(s.startTime)),
@@ -110,20 +225,15 @@ function findUncoveredRanges(
     .filter((r) => r.start < r.end)
     .sort((a, b) => a.start - b.start);
 
-  // Merge overlapping covered ranges
   const merged: TimeRange[] = [];
   for (const r of covered) {
     if (merged.length === 0 || r.start > merged[merged.length - 1].end) {
       merged.push({ ...r });
     } else {
-      merged[merged.length - 1].end = Math.max(
-        merged[merged.length - 1].end,
-        r.end
-      );
+      merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, r.end);
     }
   }
 
-  // Find gaps between covered ranges
   const uncovered: TimeRange[] = [];
   let cursor = openMin;
   for (const r of merged) {
@@ -141,7 +251,6 @@ function findUncoveredRanges(
 
 /**
  * Split uncovered ranges into shift-sized slots.
- * Uses idealRange for smart splitting when available.
  */
 function generateSlotsForRanges(
   uncoveredRanges: TimeRange[],
@@ -156,16 +265,12 @@ function generateSlotsForRanges(
     const rangeMin = range.end - range.start;
     const rangeHours = rangeMin / 60;
 
-    // Skip very short gaps (< 1 hour)
     if (rangeHours < 1) continue;
 
-    // How many time segments needed?
     let segmentCount: number;
     if (idealRange) {
-      // Smart splitting: target the center of the ideal range
       const idealCenter = ((idealRange[0] + idealRange[1]) / 2) * 60;
       segmentCount = Math.max(1, Math.round(rangeMin / idealCenter));
-      // Hard cap: no segment > 8h
       while (rangeMin / segmentCount > 8 * 60 && segmentCount < 10) {
         segmentCount++;
       }
@@ -174,7 +279,6 @@ function generateSlotsForRanges(
     }
 
     if (segmentCount === 1) {
-      // Single segment covers the whole range
       const breakMins = rangeHours > 6 ? 30 : 0;
       for (let i = 0; i < minEmployeesPerSlot; i++) {
         slots.push({
@@ -186,35 +290,19 @@ function generateSlotsForRanges(
         });
       }
     } else {
-      // Split range into segments, rounding transitions to 15-minute boundaries
       const segmentDuration = Math.round(rangeMin / segmentCount);
-
-      let prevEnd = range.start; // Track previous segment end to avoid gaps
+      let prevEnd = range.start;
       for (let si = 0; si < segmentCount; si++) {
-        const rawSegEnd =
-          si === segmentCount - 1
-            ? range.end
-            : range.start + (si + 1) * segmentDuration;
-
-        // First segment starts at range boundary, others chain from previous end
         const segStart = si === 0 ? range.start : prevEnd;
-        const segEnd =
-          si === segmentCount - 1 ? range.end : roundTo15(rawSegEnd);
-        // Clamp: ensure segment stays within store hours
+        const segEnd = si === segmentCount - 1 ? range.end : roundTo15(range.start + (si + 1) * segmentDuration);
         const clampedStart = Math.max(segStart, range.start);
         const clampedEnd = Math.min(segEnd, range.end);
-
         const segHours = (clampedEnd - clampedStart) / 60;
-        prevEnd = clampedEnd; // Chain next segment from here
-        if (segHours < 0.5) continue; // Skip tiny segments
+        prevEnd = clampedEnd;
+        if (segHours < 0.5) continue;
 
         const breakMins = segHours > 6 ? 30 : 0;
-        const label =
-          si === 0
-            ? "matin"
-            : si === segmentCount - 1
-              ? "après-midi"
-              : "milieu";
+        const label = si === 0 ? "matin" : si === segmentCount - 1 ? "après-midi" : "milieu";
 
         for (let i = 0; i < minEmployeesPerSlot; i++) {
           slots.push({
@@ -234,7 +322,6 @@ function generateSlotsForRanges(
 
 /**
  * Step 1 — Build all coverage slots for one day.
- * Finds gaps in existing coverage and generates shift-sized slots.
  */
 function buildCoverageSlots(
   store: SolverStore,
@@ -246,30 +333,19 @@ function buildCoverageSlots(
   const openMin = timeToMinutes(schedule.openTime);
   const closeMin = timeToMinutes(schedule.closeTime);
 
-  // Existing shifts for this day+store
   const existingForDay = existingShifts.filter(
     (s) => s.date === date && s.storeId === store.id
   );
 
-  // Find uncovered time ranges
-  const uncoveredRanges = findUncoveredRanges(
-    openMin,
-    closeMin,
-    existingForDay
-  );
+  const uncoveredRanges = findUncoveredRanges(openMin, closeMin, existingForDay);
   const totalUncoveredHours = uncoveredRanges.reduce(
-    (sum, r) => sum + (r.end - r.start) / 60,
-    0
+    (sum, r) => sum + (r.end - r.start) / 60, 0
   );
 
-  // If everything is covered (or gaps are tiny), skip
   if (totalUncoveredHours < 0.5) {
     return { slots: [], existingForDay };
   }
 
-  // Cap employees per slot at maxSimultaneous (no point creating parallel
-  // slots that the constraint check will always reject).
-  // Also force 1 when overlap is explicitly forbidden.
   const storeMaxSim = schedule.maxSimultaneous ?? store.maxSimultaneous;
   const effectiveMinEmployees = Math.min(
     schedule.minEmployees,
@@ -291,11 +367,6 @@ function buildCoverageSlots(
 // STEP 2 — GET ELIGIBLE EMPLOYEES
 // ═══════════════════════════════════════════════════
 
-/**
- * Step 2 — Find all employees who CAN work this slot.
- * Runs all hard constraints: overlap, availability, daily/weekly max, rest, preference.
- * Never crashes — skips any employee that throws.
- */
 function getEligibleEmployees(
   employees: SolverEmployee[],
   employeeStates: Map<string, EmployeeState>,
@@ -309,7 +380,10 @@ function getEligibleEmployees(
   storeId?: string,
   storeMaxOverlapMinutes?: number | null,
   storeMaxEmployees?: number | null,
-  storeMaxSimultaneous?: number
+  storeMaxSimultaneous?: number,
+  slotPhase?: SlotPhase,
+  storeImportance?: number,
+  coworkersOnSlot?: SolverEmployee[],
 ): SolverEmployee[] {
   const eligible: SolverEmployee[] = [];
 
@@ -320,27 +394,15 @@ function getEligibleEmployees(
 
       if (
         passesAllHardConstraints(
-          emp,
-          state,
-          date,
-          dayOfWeek,
-          slot.startTime,
-          slot.endTime,
-          slot.hours,
-          existingShifts,
-          generatedShifts,
-          storeOpenTime,
-          storeCloseTime,
-          storeId,
-          storeMaxOverlapMinutes,
-          storeMaxEmployees,
-          storeMaxSimultaneous
+          emp, state, date, dayOfWeek, slot.startTime, slot.endTime, slot.hours,
+          existingShifts, generatedShifts, storeOpenTime, storeCloseTime,
+          storeId, storeMaxOverlapMinutes, storeMaxEmployees, storeMaxSimultaneous,
+          slotPhase, storeImportance, coworkersOnSlot,
         )
       ) {
         eligible.push(emp);
       }
     } catch {
-      // Never crash on a constraint check — skip this employee
       continue;
     }
   }
@@ -352,20 +414,6 @@ function getEligibleEmployees(
 // STEP 3 — SCORE & ASSIGN
 // ═══════════════════════════════════════════════════
 
-/**
- * Step 3a — Score an employee for a slot.
- * Simple penalty-based: score = 100 - penalties + bonuses.
- *
- * Penalties:
- *   -25  shift > 6h (long shift fatigue)
- *   -15  employee already worked today
- *   -10  employee exceeds weekly contractual target
- *
- * Bonuses:
- *   +10  employee has good remaining capacity (needs hours)
- *   +5   preferred store match
- *   +5   CDI priority (stable contract)
- */
 function scoreEmployeeForSlot(
   employee: SolverEmployee,
   state: EmployeeState,
@@ -374,48 +422,21 @@ function scoreEmployeeForSlot(
   storeId: string
 ): number {
   let score = 100;
-
-  // ─── Penalties ───
-
-  // Long shift penalty
   if (slotHours > 6) score -= 25;
-
-  // Already working today → overloading
   const dailyHours = state.dailyHours.get(date) || 0;
   if (dailyHours > 0) score -= 15;
-
-  // Would exceed weekly contractual target
   const target = employee.weeklyHours || 35;
   const afterAssignment = state.weeklyHoursAssigned + slotHours;
   if (target > 0 && afterAssignment > target) score -= 10;
-
-  // ─── Bonuses ───
-
-  // Good remaining capacity (needs more hours to reach target)
   if (target > 0) {
     const remaining = target - state.weeklyHoursAssigned;
     if (remaining >= slotHours) score += 10;
   }
-
-  // Preferred store
   if (employee.preferredStoreId === storeId) score += 5;
-
-  // CDI priority bonus
   if (employee.priority === 1) score += 5;
-
   return score;
 }
 
-/**
- * Step 3b — Pick the best employee from eligible candidates.
- * Scores all candidates and returns the highest-scoring one.
- *
- * When assignmentOrder is "fairness-first", prioritizes employees
- * with the most remaining capacity (for better hour distribution).
- *
- * When weightedScoring is provided (multi-scenario mode), uses
- * the weighted composite scoring instead of simple penalties.
- */
 function assignBestEmployee(
   eligible: SolverEmployee[],
   employeeStates: Map<string, EmployeeState>,
@@ -428,51 +449,38 @@ function assignBestEmployee(
     minCost: number;
     maxCost: number;
     avgPoolHours: number;
-  }
+  },
+  slotPhase?: SlotPhase,
+  storeImportance?: number,
 ): { employee: SolverEmployee; score: number } | null {
   if (eligible.length === 0) return null;
 
-  // Score all candidates
   const scored = eligible.map((emp) => {
     const state = employeeStates.get(emp.id)!;
     let score: number;
 
     if (weightedScoring) {
-      // Multi-scenario mode: use weighted scoring profiles
       score = calculateCandidateScore(
-        emp,
-        state,
-        slot.hours,
-        storeId,
-        weightedScoring.minCost,
-        weightedScoring.maxCost,
-        weightedScoring.avgPoolHours,
-        weightedScoring.weights
+        emp, state, slot.hours, storeId,
+        weightedScoring.minCost, weightedScoring.maxCost,
+        weightedScoring.avgPoolHours, weightedScoring.weights,
+        slotPhase, storeImportance,
       );
     } else {
-      // Default: simple penalty-based scoring
       score = scoreEmployeeForSlot(emp, state, date, slot.hours, storeId);
     }
 
     return { employee: emp, score };
   });
 
-  // Sort based on assignment strategy
   if (assignmentOrder === "fairness-first") {
-    // Sort by remaining capacity descending, score as tiebreak
     scored.sort((a, b) => {
-      const aRemaining =
-        (a.employee.weeklyHours || 35) -
-        (employeeStates.get(a.employee.id)?.weeklyHoursAssigned || 0);
-      const bRemaining =
-        (b.employee.weeklyHours || 35) -
-        (employeeStates.get(b.employee.id)?.weeklyHoursAssigned || 0);
-      if (Math.abs(aRemaining - bRemaining) > 0.5)
-        return bRemaining - aRemaining;
+      const aRemaining = (a.employee.weeklyHours || 35) - (employeeStates.get(a.employee.id)?.weeklyHoursAssigned || 0);
+      const bRemaining = (b.employee.weeklyHours || 35) - (employeeStates.get(b.employee.id)?.weeklyHoursAssigned || 0);
+      if (Math.abs(aRemaining - bRemaining) > 0.5) return bRemaining - aRemaining;
       return b.score - a.score;
     });
   } else {
-    // Default: sort by score descending
     scored.sort((a, b) => b.score - a.score);
   }
 
@@ -483,34 +491,28 @@ function assignBestEmployee(
 // STEP 4 — CREATE SHIFTS
 // ═══════════════════════════════════════════════════
 
-/**
- * Step 4a — Create an assigned shift (employee found).
- * Updates employee state and returns the generated shift.
- */
 function createAssignedShift(
   employee: SolverEmployee,
   slot: CoverageSlot,
   store: SolverStore,
   date: string,
-  state: EmployeeState
+  state: EmployeeState,
+  slotPhase: SlotPhase = "MILIEU",
+  assignmentReason: string | null = null,
 ): { generated: GeneratedShift; raw: SolverShift } {
   const raw: SolverShift = {
     employeeId: employee.id,
+    storeId: store.id,
     date,
     startTime: slot.startTime,
     endTime: slot.endTime,
     hours: slot.hours,
   };
 
-  // Update employee state
   updateState(state, raw);
 
-  // Per-shift warnings
   const warnings: string[] = [];
-  if (
-    employee.weeklyHours &&
-    state.weeklyHoursAssigned > employee.weeklyHours
-  ) {
+  if (employee.weeklyHours && state.weeklyHoursAssigned > employee.weeklyHours) {
     warnings.push(
       `Dépasse les ${employee.weeklyHours}h contractuelles (${state.weeklyHoursAssigned.toFixed(1)}h cette semaine)`
     );
@@ -527,22 +529,22 @@ function createAssignedShift(
     hours: slot.hours,
     breakMinutes: slot.breakMinutes,
     warnings,
+    assignmentReason,
+    slotPhase,
   };
 
   return { generated, raw };
 }
 
-/**
- * Step 4b — Create an unassigned shift (no eligible employee).
- * Always succeeds — guarantees coverage visibility.
- */
 function createUnassignedShift(
   slot: CoverageSlot,
   store: SolverStore,
-  date: string
+  date: string,
+  slotPhase: SlotPhase = "MILIEU",
 ): { generated: GeneratedShift; raw: SolverShift } {
   const raw: SolverShift = {
     employeeId: null,
+    storeId: store.id,
     date,
     startTime: slot.startTime,
     endTime: slot.endTime,
@@ -560,6 +562,8 @@ function createUnassignedShift(
     hours: slot.hours,
     breakMinutes: slot.breakMinutes,
     warnings: ["Aucun employé éligible"],
+    assignmentReason: null,
+    slotPhase,
   };
 
   return { generated, raw };
@@ -576,31 +580,18 @@ function initializeStates(
   const states = new Map<string, EmployeeState>();
 
   for (const emp of employees) {
-    states.set(emp.id, {
-      weeklyHoursAssigned: 0,
-      dailyHours: new Map(),
-      shifts: [],
-    });
+    states.set(emp.id, { weeklyHoursAssigned: 0, dailyHours: new Map(), shifts: [] });
   }
 
   for (const shift of existingShifts) {
-    if (!shift.employeeId) continue; // Skip unassigned shifts
+    if (!shift.employeeId) continue;
     const state = states.get(shift.employeeId);
     if (!state) continue;
 
     const hours = calculateHoursFromTimes(shift.startTime, shift.endTime);
     state.weeklyHoursAssigned += hours;
-    state.dailyHours.set(
-      shift.date,
-      (state.dailyHours.get(shift.date) || 0) + hours
-    );
-    state.shifts.push({
-      employeeId: shift.employeeId,
-      date: shift.date,
-      startTime: shift.startTime,
-      endTime: shift.endTime,
-      hours,
-    });
+    state.dailyHours.set(shift.date, (state.dailyHours.get(shift.date) || 0) + hours);
+    state.shifts.push({ employeeId: shift.employeeId, storeId: shift.storeId, date: shift.date, startTime: shift.startTime, endTime: shift.endTime, hours });
   }
 
   return states;
@@ -608,29 +599,16 @@ function initializeStates(
 
 function updateState(state: EmployeeState, shift: SolverShift): void {
   state.weeklyHoursAssigned += shift.hours;
-  state.dailyHours.set(
-    shift.date,
-    (state.dailyHours.get(shift.date) || 0) + shift.hours
-  );
+  state.dailyHours.set(shift.date, (state.dailyHours.get(shift.date) || 0) + shift.hours);
   state.shifts.push(shift);
 }
 
 function computePoolStats(employees: SolverEmployee[]) {
-  const costs = employees
-    .map((e) => e.costPerHour)
-    .filter((c): c is number => c !== null);
-
+  const costs = employees.map((e) => e.costPerHour).filter((c): c is number => c !== null);
   const minCost = costs.length > 0 ? Math.min(...costs) : 0;
   const maxCost = costs.length > 0 ? Math.max(...costs) : 0;
-
-  const targets = employees
-    .map((e) => e.weeklyHours)
-    .filter((h): h is number => h !== null && h > 0);
-  const avgPoolHours =
-    targets.length > 0
-      ? targets.reduce((a, b) => a + b, 0) / targets.length
-      : 35;
-
+  const targets = employees.map((e) => e.weeklyHours).filter((h): h is number => h !== null && h > 0);
+  const avgPoolHours = targets.length > 0 ? targets.reduce((a, b) => a + b, 0) / targets.length : 35;
   return { minCost, maxCost, avgPoolHours };
 }
 
@@ -638,24 +616,9 @@ function computePoolStats(employees: SolverEmployee[]) {
 // MAIN SOLVER
 // ═══════════════════════════════════════════════════
 
-/**
- * Main solver — plans one store for one week.
- *
- * For each open day:
- *   1. Build coverage slots from uncovered time ranges
- *   2. For each slot, find eligible employees
- *   3. Score and assign the best candidate
- *   4. If nobody fits, create an unassigned shift
- *
- * Never crashes — each slot is wrapped in try/catch.
- * Always produces a result, even if incomplete.
- */
-export function solve(
-  input: SolverInput,
-  solveOptions: SolveOptions = {}
-): SolverResult {
+export function solve(input: SolverInput, solveOptions: SolveOptions = {}): SolverResult {
   const startTime = performance.now();
-  const { weights, assignmentOrder = "score-desc" } = solveOptions;
+  const { weights, assignmentOrder = "score-desc", useManagerBrain = true } = solveOptions;
 
   const { store, employees, existingShifts, weekDays, options } = input;
 
@@ -672,170 +635,196 @@ export function solve(
   let assignedCount = 0;
   let unassignedCount = 0;
 
-  // Weighted scoring context (only for multi-scenario mode)
-  const weightedScoring = weights
-    ? {
-        weights,
-        minCost: poolStats.minCost,
-        maxCost: poolStats.maxCost,
-        avgPoolHours: poolStats.avgPoolHours,
-      }
+  const effectiveWeights = weights ?? (useManagerBrain ? SCORING_PROFILES["manager-brain"] : undefined);
+  const weightedScoring = effectiveWeights
+    ? { weights: effectiveWeights, minCost: poolStats.minCost, maxCost: poolStats.maxCost, avgPoolHours: poolStats.avgPoolHours }
     : undefined;
 
-  for (const daySlot of weekDays) {
-    const { date, dayOfWeek, schedule } = daySlot;
+  if (useManagerBrain) {
+    // ─── MANAGER BRAIN MODE ───
+    const allClassifiedSlots: ClassifiedSlot[] = [];
+    const daySlotMap = new Map<string, { daySlot: DaySlot; existingForDay: SolverExistingShift[] }>();
+    const slotsPerDay = new Map<string, number>();
 
-    try {
-      // ─── Step 1: Build coverage slots ───
-      const { slots, existingForDay } = buildCoverageSlots(
-        store,
-        daySlot,
-        existingShifts,
-        options
-      );
+    for (const daySlot of weekDays) {
+      const { date, schedule } = daySlot;
+      try {
+        const { slots, existingForDay } = buildCoverageSlots(store, daySlot, existingShifts, options);
+        daySlotMap.set(date, { daySlot, existingForDay });
 
-      if (slots.length === 0) {
-        daysFullyCovered++;
-        continue;
+        if (slots.length === 0) {
+          daysFullyCovered++;
+          slotsPerDay.set(date, 0);
+          continue;
+        }
+
+        slotsPerDay.set(date, slots.length);
+
+        if (!store.allowOverlap && schedule.minEmployees > 1) {
+          warnings.push(`${date}: chevauchement interdit — couverture limitée à 1 employé par créneau (min demandé: ${schedule.minEmployees})`);
+        }
+
+        for (const slot of slots) {
+          const phase = classifySlotPhase(slot.startTime, slot.endTime, schedule.openTime, schedule.closeTime);
+          allClassifiedSlots.push({
+            ...slot,
+            phase,
+            storeId: store.id,
+            storeImportance: store.importance,
+            date,
+            dayOfWeek: daySlot.dayOfWeek,
+            priority: computeSlotPriority(phase, store.importance),
+          });
+        }
+      } catch (dayErr) {
+        console.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
+        daysUncovered++;
+        warnings.push(`${daySlot.date}: erreur interne — jour non planifié`);
       }
+    }
 
-      // Warn if overlap forbidden but minEmployees > 1
-      if (!store.allowOverlap && schedule.minEmployees > 1) {
-        warnings.push(
-          `${date}: chevauchement interdit — couverture limitée à 1 employé par créneau (min demandé: ${schedule.minEmployees})`
-        );
-      }
+    // Sort: all OUVERTUREs first, then FERMETUREs, then MILIEUs
+    allClassifiedSlots.sort((a, b) => a.priority - b.priority);
 
-      let filledThisDay = 0;
-      const totalSlotsNeeded = slots.length;
+    const filledPerDay = new Map<string, number>();
 
-      // ─── Process each slot ───
+    for (const cs of allClassifiedSlots) {
+      const { date, dayOfWeek, phase, storeImportance } = cs;
+      const slot: CoverageSlot = { startTime: cs.startTime, endTime: cs.endTime, hours: cs.hours, breakMinutes: cs.breakMinutes, label: cs.label };
+
+      const dayData = daySlotMap.get(date);
+      if (!dayData) continue;
+      const { daySlot } = dayData;
+      const { schedule } = daySlot;
       const storeMaxOverlap = store.allowOverlap ? store.maxOverlapMinutes : 0;
       const storeMaxSimultaneous = schedule.maxSimultaneous ?? store.maxSimultaneous;
 
-      for (const slot of slots) {
+      try {
+        const coworkers = getCoworkersOnSlot(store.id, date, slot.startTime, slot.endTime, existingShifts, allGeneratedRaw, employees);
+
+        const eligible = getEligibleEmployees(
+          employees, employeeStates, date, dayOfWeek, slot,
+          existingShifts, allGeneratedRaw, schedule.openTime, schedule.closeTime,
+          store.id, storeMaxOverlap, schedule.maxEmployees, storeMaxSimultaneous,
+          phase, storeImportance, coworkers,
+        );
+
+        const best = assignBestEmployee(eligible, employeeStates, date, slot, store.id, assignmentOrder, weightedScoring, phase, storeImportance);
+
+        if (best) {
+          const reason = generateAssignmentReason(best.employee, phase, storeImportance);
+          const state = employeeStates.get(best.employee.id)!;
+          const { generated, raw } = createAssignedShift(best.employee, slot, store, date, state, phase, reason);
+          allGeneratedRaw.push(raw);
+          generatedShifts.push(generated);
+          employeesUsedSet.add(best.employee.id);
+          assignedCount++;
+          filledPerDay.set(date, (filledPerDay.get(date) || 0) + 1);
+        } else {
+          warnings.push(`${date} (${slot.label} ${slot.startTime}-${slot.endTime}): aucun employé — shift non assigné`);
+          const { generated, raw } = createUnassignedShift(slot, store, date, phase);
+          allGeneratedRaw.push(raw);
+          generatedShifts.push(generated);
+          unassignedCount++;
+        }
+      } catch (slotErr) {
+        console.warn(`[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`, slotErr);
         try {
-          // Step 2: Get eligible employees
-          // maxEmployees is now enforced per-candidate inside passesAllHardConstraints
-          const eligible = getEligibleEmployees(
-            employees,
-            employeeStates,
-            date,
-            dayOfWeek,
-            slot,
-            existingShifts,
-            allGeneratedRaw,
-            schedule.openTime,
-            schedule.closeTime,
-            store.id,
-            storeMaxOverlap,
-            schedule.maxEmployees,
-            storeMaxSimultaneous
-          );
+          const { generated, raw } = createUnassignedShift(slot, store, date, phase);
+          allGeneratedRaw.push(raw);
+          generatedShifts.push(generated);
+          unassignedCount++;
+        } catch { /* last resort */ }
+      }
+    }
 
-          // Step 3: Score & assign best employee
-          const best = assignBestEmployee(
-            eligible,
-            employeeStates,
-            date,
-            slot,
-            store.id,
-            assignmentOrder,
-            weightedScoring
-          );
+    // Coverage tracking
+    for (const daySlot of weekDays) {
+      const total = slotsPerDay.get(daySlot.date) || 0;
+      if (total === 0) continue;
+      const filled = filledPerDay.get(daySlot.date) || 0;
+      if (filled >= total) daysFullyCovered++;
+      else if (filled > 0) { daysPartiallyCovered++; warnings.push(`${daySlot.date}: couverture partielle (${filled}/${total} créneaux remplis)`); }
+      else { daysUncovered++; warnings.push(`${daySlot.date}: aucun employé n'a pu être affecté`); }
+    }
 
-          if (best) {
-            // Step 4a: Create assigned shift
-            const state = employeeStates.get(best.employee.id)!;
-            const { generated, raw } = createAssignedShift(
-              best.employee,
-              slot,
-              store,
-              date,
-              state
-            );
-            allGeneratedRaw.push(raw);
-            generatedShifts.push(generated);
-            employeesUsedSet.add(best.employee.id);
-            assignedCount++;
-          } else {
-            // Step 4b: Create unassigned shift
-            warnings.push(
-              `${date} (${slot.label} ${slot.startTime}-${slot.endTime}): aucun employé — shift non assigné`
-            );
-            const { generated, raw } = createUnassignedShift(
-              slot,
-              store,
-              date
-            );
-            allGeneratedRaw.push(raw);
-            generatedShifts.push(generated);
-            unassignedCount++;
-          }
+    // Manager check
+    if (store.needsManager) {
+      for (const daySlot of weekDays) {
+        const { date } = daySlot;
+        const dayData = daySlotMap.get(date);
+        if (!dayData) continue;
+        const { existingForDay } = dayData;
 
-          filledThisDay++;
-        } catch (slotErr) {
-          // Never crash on a single slot — log and create fallback
-          console.warn(
-            `[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`,
-            slotErr
-          );
+        const hasManager = existingForDay.some((s) => employees.find((e) => e.id === s.employeeId)?.skills.includes("MANAGER"))
+          || generatedShifts.some((s) => s.date === date && employees.find((e) => e.id === s.employeeId)?.skills.includes("MANAGER"));
 
-          // Create unassigned as fallback
+        if (!hasManager) {
+          warnings.push(`${date}: aucun manager planifié (magasin requiert un manager)`);
+        }
+      }
+    }
+  } else {
+    // ─── CLASSIC MODE ───
+    for (const daySlot of weekDays) {
+      const { date, dayOfWeek, schedule } = daySlot;
+      try {
+        const { slots, existingForDay } = buildCoverageSlots(store, daySlot, existingShifts, options);
+        if (slots.length === 0) { daysFullyCovered++; continue; }
+        if (!store.allowOverlap && schedule.minEmployees > 1) {
+          warnings.push(`${date}: chevauchement interdit — couverture limitée à 1 employé par créneau (min demandé: ${schedule.minEmployees})`);
+        }
+
+        let filledThisDay = 0;
+        const totalSlotsNeeded = slots.length;
+        const storeMaxOverlap = store.allowOverlap ? store.maxOverlapMinutes : 0;
+        const storeMaxSimultaneous = schedule.maxSimultaneous ?? store.maxSimultaneous;
+
+        for (const slot of slots) {
           try {
-            const { generated, raw } = createUnassignedShift(
-              slot,
-              store,
-              date
-            );
-            allGeneratedRaw.push(raw);
-            generatedShifts.push(generated);
-            unassignedCount++;
-            filledThisDay++;
-          } catch {
-            // Absolute last resort — skip this slot entirely
+            const eligible = getEligibleEmployees(employees, employeeStates, date, dayOfWeek, slot, existingShifts, allGeneratedRaw, schedule.openTime, schedule.closeTime, store.id, storeMaxOverlap, schedule.maxEmployees, storeMaxSimultaneous);
+            const best = assignBestEmployee(eligible, employeeStates, date, slot, store.id, assignmentOrder, weightedScoring);
+
+            if (best) {
+              const state = employeeStates.get(best.employee.id)!;
+              const { generated, raw } = createAssignedShift(best.employee, slot, store, date, state);
+              allGeneratedRaw.push(raw);
+              generatedShifts.push(generated);
+              employeesUsedSet.add(best.employee.id);
+              assignedCount++;
+              filledThisDay++;
+            } else {
+              warnings.push(`${date} (${slot.label} ${slot.startTime}-${slot.endTime}): aucun employé — shift non assigné`);
+              const { generated, raw } = createUnassignedShift(slot, store, date);
+              allGeneratedRaw.push(raw);
+              generatedShifts.push(generated);
+              unassignedCount++;
+            }
+          } catch (slotErr) {
+            console.warn(`[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`, slotErr);
+            try {
+              const { generated, raw } = createUnassignedShift(slot, store, date);
+              allGeneratedRaw.push(raw);
+              generatedShifts.push(generated);
+              unassignedCount++;
+            } catch { /* last resort */ }
           }
         }
-      }
 
-      // Coverage tracking
-      if (filledThisDay >= totalSlotsNeeded) {
-        daysFullyCovered++;
-      } else if (filledThisDay > 0) {
-        daysPartiallyCovered++;
-        warnings.push(
-          `${date}: couverture partielle (${filledThisDay}/${totalSlotsNeeded} créneaux remplis)`
-        );
-      } else {
-        daysUncovered++;
-        warnings.push(`${date}: aucun employé n'a pu être affecté`);
-      }
+        if (filledThisDay >= totalSlotsNeeded) daysFullyCovered++;
+        else if (filledThisDay > 0) { daysPartiallyCovered++; warnings.push(`${date}: couverture partielle (${filledThisDay}/${totalSlotsNeeded} créneaux remplis)`); }
+        else { daysUncovered++; warnings.push(`${date}: aucun employé n'a pu être affecté`); }
 
-      // Manager check
-      if (store.needsManager) {
-        const hasManagerExisting = existingForDay.some((s) => {
-          const emp = employees.find((e) => e.id === s.employeeId);
-          return emp?.skills.includes("MANAGER");
-        });
-        const hasManagerGenerated = generatedShifts.some(
-          (s) =>
-            s.date === date &&
-            employees
-              .find((e) => e.id === s.employeeId)
-              ?.skills.includes("MANAGER")
-        );
-
-        if (!hasManagerExisting && !hasManagerGenerated) {
-          warnings.push(
-            `${date}: aucun manager planifié (magasin requiert un manager)`
-          );
+        if (store.needsManager) {
+          const hasManager = existingForDay.some((s) => employees.find((e) => e.id === s.employeeId)?.skills.includes("MANAGER"))
+            || generatedShifts.some((s) => s.date === date && employees.find((e) => e.id === s.employeeId)?.skills.includes("MANAGER"));
+          if (!hasManager) warnings.push(`${date}: aucun manager planifié (magasin requiert un manager)`);
         }
+      } catch (dayErr) {
+        console.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
+        daysUncovered++;
+        warnings.push(`${daySlot.date}: erreur interne — jour non planifié`);
       }
-    } catch (dayErr) {
-      // Never crash on a full day — log and mark uncovered
-      console.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
-      daysUncovered++;
-      warnings.push(`${daySlot.date}: erreur interne — jour non planifié`);
     }
   }
 
@@ -863,70 +852,36 @@ export function solve(
 // MULTI-STORE SOLVER
 // ═══════════════════════════════════════════════════
 
-/**
- * Solve planning for multiple stores.
- * Runs solver for each store, feeding generated shifts as "existing"
- * to the next store (ensures cross-store constraint respect).
- */
-export function solveMultiStore(
-  inputs: SolverInput[],
-  solveOptions: SolveOptions = {}
-): SolverResult {
+export function solveMultiStore(inputs: SolverInput[], solveOptions: SolveOptions = {}): SolverResult {
   const startTime = performance.now();
-
   const allShifts: GeneratedShift[] = [];
   const allWarnings: string[] = [];
-  let totalDaysFullyCovered = 0;
-  let totalDaysPartiallyCovered = 0;
-  let totalDaysUncovered = 0;
-  let totalAssigned = 0;
-  let totalUnassigned = 0;
+  let totalDaysFullyCovered = 0, totalDaysPartiallyCovered = 0, totalDaysUncovered = 0;
+  let totalAssigned = 0, totalUnassigned = 0;
   const allEmployeesUsed = new Set<string>();
-
-  // Cumulative generated shifts (fed as "existing" to next store)
   let cumulativeShifts: SolverExistingShift[] = [];
 
   for (const input of inputs) {
     try {
-      // Add previously generated shifts to this store's existing shifts
-      const enrichedInput: SolverInput = {
-        ...input,
-        existingShifts: [...input.existingShifts, ...cumulativeShifts],
-      };
-
+      const enrichedInput: SolverInput = { ...input, existingShifts: [...input.existingShifts, ...cumulativeShifts] };
       const result = solve(enrichedInput, solveOptions);
 
-      // Collect results
       allShifts.push(...result.shifts);
-      allWarnings.push(
-        ...result.warnings.map((w) => `[${input.store.name}] ${w}`)
-      );
+      allWarnings.push(...result.warnings.map((w) => `[${input.store.name}] ${w}`));
       totalDaysFullyCovered += result.stats.daysFullyCovered;
       totalDaysPartiallyCovered += result.stats.daysPartiallyCovered;
       totalDaysUncovered += result.stats.daysUncovered;
       totalAssigned += result.stats.assignedCount;
       totalUnassigned += result.stats.unassignedCount;
+      for (const s of result.shifts) { if (s.employeeId) allEmployeesUsed.add(s.employeeId); }
 
-      for (const s of result.shifts) {
-        if (s.employeeId) allEmployeesUsed.add(s.employeeId);
-      }
-
-      // Add generated shifts as "existing" for next store
       const newExisting: SolverExistingShift[] = result.shifts.map((s, i) => ({
-        id: `gen-${input.store.id}-${i}`,
-        employeeId: s.employeeId,
-        storeId: s.storeId,
-        date: s.date,
-        startTime: s.startTime,
-        endTime: s.endTime,
+        id: `gen-${input.store.id}-${i}`, employeeId: s.employeeId, storeId: s.storeId, date: s.date, startTime: s.startTime, endTime: s.endTime,
       }));
       cumulativeShifts = [...cumulativeShifts, ...newExisting];
     } catch (storeErr) {
-      // Never crash on a store — log and continue
       console.warn(`[Solver] Erreur store ${input.store.name}:`, storeErr);
-      allWarnings.push(
-        `[${input.store.name}] Erreur interne — magasin non planifié`
-      );
+      allWarnings.push(`[${input.store.name}] Erreur interne — magasin non planifié`);
     }
   }
 
@@ -934,19 +889,8 @@ export function solveMultiStore(
   const totalHours = allShifts.reduce((sum, s) => sum + s.hours, 0);
 
   return {
-    shifts: allShifts,
-    warnings: allWarnings,
-    stats: {
-      totalShiftsGenerated: allShifts.length,
-      assignedCount: totalAssigned,
-      unassignedCount: totalUnassigned,
-      totalHoursGenerated: totalHours,
-      daysFullyCovered: totalDaysFullyCovered,
-      daysPartiallyCovered: totalDaysPartiallyCovered,
-      daysUncovered: totalDaysUncovered,
-      employeesUsed: allEmployeesUsed.size,
-      solveTimeMs: Math.round(solveTimeMs * 100) / 100,
-    },
+    shifts: allShifts, warnings: allWarnings,
+    stats: { totalShiftsGenerated: allShifts.length, assignedCount: totalAssigned, unassignedCount: totalUnassigned, totalHoursGenerated: totalHours, daysFullyCovered: totalDaysFullyCovered, daysPartiallyCovered: totalDaysPartiallyCovered, daysUncovered: totalDaysUncovered, employeesUsed: allEmployeesUsed.size, solveTimeMs: Math.round(solveTimeMs * 100) / 100 },
   };
 }
 
@@ -954,89 +898,26 @@ export function solveMultiStore(
 // MULTI-SCENARIO SOLVER
 // ═══════════════════════════════════════════════════
 
-/** Empty result for error fallback */
-function emptyScenarioFallback(
-  id: string,
-  params: ScoredScenario["params"]
-): ScoredScenario {
+function emptyScenarioFallback(id: string, params: ScoredScenario["params"]): ScoredScenario {
   return {
-    id,
-    params,
-    result: {
-      shifts: [],
-      warnings: ["Erreur interne"],
-      stats: {
-        totalShiftsGenerated: 0,
-        assignedCount: 0,
-        unassignedCount: 0,
-        totalHoursGenerated: 0,
-        daysFullyCovered: 0,
-        daysPartiallyCovered: 0,
-        daysUncovered: 0,
-        employeesUsed: 0,
-        solveTimeMs: 0,
-      },
-    },
-    score: {
-      total: 0,
-      breakdown: {
-        coverageCompleteness: 0,
-        shiftDurationQuality: 0,
-        employeeBalance: 0,
-        constraintRespect: 0,
-        costEfficiency: 0,
-        breakQuality: 0,
-      },
-      label: "Insuffisant",
-    },
+    id, params,
+    result: { shifts: [], warnings: ["Erreur interne"], stats: { totalShiftsGenerated: 0, assignedCount: 0, unassignedCount: 0, totalHoursGenerated: 0, daysFullyCovered: 0, daysPartiallyCovered: 0, daysUncovered: 0, employeesUsed: 0, solveTimeMs: 0 } },
+    score: { total: 0, breakdown: { coverageCompleteness: 0, shiftDurationQuality: 0, employeeBalance: 0, constraintRespect: 0, costEfficiency: 0, breakQuality: 0, profilePlacementQuality: 0 }, label: "Insuffisant" },
   };
 }
 
-/**
- * Generate multiple planning scenarios, score each, return best.
- *
- * Strategy (3-phase):
- *   Phase 1: All durations × balanced (5 solves)
- *   Phase 2: Top 2 durations × other profiles (4 solves)
- *   Phase 3: Top 3 × fairness-first (3 solves)
- *   Total: ≤12 solves
- */
-export function solveWithScenarios(
-  input: SolverInput,
-  config: ScenarioConfig = DEFAULT_SCENARIO_CONFIG
-): ScenarioResult {
+export function solveWithScenarios(input: SolverInput, config: ScenarioConfig = DEFAULT_SCENARIO_CONFIG, useManagerBrain: boolean = true): ScenarioResult {
   const startTime = performance.now();
   const allScenarios: ScoredScenario[] = [];
 
-  function runScenario(
-    durationHours: number,
-    profileName: string,
-    order: "score-desc" | "fairness-first"
-  ): ScoredScenario {
-    const params = {
-      shiftDurationHours: durationHours,
-      scoringProfile: profileName,
-      assignmentOrder: order,
-    };
+  function runScenario(durationHours: number, profileName: string, order: "score-desc" | "fairness-first"): ScoredScenario {
+    const params = { shiftDurationHours: durationHours, scoringProfile: profileName, assignmentOrder: order };
     const id = `scenario-dur${durationHours}-${profileName}-${order}`;
-
     try {
       const weights = SCORING_PROFILES[profileName] || DEFAULT_WEIGHTS;
-      const scenarioInput: SolverInput = {
-        ...input,
-        options: {
-          ...input.options,
-          shiftDurationHours: durationHours,
-          idealShiftRange: config.idealShiftHours,
-        },
-      };
-
-      const result = solve(scenarioInput, {
-        weights,
-        assignmentOrder: order,
-      });
+      const scenarioInput: SolverInput = { ...input, options: { ...input.options, shiftDurationHours: durationHours, idealShiftRange: config.idealShiftHours } };
+      const result = solve(scenarioInput, { weights, assignmentOrder: order, useManagerBrain });
       const score = scoreScenario(result, input, config);
-
       return { id, params, result, score };
     } catch (err) {
       console.warn(`[Solver] Erreur scenario ${id}:`, err);
@@ -1044,97 +925,36 @@ export function solveWithScenarios(
     }
   }
 
-  // Phase 1: All durations with balanced weights
-  for (const dur of config.durationsToTry) {
-    allScenarios.push(runScenario(dur, "balanced", "score-desc"));
-  }
-
-  // Phase 2: Top 2 durations × other profiles
+  for (const dur of config.durationsToTry) { allScenarios.push(runScenario(dur, "balanced", "score-desc")); }
   allScenarios.sort((a, b) => b.score.total - a.score.total);
-  const topDurations = [
-    ...new Set(
-      allScenarios.slice(0, 2).map((s) => s.params.shiftDurationHours)
-    ),
-  ];
-  const otherProfiles = Object.keys(SCORING_PROFILES).filter(
-    (p) => p !== "balanced"
-  );
-  for (const dur of topDurations) {
-    for (const profile of otherProfiles) {
-      if (allScenarios.length >= config.maxScenarios) break;
-      allScenarios.push(runScenario(dur, profile, "score-desc"));
-    }
-  }
-
-  // Phase 3: Top 3 × fairness-first
+  const topDurations = [...new Set(allScenarios.slice(0, 2).map((s) => s.params.shiftDurationHours))];
+  const otherProfiles = Object.keys(SCORING_PROFILES).filter((p) => p !== "balanced");
+  for (const dur of topDurations) { for (const profile of otherProfiles) { if (allScenarios.length >= config.maxScenarios) break; allScenarios.push(runScenario(dur, profile, "score-desc")); } }
   allScenarios.sort((a, b) => b.score.total - a.score.total);
   const topForFairness = allScenarios.slice(0, 3);
-  for (const scenario of topForFairness) {
-    if (allScenarios.length >= config.maxScenarios) break;
-    allScenarios.push(
-      runScenario(
-        scenario.params.shiftDurationHours,
-        scenario.params.scoringProfile,
-        "fairness-first"
-      )
-    );
-  }
-
-  // Final sort
+  for (const scenario of topForFairness) { if (allScenarios.length >= config.maxScenarios) break; allScenarios.push(runScenario(scenario.params.shiftDurationHours, scenario.params.scoringProfile, "fairness-first")); }
   allScenarios.sort((a, b) => b.score.total - a.score.total);
 
-  const totalTimeMs =
-    Math.round((performance.now() - startTime) * 100) / 100;
+  if (allScenarios.length === 0) {
+    const fallback = emptyScenarioFallback("no-scenarios", { shiftDurationHours: config.durationsToTry[0] || 7, scoringProfile: "balanced", assignmentOrder: "score-desc" });
+    return { best: fallback, alternatives: [], suggestions: [], totalScenariosEvaluated: 0, totalTimeMs: Math.round((performance.now() - startTime) * 100) / 100 };
+  }
 
-  return {
-    best: allScenarios[0],
-    alternatives: allScenarios.slice(1, 4),
-    suggestions: [],
-    totalScenariosEvaluated: allScenarios.length,
-    totalTimeMs,
-  };
+  return { best: allScenarios[0], alternatives: allScenarios.slice(1, 4), suggestions: [], totalScenariosEvaluated: allScenarios.length, totalTimeMs: Math.round((performance.now() - startTime) * 100) / 100 };
 }
 
-/**
- * Multi-store version of solveWithScenarios.
- * Same 3-phase pruning strategy, wraps solveMultiStore.
- */
-export function solveMultiStoreWithScenarios(
-  inputs: SolverInput[],
-  config: ScenarioConfig = DEFAULT_SCENARIO_CONFIG
-): ScenarioResult {
+export function solveMultiStoreWithScenarios(inputs: SolverInput[], config: ScenarioConfig = DEFAULT_SCENARIO_CONFIG, useManagerBrain: boolean = true): ScenarioResult {
   const startTime = performance.now();
   const allScenarios: ScoredScenario[] = [];
 
-  function runScenario(
-    durationHours: number,
-    profileName: string,
-    order: "score-desc" | "fairness-first"
-  ): ScoredScenario {
-    const params = {
-      shiftDurationHours: durationHours,
-      scoringProfile: profileName,
-      assignmentOrder: order,
-    };
+  function runScenario(durationHours: number, profileName: string, order: "score-desc" | "fairness-first"): ScoredScenario {
+    const params = { shiftDurationHours: durationHours, scoringProfile: profileName, assignmentOrder: order };
     const id = `multi-scenario-dur${durationHours}-${profileName}-${order}`;
-
     try {
       const weights = SCORING_PROFILES[profileName] || DEFAULT_WEIGHTS;
-      const scenarioInputs = inputs.map((input) => ({
-        ...input,
-        options: {
-          ...input.options,
-          shiftDurationHours: durationHours,
-          idealShiftRange: config.idealShiftHours as [number, number],
-        },
-      }));
-
-      const result = solveMultiStore(scenarioInputs, {
-        weights,
-        assignmentOrder: order,
-      });
+      const scenarioInputs = inputs.map((input) => ({ ...input, options: { ...input.options, shiftDurationHours: durationHours, idealShiftRange: config.idealShiftHours as [number, number] } }));
+      const result = solveMultiStore(scenarioInputs, { weights, assignmentOrder: order, useManagerBrain });
       const score = scoreScenario(result, inputs, config);
-
       return { id, params, result, score };
     } catch (err) {
       console.warn(`[Solver] Erreur multi-scenario ${id}:`, err);
@@ -1142,52 +962,20 @@ export function solveMultiStoreWithScenarios(
     }
   }
 
-  // Phase 1: All durations with balanced
-  for (const dur of config.durationsToTry) {
-    allScenarios.push(runScenario(dur, "balanced", "score-desc"));
-  }
-
-  // Phase 2: Top 2 × other profiles
+  for (const dur of config.durationsToTry) { allScenarios.push(runScenario(dur, "balanced", "score-desc")); }
   allScenarios.sort((a, b) => b.score.total - a.score.total);
-  const topDurations = [
-    ...new Set(
-      allScenarios.slice(0, 2).map((s) => s.params.shiftDurationHours)
-    ),
-  ];
-  const otherProfiles = Object.keys(SCORING_PROFILES).filter(
-    (p) => p !== "balanced"
-  );
-  for (const dur of topDurations) {
-    for (const profile of otherProfiles) {
-      if (allScenarios.length >= config.maxScenarios) break;
-      allScenarios.push(runScenario(dur, profile, "score-desc"));
-    }
-  }
-
-  // Phase 3: Top 3 × fairness-first
+  const topDurations = [...new Set(allScenarios.slice(0, 2).map((s) => s.params.shiftDurationHours))];
+  const otherProfiles = Object.keys(SCORING_PROFILES).filter((p) => p !== "balanced");
+  for (const dur of topDurations) { for (const profile of otherProfiles) { if (allScenarios.length >= config.maxScenarios) break; allScenarios.push(runScenario(dur, profile, "score-desc")); } }
   allScenarios.sort((a, b) => b.score.total - a.score.total);
   const topForFairness = allScenarios.slice(0, 3);
-  for (const scenario of topForFairness) {
-    if (allScenarios.length >= config.maxScenarios) break;
-    allScenarios.push(
-      runScenario(
-        scenario.params.shiftDurationHours,
-        scenario.params.scoringProfile,
-        "fairness-first"
-      )
-    );
-  }
-
+  for (const scenario of topForFairness) { if (allScenarios.length >= config.maxScenarios) break; allScenarios.push(runScenario(scenario.params.shiftDurationHours, scenario.params.scoringProfile, "fairness-first")); }
   allScenarios.sort((a, b) => b.score.total - a.score.total);
 
-  const totalTimeMs =
-    Math.round((performance.now() - startTime) * 100) / 100;
+  if (allScenarios.length === 0) {
+    const fallback = emptyScenarioFallback("no-scenarios", { shiftDurationHours: config.durationsToTry[0] || 7, scoringProfile: "balanced", assignmentOrder: "score-desc" });
+    return { best: fallback, alternatives: [], suggestions: [], totalScenariosEvaluated: 0, totalTimeMs: Math.round((performance.now() - startTime) * 100) / 100 };
+  }
 
-  return {
-    best: allScenarios[0],
-    alternatives: allScenarios.slice(1, 4),
-    suggestions: [],
-    totalScenariosEvaluated: allScenarios.length,
-    totalTimeMs,
-  };
+  return { best: allScenarios[0], alternatives: allScenarios.slice(1, 4), suggestions: [], totalScenariosEvaluated: allScenarios.length, totalTimeMs: Math.round((performance.now() - startTime) * 100) / 100 };
 }

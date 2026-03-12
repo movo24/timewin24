@@ -25,7 +25,12 @@ export async function GET(req: NextRequest) {
     if (type && type !== "ALL") where.type = type;
     if (status && status !== "ALL") where.status = status;
     if (storeId && storeId !== "all") where.storeId = storeId;
-    if (dateStr) where.date = new Date(dateStr + "T00:00:00Z");
+    if (dateStr) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return errorResponse("Format de date invalide (YYYY-MM-DD attendu)");
+      }
+      where.date = new Date(dateStr + "T00:00:00Z");
+    }
 
     const alerts = await prisma.managerAlert.findMany({
       where,
@@ -40,7 +45,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("GET /api/alerts error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

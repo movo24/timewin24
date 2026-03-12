@@ -5,7 +5,6 @@ import {
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
-import { findOverlappingShift } from "@/lib/shifts";
 
 // PATCH /api/replacements/[id] — Employee accepts or declines a replacement offer
 export async function PATCH(
@@ -87,54 +86,65 @@ export async function PATCH(
     // action === "accept"
     const shift = candidate.offer.shift;
 
-    // Re-validate: check for overlapping shifts (could have changed since offer creation)
-    const dateStr = shift.date.toISOString().split("T")[0];
-    const overlap = await findOverlappingShift(
-      employeeId!,
-      dateStr,
-      shift.startTime,
-      shift.endTime
-    );
+    // Atomic transaction: overlap check + assign shift + update offer + update candidates
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Re-validate: check for overlapping shifts inside transaction (using tx, not global prisma)
+        const dateStr = shift.date.toISOString().split("T")[0];
+        const overlap = await tx.shift.findFirst({
+          where: {
+            employeeId: employeeId!,
+            date: new Date(dateStr),
+            id: { not: shift.id },
+            OR: [
+              { startTime: { lt: shift.endTime }, endTime: { gt: shift.startTime } },
+            ],
+          },
+        });
 
-    if (overlap) {
-      return errorResponse(
-        "Vous avez un conflit d'horaire avec un autre shift. Impossible d'accepter."
-      );
+        if (overlap) {
+          throw new Error("OVERLAP_CONFLICT");
+        }
+
+        // Assign shift to this employee
+        await tx.shift.update({
+          where: { id: shift.id },
+          data: {
+            employeeId: employeeId!,
+            note: `Remplacement — était assigné à l'employé absent`,
+          },
+        });
+        // Mark this candidate as accepted
+        await tx.replacementCandidate.update({
+          where: { id: candidate.id },
+          data: { status: "ACCEPTED", respondedAt: new Date() },
+        });
+        // Mark offer as filled
+        await tx.replacementOffer.update({
+          where: { id },
+          data: {
+            status: "FILLED",
+            filledByEmployeeId: employeeId!,
+          },
+        });
+        // Expire all other pending candidates
+        await tx.replacementCandidate.updateMany({
+          where: {
+            offerId: id,
+            status: "PENDING",
+            id: { not: candidate.id },
+          },
+          data: { status: "EXPIRED" },
+        });
+      });
+    } catch (txErr) {
+      if (txErr instanceof Error && txErr.message === "OVERLAP_CONFLICT") {
+        return errorResponse(
+          "Vous avez un conflit d'horaire avec un autre shift. Impossible d'accepter."
+        );
+      }
+      throw txErr;
     }
-
-    // Atomic transaction: assign shift + update offer + update candidates
-    await prisma.$transaction([
-      // Assign shift to this employee
-      prisma.shift.update({
-        where: { id: shift.id },
-        data: {
-          employeeId: employeeId!,
-          note: `Remplacement — était assigné à l'employé absent`,
-        },
-      }),
-      // Mark this candidate as accepted
-      prisma.replacementCandidate.update({
-        where: { id: candidate.id },
-        data: { status: "ACCEPTED", respondedAt: new Date() },
-      }),
-      // Mark offer as filled
-      prisma.replacementOffer.update({
-        where: { id },
-        data: {
-          status: "FILLED",
-          filledByEmployeeId: employeeId!,
-        },
-      }),
-      // Expire all other pending candidates
-      prisma.replacementCandidate.updateMany({
-        where: {
-          offerId: id,
-          status: "PENDING",
-          id: { not: candidate.id },
-        },
-        data: { status: "EXPIRED" },
-      }),
-    ]);
 
     console.log(
       `[PATCH /api/replacements/${id}] ACCEPTED by employee ${employeeId} — shift ${shift.id} reassigned`
@@ -144,7 +154,7 @@ export async function PATCH(
   } catch (err) {
     console.error("[PATCH /api/replacements] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

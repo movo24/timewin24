@@ -9,109 +9,134 @@ import { dispatchNotificationAsync } from "@/lib/notifications/dispatcher";
 
 // POST /api/shifts/duplicate - Duplicate a week of shifts
 export async function POST(req: NextRequest) {
-  const { session, error } = await requireManagerOrAdmin();
-  if (error) return error;
+  try {
+    const { session, error } = await requireManagerOrAdmin();
+    if (error) return error;
 
-  const body = await req.json();
-  const parsed = duplicateWeekSchema.safeParse(body);
-  if (!parsed.success) {
-    return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
-  }
+    const body = await req.json();
+    const parsed = duplicateWeekSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
+    }
 
-  const { storeId, sourceWeekStart, targetWeekStart } = parsed.data;
-  const { weekStart: srcStart, weekEnd: srcEnd } = getWeekBounds(sourceWeekStart);
-  const targetStart = toUTCDate(targetWeekStart);
+    const { storeId, sourceWeekStart, targetWeekStart } = parsed.data;
+    const { weekStart: srcStart, weekEnd: srcEnd } = getWeekBounds(sourceWeekStart);
+    const targetStart = toUTCDate(targetWeekStart);
 
-  // Calculate day offset
-  const dayOffset = Math.round(
-    (targetStart.getTime() - srcStart.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  // Get source shifts
-  const where: Record<string, unknown> = {
-    date: { gte: srcStart, lte: srcEnd },
-  };
-  if (storeId) where.storeId = storeId;
-
-  const sourceShifts = await prisma.shift.findMany({
-    where,
-    include: { store: true },
-  });
-
-  if (sourceShifts.length === 0) {
-    return errorResponse("Aucun shift à dupliquer pour cette semaine");
-  }
-
-  let created = 0;
-  let skipped = 0;
-  const conflicts: string[] = [];
-
-  for (const shift of sourceShifts) {
-    const newDate = new Date(shift.date);
-    newDate.setUTCDate(newDate.getUTCDate() + dayOffset);
-    const dateStr = newDate.toISOString().split("T")[0];
-
-    // Check for overlap before creating
-    const overlap = await findOverlappingShift(
-      shift.employeeId,
-      dateStr,
-      shift.startTime,
-      shift.endTime
+    // Calculate day offset
+    const dayOffset = Math.round(
+      (targetStart.getTime() - srcStart.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (overlap) {
-      skipped++;
-      conflicts.push(
-        `${dateStr} ${shift.startTime}-${shift.endTime}: conflit existant`
-      );
-      continue;
+    // Get source shifts
+    const where: Record<string, unknown> = {
+      date: { gte: srcStart, lte: srcEnd },
+    };
+    if (storeId) where.storeId = storeId;
+
+    const sourceShifts = await prisma.shift.findMany({
+      where,
+      include: { store: true },
+    });
+
+    if (sourceShifts.length === 0) {
+      return errorResponse("Aucun shift à dupliquer pour cette semaine");
     }
 
-    await prisma.shift.create({
-      data: {
-        storeId: shift.storeId,
-        employeeId: shift.employeeId,
-        date: toUTCDate(dateStr),
-        startTime: shift.startTime,
-        endTime: shift.endTime,
-        note: shift.note,
-      },
-    });
-    created++;
-  }
+    let created = 0;
+    let skipped = 0;
+    const conflicts: string[] = [];
 
-  await logAudit(session!.user.id, "CREATE", "Shift", "bulk-duplicate", {
-    sourceWeekStart,
-    targetWeekStart,
-    storeId,
-    created,
-    skipped,
-  });
+    for (const shift of sourceShifts) {
+      const newDate = new Date(shift.date);
+      newDate.setUTCDate(newDate.getUTCDate() + dayOffset);
+      const dateStr = newDate.toISOString().split("T")[0];
 
-  // Notify assigned employees about the new planning
-  if (created > 0) {
-    const employeeIds = [...new Set(
-      sourceShifts.filter((s) => s.employeeId).map((s) => s.employeeId!)
-    )];
-    if (employeeIds.length > 0) {
-      const empUsers = await prisma.user.findMany({
-        where: { employeeId: { in: employeeIds }, active: true },
-        select: { id: true },
-      });
-      if (empUsers.length > 0) {
-        dispatchNotificationAsync({
-          userIds: empUsers.map((u) => u.id),
-          eventType: "PLANNING_PUBLISHED",
-          context: { weekStart: targetWeekStart },
+      // For unassigned shifts, check for existing unassigned shift at same time
+      if (!shift.employeeId) {
+        const existingUnassigned = await prisma.shift.findFirst({
+          where: {
+            storeId: shift.storeId,
+            date: new Date(dateStr),
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            employeeId: null,
+          },
         });
+        if (existingUnassigned) {
+          skipped++;
+          conflicts.push(
+            `${dateStr} ${shift.startTime}-${shift.endTime}: shift non assigné existant`
+          );
+          continue;
+        }
+      } else {
+        // Check for overlap before creating (assigned shifts)
+        const overlap = await findOverlappingShift(
+          shift.employeeId,
+          dateStr,
+          shift.startTime,
+          shift.endTime
+        );
+
+        if (overlap) {
+          skipped++;
+          conflicts.push(
+            `${dateStr} ${shift.startTime}-${shift.endTime}: conflit existant`
+          );
+          continue;
+        }
+      }
+
+      await prisma.shift.create({
+        data: {
+          storeId: shift.storeId,
+          employeeId: shift.employeeId,
+          date: toUTCDate(dateStr),
+          startTime: shift.startTime,
+          endTime: shift.endTime,
+          note: shift.note,
+        },
+      });
+      created++;
+    }
+
+    await logAudit(session!.user.id, "CREATE", "Shift", "bulk-duplicate", {
+      sourceWeekStart,
+      targetWeekStart,
+      storeId,
+      created,
+      skipped,
+    });
+
+    // Notify assigned employees about the new planning
+    if (created > 0) {
+      const employeeIds = [...new Set(
+        sourceShifts.filter((s) => s.employeeId).map((s) => s.employeeId!)
+      )];
+      if (employeeIds.length > 0) {
+        const empUsers = await prisma.user.findMany({
+          where: { employeeId: { in: employeeIds }, active: true },
+          select: { id: true },
+        });
+        if (empUsers.length > 0) {
+          dispatchNotificationAsync({
+            userIds: empUsers.map((u) => u.id),
+            eventType: "PLANNING_PUBLISHED",
+            context: { weekStart: targetWeekStart },
+          });
+        }
       }
     }
-  }
 
-  return successResponse({
-    created,
-    skipped,
-    total: sourceShifts.length,
-    conflicts,
-  });
+    return successResponse({
+      created,
+      skipped,
+      total: sourceShifts.length,
+      conflicts,
+    });
+  } catch (err) {
+    console.error("POST /api/shifts/duplicate error:", err);
+    return errorResponse("Erreur serveur", 500);
+  }
 }

@@ -60,13 +60,17 @@ export default function PointagePage() {
 
   // Load employee's stores
   const loadStores = useCallback(async () => {
-    const res = await fetch("/api/me/stores");
-    if (res.ok) {
-      const data = await res.json();
-      setStores(data.stores || []);
-      if (data.stores?.length === 1) {
-        setSelectedStoreId(data.stores[0].storeId);
+    try {
+      const res = await fetch("/api/me/stores");
+      if (res.ok) {
+        const data = await res.json();
+        setStores(data.stores || []);
+        if (data.stores?.length === 1) {
+          setSelectedStoreId(data.stores[0].storeId);
+        }
       }
+    } catch {
+      console.error("Erreur chargement magasins");
     }
   }, []);
 

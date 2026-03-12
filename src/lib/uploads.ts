@@ -19,22 +19,62 @@ export async function ensureUploadDir() {
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
 }
 
+// Magic bytes signatures for file type validation
+const MAGIC_BYTES: { mime: string; bytes: number[] }[] = [
+  { mime: "image/jpeg", bytes: [0xFF, 0xD8, 0xFF] },
+  { mime: "image/png", bytes: [0x89, 0x50, 0x4E, 0x47] },
+  { mime: "image/webp", bytes: [0x52, 0x49, 0x46, 0x46] }, // RIFF
+  { mime: "video/mp4", bytes: [] }, // ftyp at offset 4 — checked separately
+  { mime: "video/quicktime", bytes: [] }, // also ftyp
+  { mime: "application/pdf", bytes: [0x25, 0x50, 0x44, 0x46] }, // %PDF
+];
+
+function detectMimeFromBytes(buffer: Buffer): string | null {
+  if (buffer.length < 8) return null;
+
+  // JPEG
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return "image/jpeg";
+  // PNG
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) return "image/png";
+  // WebP (RIFF....WEBP)
+  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46
+    && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return "image/webp";
+  // PDF (%PDF)
+  if (buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46) return "application/pdf";
+  // MP4/MOV (ftyp at offset 4)
+  if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) return "video/mp4";
+
+  return null;
+}
+
 export async function saveFile(
   file: File
 ): Promise<{ filename: string; storedPath: string; mimeType: string; size: number }> {
   await ensureUploadDir();
 
-  const ext = path.extname(file.name) || mimeToExt(file.type);
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Validate magic bytes match the claimed MIME type
+  const detectedMime = detectMimeFromBytes(buffer);
+  const trustedMime = detectedMime && ALLOWED_TYPES.includes(detectedMime) ? detectedMime : file.type;
+
+  if (detectedMime && detectedMime !== file.type && file.type !== "video/quicktime") {
+    // Allow video/quicktime ↔ video/mp4 mismatch (same ftyp header)
+    if (!(detectedMime === "video/mp4" && file.type === "video/quicktime")) {
+      throw new Error("Le type de fichier ne correspond pas à son contenu");
+    }
+  }
+
+  const ext = mimeToExt(trustedMime) || path.extname(file.name) || '.bin';
   const uniqueName = `${randomUUID()}${ext}`;
   const filePath = path.join(UPLOAD_DIR, uniqueName);
 
-  const buffer = Buffer.from(await file.arrayBuffer());
   await fs.writeFile(filePath, buffer);
 
   return {
     filename: file.name,
     storedPath: uniqueName, // relative to UPLOAD_DIR
-    mimeType: file.type,
+    mimeType: trustedMime,
     size: buffer.length,
   };
 }

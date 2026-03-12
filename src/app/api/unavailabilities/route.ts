@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[POST /api/unavailabilities] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }
@@ -114,7 +114,7 @@ export async function DELETE(req: NextRequest) {
   } catch (err) {
     console.error("[DELETE /api/unavailabilities] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[POST /api/absences] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }
@@ -139,7 +139,8 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    if (status) {
+    const VALID_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
+    if (status && VALID_STATUSES.includes(status as any)) {
       where.status = status;
     }
 
@@ -165,7 +166,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("[GET /api/absences] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

@@ -124,7 +124,7 @@ export default function IntegrationsPage() {
   useEffect(() => {
     loadProviders();
     fetch("/api/stores?limit=100")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((d) => setStores(d.stores || []))
       .catch(() => {});
   }, [loadProviders]);
@@ -159,13 +159,20 @@ export default function IntegrationsPage() {
   async function testConnection(providerId: string) {
     setTestResults((prev) => ({ ...prev, [providerId]: { connected: false, loading: true } }));
 
-    const res = await fetch(`/api/integrations/pos/${providerId}/test`, { method: "POST" });
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/integrations/pos/${providerId}/test`, { method: "POST" });
+      const data = await res.json();
 
-    setTestResults((prev) => ({
-      ...prev,
-      [providerId]: { connected: data.connected, posStores: data.posStores, loading: false },
-    }));
+      setTestResults((prev) => ({
+        ...prev,
+        [providerId]: { connected: data.connected, posStores: data.posStores, loading: false },
+      }));
+    } catch {
+      setTestResults((prev) => ({
+        ...prev,
+        [providerId]: { connected: false, loading: false },
+      }));
+    }
   }
 
   async function runSync(providerId: string, entity: string) {

@@ -11,7 +11,9 @@ export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showNew, setShowNew] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -91,15 +93,27 @@ export default function ChangePasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="current">Mot de passe actuel</Label>
-              <Input
-                id="current"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Votre mot de passe temporaire"
-                required
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Input
+                  id="current"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Votre mot de passe temporaire"
+                  required
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer z-10"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  tabIndex={-1}
+                  aria-label={showCurrentPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4 pointer-events-none" /> : <Eye className="h-4 w-4 pointer-events-none" />}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -107,20 +121,22 @@ export default function ChangePasswordPage() {
               <div className="relative">
                 <Input
                   id="new"
-                  type={showNew ? "text" : "password"}
+                  type={showNewPassword ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min. 8 caractères"
                   required
                   autoComplete="new-password"
+                  className="pr-10"
                 />
                 <button
                   type="button"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer z-10"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
                   tabIndex={-1}
+                  aria-label={showNewPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
-                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showNewPassword ? <EyeOff className="h-4 w-4 pointer-events-none" /> : <Eye className="h-4 w-4 pointer-events-none" />}
                 </button>
               </div>
 
@@ -137,15 +153,27 @@ export default function ChangePasswordPage() {
 
             <div className="space-y-2">
               <Label htmlFor="confirm">Confirmer le nouveau mot de passe</Label>
-              <Input
-                id="confirm"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Retapez le mot de passe"
-                required
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="confirm"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Retapez le mot de passe"
+                  required
+                  autoComplete="new-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer z-10"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4 pointer-events-none" /> : <Eye className="h-4 w-4 pointer-events-none" />}
+                </button>
+              </div>
               {confirmPassword.length > 0 && !passwordsMatch && (
                 <p className="text-xs text-red-500">Les mots de passe ne correspondent pas</p>
               )}

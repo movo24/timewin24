@@ -2,6 +2,14 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
+import { z } from "zod";
+
+const managerIaSchema = z.object({
+  command: z.string().min(1).max(1000),
+  weekStart: z.string().min(1),
+  storeId: z.string().optional(),
+  execute: z.boolean().optional().default(false),
+});
 import { toUTCDate, getWeekBounds, formatDate } from "@/lib/utils";
 import { parseCommand } from "@/lib/manager-ia/parser";
 import { resolveCommand } from "@/lib/manager-ia/resolver";
@@ -23,16 +31,11 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
-    const { command, weekStart, storeId, execute } = body as {
-      command?: string;
-      weekStart?: string;
-      storeId?: string;
-      execute?: boolean;
-    };
-
-    if (!command || !weekStart) {
-      return errorResponse("command et weekStart sont requis.");
+    const validatedBody = managerIaSchema.safeParse(body);
+    if (!validatedBody.success) {
+      return errorResponse(validatedBody.error.issues.map((e) => e.message).join(", "));
     }
+    const { command, weekStart, storeId, execute } = validatedBody.data;
 
     // ─── Load data from DB ───────────────────────
     const { weekStart: wsDate, weekEnd: weDate } = getWeekBounds(weekStart);
@@ -183,7 +186,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("POST /api/planning/manager-ia error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }
@@ -247,9 +250,7 @@ async function executeProposal(
         }
       }
     } catch (err) {
-      errors.push(
-        `Erreur ${action.type} : ${err instanceof Error ? err.message : "inconnue"}`
-      );
+      errors.push(`Erreur lors de l'action ${action.type}`);
     }
   }
 

@@ -152,18 +152,22 @@ export default function PlanningPage() {
   const loadShifts = useCallback(async () => {
     if (!isAdmin && !employeeId) return;
 
-    let url = `/api/shifts?weekStart=${weekStart}`;
-    if (isAdmin && storeId) {
-      url += `&storeId=${storeId}`;
-    } else if (!isAdmin && employeeId) {
-      url += `&employeeId=${employeeId}`;
-    }
+    try {
+      let url = `/api/shifts?weekStart=${weekStart}`;
+      if (isAdmin && storeId) {
+        url += `&storeId=${storeId}`;
+      } else if (!isAdmin && employeeId) {
+        url += `&employeeId=${employeeId}`;
+      }
 
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      setShifts(data.shifts || []);
-      setShiftsVersion((v) => v + 1);
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setShifts(data.shifts || []);
+        setShiftsVersion((v) => v + 1);
+      }
+    } catch {
+      console.error("Erreur chargement shifts");
     }
   }, [weekStart, storeId, isAdmin, employeeId]);
 
@@ -309,28 +313,31 @@ export default function PlanningPage() {
     const nextWeek = new Date(weekStart);
     nextWeek.setDate(nextWeek.getDate() + 7);
 
-    const res = await fetch("/api/shifts/duplicate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        storeId,
-        sourceWeekStart: weekStart,
-        targetWeekStart: formatDate(nextWeek),
-      }),
-    });
+    try {
+      const res = await fetch("/api/shifts/duplicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeId,
+          sourceWeekStart: weekStart,
+          targetWeekStart: formatDate(nextWeek),
+        }),
+      });
 
-    const data = await res.json();
-    setDuplicating(false);
+      const data = await res.json();
 
-    if (!res.ok) {
-      setDuplicateMsg(`Erreur: ${data.error}`);
-      return;
+      if (!res.ok) {
+        setDuplicateMsg(data.error || "Erreur");
+      } else {
+        setDuplicateMsg(data.message || `${data.created} shift(s) créé(s), ${data.skipped} ignoré(s) (conflits)`);
+        loadShifts();
+      }
+    } catch {
+      setDuplicateMsg("Erreur réseau");
+    } finally {
+      setDuplicating(false);
+      setTimeout(() => setDuplicateMsg(""), 5000);
     }
-
-    setDuplicateMsg(
-      `${data.created} shift(s) créé(s), ${data.skipped} ignoré(s) (conflits)`
-    );
-    setTimeout(() => setDuplicateMsg(""), 5000);
   }
 
   function handleExport() {

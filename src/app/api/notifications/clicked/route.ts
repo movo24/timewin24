@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { notificationId } = body as { notificationId?: string };
 
-    if (!notificationId) {
+    if (!notificationId || typeof notificationId !== "string" || notificationId.length > 200) {
       return successResponse({ ok: true }); // Silently accept
     }
 

@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("[GET /api/market-listings] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[POST /api/market-listings] Error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

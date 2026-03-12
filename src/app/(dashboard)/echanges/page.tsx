@@ -118,7 +118,7 @@ export default function EchangesPage() {
     const res = await fetch("/api/stores?limit=100");
     if (res.ok) {
       const data = await res.json();
-      setStores(data.stores.map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })));
+      setStores((data.stores || []).map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })));
     }
   }, []);
 

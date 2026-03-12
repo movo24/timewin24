@@ -103,7 +103,8 @@ export function ShiftModal({
     }
     setError("");
     setWarning("");
-  }, [shift, storeId, defaultDate, defaultStartTime, initialEmployees, open]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shift, storeId, defaultDate, defaultStartTime, open]);
 
   // When store changes in the modal, load employees for that store
   function handleStoreChange(newStoreId: string) {
@@ -202,10 +203,21 @@ export function ShiftModal({
     if (!shift?.id) return;
     if (!confirm("Supprimer ce shift ?")) return;
     setLoading(true);
-    await fetch(`/api/shifts/${shift.id}`, { method: "DELETE" });
-    setLoading(false);
-    onSaved();
-    onClose();
+    try {
+      const res = await fetch(`/api/shifts/${shift.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Erreur lors de la suppression");
+        setLoading(false);
+        return;
+      }
+      onSaved();
+      onClose();
+    } catch {
+      setError("Erreur réseau");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const showStoreSelector = stores && stores.length > 1;

@@ -29,12 +29,16 @@ export function StoreSearch({
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(
-        `/api/stores?limit=50&search=${encodeURIComponent(search)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setStores(data.stores);
+      try {
+        const res = await fetch(
+          `/api/stores?limit=50&search=${encodeURIComponent(search)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setStores(data.stores);
+        }
+      } catch {
+        // ignore network errors
       }
     };
     load();
@@ -44,7 +48,7 @@ export function StoreSearch({
   useEffect(() => {
     if (value && !selectedLabel) {
       fetch(`/api/stores/${value}`)
-        .then((r) => r.json())
+        .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
         .then((data) => {
           if (data.name) {
             setSelectedLabel(`${data.name}${data.city ? ` (${data.city})` : ""}`);

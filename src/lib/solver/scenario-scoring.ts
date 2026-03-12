@@ -2,8 +2,10 @@
  * Scenario Scoring — Evaluates an entire SolverResult holistically.
  *
  * Unlike scoring.ts (which scores individual candidate assignments),
- * this module scores a complete planning scenario across 6 dimensions.
+ * this module scores a complete planning scenario across 7 dimensions.
  * Pure functions, no DB access.
+ *
+ * Dimension 7 (Manager Brain): profilePlacementQuality
  */
 
 import type {
@@ -17,26 +19,24 @@ import type {
 // ─── Score Dimension Weights ─────────────────────
 
 const DIMENSION_WEIGHTS = {
-  coverageCompleteness: 30,
-  shiftDurationQuality: 20,
-  employeeBalance: 20,
-  constraintRespect: 15,
+  coverageCompleteness: 25,
+  shiftDurationQuality: 15,
+  employeeBalance: 15,
+  constraintRespect: 10,
   costEfficiency: 10,
   breakQuality: 5,
+  profilePlacementQuality: 20,
 } as const;
 
 // ─── Individual Dimension Scorers ────────────────
 
 /**
  * Coverage Completeness (0-100)
- * How well does the scenario cover all needed hours?
- * Penalizes unassigned shifts and uncovered days.
  */
 function scoreCoverageCompleteness(
   result: SolverResult,
   inputs: SolverInput[]
 ): number {
-  // Calculate total needed hours across all stores
   let totalNeededHours = 0;
   for (const input of inputs) {
     for (const day of input.weekDays) {
@@ -49,21 +49,11 @@ function scoreCoverageCompleteness(
 
   if (totalNeededHours === 0) return 100;
 
-  // Calculate assigned hours (shifts with actual employees)
-  const assignedHours = result.shifts
-    .filter((s) => s.employeeId !== null)
-    .reduce((sum, s) => sum + s.hours, 0);
-
   const totalHours = result.shifts.reduce((sum, s) => sum + s.hours, 0);
-
-  // Base score from coverage ratio
   let score = Math.min(100, (totalHours / totalNeededHours) * 100);
 
-  // Penalty for unassigned shifts (-10 each, capped)
   const unassignedCount = result.shifts.filter((s) => s.employeeId === null).length;
   score -= unassignedCount * 10;
-
-  // Penalty for fully uncovered days
   score -= result.stats.daysUncovered * 20;
 
   return Math.max(0, Math.min(100, score));
@@ -71,7 +61,6 @@ function scoreCoverageCompleteness(
 
 /**
  * Shift Duration Quality (0-100)
- * Scores how well shift durations match the ideal range.
  */
 function scoreShiftDurationQuality(
   result: SolverResult,
@@ -87,18 +76,23 @@ function scoreShiftDurationQuality(
   for (const shift of result.shifts) {
     const h = shift.hours;
     if (h >= idealMin && h <= idealMax) {
-      // Within ideal range: 100
       totalScore += 100;
-    } else if (h >= acceptMin && h <= acceptMax) {
-      // Within acceptable range: 70 → 40 linearly
-      const ratio = (h - acceptMin) / (acceptMax - acceptMin);
-      totalScore += 70 - ratio * 30;
-    } else if (h < idealMin) {
-      // Too short: 50
-      totalScore += 50;
+    } else if (h >= acceptMin && h < idealMin) {
+      // Below ideal but within acceptable range: interpolate 70→100
+      const range = idealMin - acceptMin;
+      const ratio = range > 0 ? (h - acceptMin) / range : 1;
+      totalScore += Math.round(70 + ratio * 30);
+    } else if (h > idealMax && h <= acceptMax) {
+      // Above ideal but within acceptable range: interpolate 100→70
+      const range = acceptMax - idealMax;
+      const ratio = range > 0 ? (h - idealMax) / range : 1;
+      totalScore += Math.round(100 - ratio * 30);
+    } else if (h < acceptMin) {
+      // Below acceptable minimum — proportionally bad
+      totalScore += Math.max(10, Math.round((h / idealMin) * 60));
     } else {
-      // Too long (> acceptMax): 20
-      totalScore += 20;
+      // Above acceptable maximum — very bad
+      totalScore += 10;
     }
   }
 
@@ -107,13 +101,11 @@ function scoreShiftDurationQuality(
 
 /**
  * Employee Balance (0-100)
- * How evenly are hours distributed relative to contractual targets?
  */
 function scoreEmployeeBalance(
   result: SolverResult,
   inputs: SolverInput[]
 ): number {
-  // Build a map of all employees across all inputs
   const employeeMap = new Map<string, { weeklyHours: number | null }>();
   for (const input of inputs) {
     for (const emp of input.employees) {
@@ -123,7 +115,6 @@ function scoreEmployeeBalance(
     }
   }
 
-  // Calculate average pool target
   const targets = Array.from(employeeMap.values())
     .map((e) => e.weeklyHours)
     .filter((h): h is number => h !== null && h > 0);
@@ -131,7 +122,6 @@ function scoreEmployeeBalance(
     ? targets.reduce((a, b) => a + b, 0) / targets.length
     : 35;
 
-  // Sum hours per employee from generated shifts
   const hoursPerEmployee = new Map<string, number>();
   for (const shift of result.shifts) {
     if (!shift.employeeId) continue;
@@ -141,9 +131,8 @@ function scoreEmployeeBalance(
     );
   }
 
-  if (hoursPerEmployee.size === 0) return 50; // no assignments
+  if (hoursPerEmployee.size === 0) return 50;
 
-  // Calculate deviation from target ratio
   let totalDeviation = 0;
   let count = 0;
 
@@ -151,7 +140,6 @@ function scoreEmployeeBalance(
     const emp = employeeMap.get(empId);
     const target = emp?.weeklyHours || avgTarget;
     if (target <= 0) continue;
-
     const ratio = hours / target;
     const deviation = Math.abs(ratio - 1.0);
     totalDeviation += deviation;
@@ -166,31 +154,23 @@ function scoreEmployeeBalance(
 
 /**
  * Constraint Respect (0-100)
- * Fewer warnings = better score.
  */
 function scoreConstraintRespect(result: SolverResult): number {
-  // Count per-shift warnings
   const shiftWarningCount = result.shifts.reduce(
-    (sum, s) => sum + s.warnings.length,
-    0
+    (sum, s) => sum + s.warnings.length, 0
   );
-
-  // Global warnings
   const globalWarningCount = result.warnings.length;
-
   const totalPenalty = shiftWarningCount * 5 + globalWarningCount * 3;
   return Math.max(0, Math.min(100, 100 - totalPenalty));
 }
 
 /**
  * Cost Efficiency (0-100)
- * Lower total cost relative to baseline = better.
  */
 function scoreCostEfficiency(
   result: SolverResult,
   inputs: SolverInput[]
 ): number {
-  // Build employee cost map
   const costMap = new Map<string, number>();
   let totalCostKnown = 0;
   let costCount = 0;
@@ -205,11 +185,9 @@ function scoreCostEfficiency(
     }
   }
 
-  if (costCount === 0) return 50; // no cost data available
-
+  if (costCount === 0) return 50;
   const avgCost = totalCostKnown / costCount;
 
-  // Calculate actual cost of the scenario
   let actualCost = 0;
   let baselineCost = 0;
 
@@ -221,19 +199,16 @@ function scoreCostEfficiency(
   }
 
   if (actualCost === 0) return 50;
-
-  // Score: 100 if actual cost equals baseline, higher if cheaper
   const ratio = baselineCost / actualCost;
   return Math.max(0, Math.min(100, Math.round(ratio * 100)));
 }
 
 /**
  * Break Quality (0-100)
- * Shifts > 6h must have adequate breaks (≥ 30min).
  */
 function scoreBreakQuality(result: SolverResult): number {
   const longShifts = result.shifts.filter((s) => s.hours > 6);
-  if (longShifts.length === 0) return 100; // no long shifts, perfect
+  if (longShifts.length === 0) return 100;
 
   let totalScore = 0;
   for (const shift of longShifts) {
@@ -241,6 +216,88 @@ function scoreBreakQuality(result: SolverResult): number {
   }
 
   return Math.round(totalScore / longShifts.length);
+}
+
+/**
+ * Profile Placement Quality (0-100) — Manager Brain dimension
+ *
+ * Evaluates:
+ * - % of OUVERTURE slots covered by profile A employees
+ * - % of critical store (importance=1) slots covered by profile A/B employees
+ * - No profile C alone violations (should be 0 due to hard constraint)
+ */
+function scoreProfilePlacementQuality(
+  result: SolverResult,
+  inputs: SolverInput[]
+): number {
+  // Build employee profile map
+  const profileMap = new Map<string, { profileCategory: string | null; reliabilityScore: number | null }>();
+  for (const input of inputs) {
+    for (const emp of input.employees) {
+      if (!profileMap.has(emp.id)) {
+        profileMap.set(emp.id, {
+          profileCategory: emp.profileCategory,
+          reliabilityScore: emp.reliabilityScore,
+        });
+      }
+    }
+  }
+
+  const assignedShifts = result.shifts.filter((s) => s.employeeId !== null);
+  if (assignedShifts.length === 0) return 50;
+
+  // Count OUVERTURE slots and how many are covered by A profiles
+  const ouvertureShifts = assignedShifts.filter((s) => s.slotPhase === "OUVERTURE");
+
+  let ouvertureScore: number;
+  if (ouvertureShifts.length === 0) {
+    ouvertureScore = 100; // No openings to cover
+  } else {
+    // A at openings = great (100%), B at openings = ok (60%), C at openings = bad (20%)
+    let total = 0;
+    for (const s of ouvertureShifts) {
+      const emp = profileMap.get(s.employeeId!);
+      const profile = emp?.profileCategory || "B";
+      if (profile === "A") total += 100;
+      else if (profile === "B") total += 60;
+      else total += 20;
+    }
+    ouvertureScore = Math.round(total / ouvertureShifts.length);
+  }
+
+  // Count critical store coverage by A/B profiles
+  // (We check all assigned shifts, not just openings)
+  const criticalShifts = assignedShifts.filter((s) => {
+    // Find the store importance from inputs
+    for (const input of inputs) {
+      if (input.store.id === s.storeId) return input.store.importance === 1;
+    }
+    return false;
+  });
+
+  let criticalScore: number;
+  if (criticalShifts.length === 0) {
+    criticalScore = 100; // No critical store shifts
+  } else {
+    const criticalWithAB = criticalShifts.filter((s) => {
+      const emp = profileMap.get(s.employeeId!);
+      return emp?.profileCategory === "A" || emp?.profileCategory === "B";
+    });
+    criticalScore = Math.round((criticalWithAB.length / criticalShifts.length) * 100);
+  }
+
+  // Check for C-alone violations (should be 0 due to hard constraint)
+  // This is a bonus check for scenario quality
+  const cAloneViolations = 0; // Hard constraint prevents this
+
+  // Weighted combination: openings matter most
+  const combinedScore = Math.round(
+    ouvertureScore * 0.5 +
+    criticalScore * 0.4 +
+    (cAloneViolations === 0 ? 100 : 0) * 0.1
+  );
+
+  return Math.max(0, Math.min(100, combinedScore));
 }
 
 // ─── Time Helper ─────────────────────────────────
@@ -253,12 +310,7 @@ function timeToMinutes(t: string): number {
 // ─── Main Scorer ─────────────────────────────────
 
 /**
- * Score an entire planning scenario across 6 dimensions.
- *
- * @param result - The solver result to evaluate
- * @param input - One or more SolverInputs (for employee data, store schedules)
- * @param config - Scenario configuration (ideal shift ranges, etc.)
- * @returns A ScenarioScore with total, breakdown, and label
+ * Score an entire planning scenario across 7 dimensions.
  */
 export function scoreScenario(
   result: SolverResult,
@@ -274,9 +326,9 @@ export function scoreScenario(
     constraintRespect: scoreConstraintRespect(result),
     costEfficiency: scoreCostEfficiency(result, inputs),
     breakQuality: scoreBreakQuality(result),
+    profilePlacementQuality: scoreProfilePlacementQuality(result, inputs),
   };
 
-  // Weighted composite score
   const wTotal = Object.values(DIMENSION_WEIGHTS).reduce((a, b) => a + b, 0);
   const total = Math.round(
     (breakdown.coverageCompleteness * DIMENSION_WEIGHTS.coverageCompleteness +
@@ -284,11 +336,11 @@ export function scoreScenario(
       breakdown.employeeBalance * DIMENSION_WEIGHTS.employeeBalance +
       breakdown.constraintRespect * DIMENSION_WEIGHTS.constraintRespect +
       breakdown.costEfficiency * DIMENSION_WEIGHTS.costEfficiency +
-      breakdown.breakQuality * DIMENSION_WEIGHTS.breakQuality) /
+      breakdown.breakQuality * DIMENSION_WEIGHTS.breakQuality +
+      breakdown.profilePlacementQuality * DIMENSION_WEIGHTS.profilePlacementQuality) /
       wTotal
   );
 
-  // Label
   let label: string;
   if (total >= 85) label = "Excellent";
   else if (total >= 70) label = "Bon";

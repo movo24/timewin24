@@ -52,7 +52,7 @@ export async function GET() {
   } catch (err) {
     console.error("GET /api/notifications/preferences error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }
@@ -117,7 +117,7 @@ export async function PUT(req: NextRequest) {
   } catch (err) {
     console.error("PUT /api/notifications/preferences error:", err);
     return errorResponse(
-      "Erreur serveur: " + (err instanceof Error ? err.message : "inconnue"),
+      "Erreur serveur",
       500
     );
   }

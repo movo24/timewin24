@@ -1,4 +1,5 @@
 import { NextAuthOptions } from "next-auth";
+import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
@@ -25,7 +26,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          throw new Error("Identifiants invalides");
+          throw new Error("Aucun compte avec cet email");
         }
 
         // Check if account is active
@@ -63,7 +64,7 @@ export const authOptions: NextAuthOptions = {
             data: updateData,
           });
 
-          throw new Error("Identifiants invalides");
+          throw new Error("Mot de passe incorrect");
         }
 
         // Reset failed attempts + update login audit on successful login
@@ -84,6 +85,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           employeeId: user.employeeId,
           mustChangePassword: user.mustChangePassword,
+          passwordChangedAt: user.passwordChangedAt,
         };
       },
     }),
@@ -94,7 +96,25 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.employeeId = user.employeeId;
         token.mustChangePassword = user.mustChangePassword;
+        token.passwordChangedAt = user.passwordChangedAt;
       }
+
+      // On token refresh (no user), verify user is still active and password hasn't changed
+      if (!user && token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { passwordChangedAt: true, active: true },
+        });
+        if (!dbUser || !dbUser.active) return {} as JWT;
+        const dbPwdAt = dbUser.passwordChangedAt?.toISOString() || null;
+        const tokenPwdAt = token.passwordChangedAt
+          ? (typeof token.passwordChangedAt === "string"
+              ? token.passwordChangedAt
+              : (token.passwordChangedAt as Date).toISOString())
+          : null;
+        if (dbPwdAt !== tokenPwdAt) return {} as JWT;
+      }
+
       return token;
     },
     async session({ session, token }) {
