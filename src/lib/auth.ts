@@ -14,15 +14,13 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
-        loginPortal: { label: "Portal", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email et mot de passe requis");
         }
 
-        const loginPortal = credentials.loginPortal || "employee";
-        console.log(`[AUTH] Login attempt — portal: ${loginPortal}, email: ${credentials.email}`);
+        console.log(`[AUTH] Login attempt — email: ${credentials.email}`);
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -71,16 +69,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Mot de passe incorrect");
         }
 
-        // Portal-role validation: block wrong role on wrong portal
-        console.log(`[AUTH] Password OK — role: ${user.role}, portal: ${loginPortal}`);
-        if (loginPortal === "admin" && user.role === "EMPLOYEE") {
-          console.log(`[AUTH] BLOCKED: Employee on admin portal`);
-          throw new Error("Accès réservé aux administrateurs. Utilisez la page de connexion employés.");
-        }
-        if (loginPortal === "employee" && user.role !== "EMPLOYEE") {
-          console.log(`[AUTH] BLOCKED: ${user.role} on employee portal`);
-          throw new Error("Espace réservé aux employés. Utilisez la page de connexion administrateur.");
-        }
+        console.log(`[AUTH] Password OK — role: ${user.role}`);
 
         // Reset failed attempts + update login audit on successful login
         await prisma.user.update({

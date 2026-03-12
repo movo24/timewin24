@@ -23,7 +23,6 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
-      loginPortal: "employee",
       redirect: false,
     });
 
@@ -37,18 +36,21 @@ export default function LoginPage() {
       try {
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
-        console.log("[EMP-LOGIN] Session data:", JSON.stringify({
-          role: sessionData?.user?.role,
-          email: sessionData?.user?.email,
-          mustChangePassword: sessionData?.user?.mustChangePassword,
-        }));
+        const role = sessionData?.user?.role;
+        console.log("[EMP-LOGIN] Session role:", role, "email:", sessionData?.user?.email);
 
         if (sessionData?.user?.mustChangePassword) {
-          console.log("[EMP-LOGIN] Must change password → /changer-mot-de-passe");
           router.push("/changer-mot-de-passe");
-        } else {
-          console.log("[EMP-LOGIN] Redirecting → /mon-planning");
+          return;
+        }
+
+        // Rediriger selon le rôle réel
+        if (role === "EMPLOYEE") {
+          console.log("[EMP-LOGIN] Employee → /mon-planning");
           router.push("/mon-planning");
+        } else {
+          console.log("[EMP-LOGIN] Admin/Manager detected → /planning");
+          router.push("/planning");
         }
       } catch (err) {
         console.error("[EMP-LOGIN] Session fetch failed:", err);
