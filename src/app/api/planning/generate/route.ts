@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { autoGenerateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 import { toUTCDate } from "@/lib/utils";
@@ -19,6 +19,7 @@ import type { SolverResult, ScenarioResult } from "@/lib/solver/types";
  *
  * If storeId is provided: solve for that store only.
  * If storeId is empty/omitted: solve for ALL stores at once (global view).
+ * RBAC: Manager can only generate for their assigned stores.
  *
  * If useScenarios is true: runs multi-scenario solver with scoring.
  */
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
     const body = await req.json();
     const parsed = autoGenerateSchema.safeParse(body);
     if (!parsed.success) {
@@ -34,6 +36,19 @@ export async function POST(req: NextRequest) {
     }
 
     const { storeId, weekStart, mode, shiftDurationHours, shiftGranularity, useScenarios, idealShiftRange, useManagerBrain } = parsed.data;
+
+    // RBAC: Manager can only generate planning for their assigned stores
+    if (user.role === "MANAGER") {
+      const { storeIds } = await getAccessibleStoreIds();
+      if (storeId) {
+        if (storeIds && !storeIds.includes(storeId)) {
+          return errorResponse("Accès refusé : vous n'êtes pas assigné à ce magasin", 403);
+        }
+      } else {
+        // Manager without storeId = block (must specify a store)
+        return errorResponse("Vous devez spécifier un magasin pour la génération", 403);
+      }
+    }
 
     let result: SolverResult;
     let scenarioResult: ScenarioResult | null = null;

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { isEmployee, getDefaultRouteForRole } from "@/lib/rbac";
 import { Sidebar } from "@/components/sidebar";
 import { PushPermission } from "@/components/notifications/push-permission";
 import { InstallPrompt } from "@/components/notifications/install-prompt";
@@ -16,8 +17,8 @@ export default async function EmployeeLayout({
   // Forcer le changement de mot de passe à la première connexion
   if (session.user.mustChangePassword) redirect("/changer-mot-de-passe");
 
-  // Only EMPLOYEE role can access this layout
-  if (session.user.role !== "EMPLOYEE") redirect("/planning");
+  // Seul EMPLOYEE accède à ce layout
+  if (!isEmployee(session.user.role)) redirect(getDefaultRouteForRole(session.user.role));
 
   return (
     <div className="min-h-screen">

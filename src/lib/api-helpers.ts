@@ -1,6 +1,8 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
+import { hasPermission, isAdmin } from "./rbac";
+import type { AppRole, Permission } from "./rbac";
 
 type SessionUser = {
   id: string;
@@ -99,6 +101,119 @@ export async function requireEmployee() {
   }
 
   return { session: session!, employeeId: user.employeeId, error: null };
+}
+
+// ============================================================
+// RBAC — Permission-based guards
+// ============================================================
+
+/**
+ * Require a specific permission.
+ * Uses the centralized RBAC matrix from rbac.ts.
+ * Returns 403 if the user's role doesn't have the permission.
+ */
+export async function requirePermission(permission: Permission) {
+  const { session, error } = await getSessionOrUnauthorized();
+  if (error) return { session: null, error };
+
+  const user = session!.user as SessionUser;
+  if (!hasPermission(user.role, permission)) {
+    return {
+      session: null,
+      error: NextResponse.json(
+        { error: `Accès refusé : permission "${permission}" requise` },
+        { status: 403 }
+      ),
+    };
+  }
+  return { session: session!, error: null };
+}
+
+/**
+ * Require access to a specific store (multi-store scoping).
+ * - ADMIN : accès à tous les magasins
+ * - MANAGER : accès seulement aux magasins où il est assigné (StoreEmployee)
+ * - EMPLOYEE : accès seulement à son propre magasin (StoreEmployee)
+ *
+ * Lazy-imports prisma to avoid circular dependency issues.
+ */
+export async function requireStoreAccess(storeId: string) {
+  const { session, error } = await getSessionOrUnauthorized();
+  if (error) return { session: null, error };
+
+  const user = session!.user as SessionUser;
+
+  // Admin has access to all stores
+  if (isAdmin(user.role)) {
+    return { session: session!, error: null };
+  }
+
+  // Manager and Employee: must be linked to the store via StoreEmployee
+  if (!user.employeeId) {
+    return {
+      session: null,
+      error: NextResponse.json(
+        { error: "Aucun profil employé lié — accès magasin impossible" },
+        { status: 403 }
+      ),
+    };
+  }
+
+  // Dynamic import to avoid circular dependencies
+  const { prisma } = await import("./prisma");
+  const link = await prisma.storeEmployee.findFirst({
+    where: {
+      employeeId: user.employeeId,
+      storeId: storeId,
+    },
+    select: { storeId: true },
+  });
+
+  if (!link) {
+    return {
+      session: null,
+      error: NextResponse.json(
+        { error: "Accès refusé : vous n'êtes pas assigné à ce magasin" },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { session: session!, error: null };
+}
+
+/**
+ * Get the list of store IDs accessible by the current user.
+ * - ADMIN : null (all stores — caller should not filter)
+ * - MANAGER/EMPLOYEE : list of assigned storeIds
+ */
+export async function getAccessibleStoreIds(): Promise<{ storeIds: string[] | null; error: NextResponse | null }> {
+  const { session, error } = await getSessionOrUnauthorized();
+  if (error) return { storeIds: null, error };
+
+  const user = session!.user as SessionUser;
+
+  if (isAdmin(user.role)) {
+    return { storeIds: null, error: null }; // null = all stores
+  }
+
+  if (!user.employeeId) {
+    return {
+      storeIds: [],
+      error: null,
+    };
+  }
+
+  const { prisma } = await import("./prisma");
+  const links = await prisma.storeEmployee.findMany({
+    where: { employeeId: user.employeeId },
+    select: { storeId: true },
+  });
+
+  return {
+    storeIds: links.map((l) => l.storeId),
+    error: null,
+  };
 }
 
 export function errorResponse(message: string, status: number = 400) {

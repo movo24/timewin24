@@ -20,7 +20,7 @@ export default function ChangePasswordPage() {
   const [success, setSuccess] = useState(false);
 
   // Redirect to the correct login page based on role
-  const callbackUrl = session?.user?.role === "EMPLOYEE" ? "/login" : "/admin-login";
+  const callbackUrl = session?.user?.role !== "EMPLOYEE" ? "/admin-login" : "/login";
 
   // Validation rules
   const hasMinLength = newPassword.length >= 8;

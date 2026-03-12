@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
+import { isAdminOrManager, isEmployee as isEmployeeRole, getLoginPageForRole, ROLE_LABELS } from "@/lib/rbac";
 
 const adminLinks = [
   { href: "/planning", label: "Planning", icon: Calendar },
@@ -78,11 +79,7 @@ const employeeLinks = [
   { href: "/annonces", label: "Annonces", icon: Megaphone },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "Administrateur",
-  MANAGER: "Manager",
-  EMPLOYEE: "Employé",
-};
+// ROLE_LABELS importé depuis rbac.ts
 
 export function Sidebar() {
   const { data: session } = useSession();
@@ -139,13 +136,13 @@ export function Sidebar() {
           <p className="font-medium text-gray-900">{session.user.name}</p>
           <p className="text-xs text-gray-500">{session.user.email}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            {ROLE_LABELS[role] || role}
+            {ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role}
           </p>
         </div>
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 mt-1 text-gray-600"
-          onClick={() => signOut({ callbackUrl: role === "EMPLOYEE" ? "/login" : "/admin-login" })}
+          onClick={() => signOut({ callbackUrl: getLoginPageForRole(role) })}
         >
           <LogOut className="h-4 w-4" />
           Déconnexion

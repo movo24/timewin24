@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireManagerOrAdmin,
+  getAccessibleStoreIds,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
@@ -9,6 +10,7 @@ import { AbsenceStatus } from "@/generated/prisma/client";
 import { createReplacementOffers } from "@/lib/replacement";
 
 // PATCH /api/absences/[id] — Manager approves or rejects
+// RBAC: Manager can only manage absences for employees in their assigned stores
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -39,7 +41,23 @@ export async function PATCH(
       return errorResponse("Cette déclaration a déjà été traitée");
     }
 
-    const user = session!.user as { id: string };
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
+
+    // RBAC: Manager can only approve/reject absences for employees in their stores
+    if (user.role === "MANAGER") {
+      const { storeIds } = await getAccessibleStoreIds();
+      if (storeIds) {
+        const employeeStores = await prisma.storeEmployee.findMany({
+          where: { employeeId: declaration.employeeId },
+          select: { storeId: true },
+        });
+        const employeeStoreIds = employeeStores.map(s => s.storeId);
+        const hasCommonStore = employeeStoreIds.some(sid => storeIds.includes(sid));
+        if (!hasCommonStore) {
+          return errorResponse("Accès refusé : cet employé n'est pas dans vos magasins", 403);
+        }
+      }
+    }
 
     if (status === "APPROVED") {
       // Wrap status update AND unavailability creation in a single atomic transaction

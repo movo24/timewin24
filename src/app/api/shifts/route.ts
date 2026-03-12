@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import {
   getSessionOrUnauthorized,
   requireManagerOrAdmin,
+  getAccessibleStoreIds,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
@@ -54,12 +55,25 @@ export async function GET(req: NextRequest) {
       return successResponse({ shifts });
     }
 
-    // Admin: filter by store or employee
+    // Admin/Manager: filter by store or employee
     const { weekStart: start, weekEnd: end } = getWeekBounds(weekStart);
     const where: Record<string, unknown> = {
       date: { gte: start, lte: end },
     };
-    if (storeId) where.storeId = storeId;
+    if (storeId) {
+      // RBAC: Manager can only see shifts from their assigned stores
+      if (user.role === "MANAGER") {
+        const { storeIds } = await getAccessibleStoreIds();
+        if (storeIds && !storeIds.includes(storeId)) {
+          return errorResponse("Accès refusé à ce magasin", 403);
+        }
+      }
+      where.storeId = storeId;
+    } else if (user.role === "MANAGER") {
+      // Manager without storeId filter: scope to their assigned stores
+      const { storeIds } = await getAccessibleStoreIds();
+      if (storeIds) where.storeId = { in: storeIds };
+    }
     if (employeeId) where.employeeId = employeeId;
 
     const shifts = await prisma.shift.findMany({
@@ -100,6 +114,7 @@ export async function POST(req: NextRequest) {
   const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
+  const user = session!.user as { id: string; role: string; employeeId: string | null };
   const body = await req.json();
   const parsed = shiftCreateSchema.safeParse(body);
   if (!parsed.success) {
@@ -107,6 +122,14 @@ export async function POST(req: NextRequest) {
   }
 
   const { storeId, employeeId, date, startTime, endTime, note } = parsed.data;
+
+  // RBAC: Manager can only create shifts in their assigned stores
+  if (user.role === "MANAGER") {
+    const { storeIds } = await getAccessibleStoreIds();
+    if (storeIds && !storeIds.includes(storeId)) {
+      return errorResponse("Accès refusé : vous n'êtes pas assigné à ce magasin", 403);
+    }
+  }
 
   // Check overlap (only if employee is assigned)
   if (employeeId) {

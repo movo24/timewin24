@@ -45,13 +45,9 @@ export default function LoginPage() {
         }
 
         // Rediriger selon le rôle réel
-        if (role === "EMPLOYEE") {
-          console.log("[EMP-LOGIN] Employee → /mon-planning");
-          router.push("/mon-planning");
-        } else {
-          console.log("[EMP-LOGIN] Admin/Manager detected → /planning");
-          router.push("/planning");
-        }
+        const target = role === "EMPLOYEE" ? "/mon-planning" : "/planning";
+        console.log(`[EMP-LOGIN] Role: ${role} → ${target}`);
+        router.push(target);
       } catch (err) {
         console.error("[EMP-LOGIN] Session fetch failed:", err);
         router.push("/mon-planning");

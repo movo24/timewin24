@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { shiftUpdateSchema } from "@/lib/validations";
 import { findOverlappingShift, findStoreOverlapViolation, findStoreHoursViolation, findMaxEmployeesViolation, findMaxSimultaneousViolation, calculateWeeklyHours } from "@/lib/shifts";
 import { logAudit } from "@/lib/audit";
@@ -16,6 +16,7 @@ export async function PUT(
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
     const { id } = await params;
     const body = await req.json();
     const parsed = shiftUpdateSchema.safeParse(body);
@@ -25,6 +26,14 @@ export async function PUT(
 
     const existing = await prisma.shift.findUnique({ where: { id } });
     if (!existing) return errorResponse("Shift non trouvé", 404);
+
+    // RBAC: Manager can only modify shifts in their assigned stores
+    if (user.role === "MANAGER") {
+      const { storeIds } = await getAccessibleStoreIds();
+      if (storeIds && !storeIds.includes(existing.storeId)) {
+        return errorResponse("Accès refusé : vous n'êtes pas assigné à ce magasin", 403);
+      }
+    }
 
     const { storeId, employeeId, date, startTime, endTime, note } = parsed.data;
 
@@ -146,6 +155,7 @@ export async function DELETE(
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
     const { id } = await params;
     const existing = await prisma.shift.findUnique({
       where: { id },
@@ -155,6 +165,14 @@ export async function DELETE(
       },
     });
     if (!existing) return errorResponse("Shift non trouvé", 404);
+
+    // RBAC: Manager can only delete shifts in their assigned stores
+    if (user.role === "MANAGER") {
+      const { storeIds } = await getAccessibleStoreIds();
+      if (storeIds && !storeIds.includes(existing.storeId)) {
+        return errorResponse("Accès refusé : vous n'êtes pas assigné à ce magasin", 403);
+      }
+    }
 
     await prisma.shift.delete({ where: { id } });
     await logAudit(session!.user.id, "DELETE", "Shift", id, {

@@ -1,13 +1,14 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireAdmin, requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { storeCreateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 
 // GET /api/stores - List stores with pagination and search
+// RBAC: Manager sees only their assigned stores, Admin sees all
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -15,13 +16,25 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
     const search = searchParams.get("search") || "";
 
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { city: { contains: search, mode: "insensitive" as const } },
-          ],
-        }
+    // RBAC: Manager sees only their assigned stores
+    const { storeIds: accessibleStoreIds } = await getAccessibleStoreIds();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const conditions: any[] = [];
+    if (search) {
+      conditions.push({
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { city: { contains: search, mode: "insensitive" as const } },
+        ],
+      });
+    }
+    if (accessibleStoreIds) {
+      conditions.push({ id: { in: accessibleStoreIds } });
+    }
+
+    const where = conditions.length > 0
+      ? conditions.length === 1 ? conditions[0] : { AND: conditions }
       : {};
 
     const [stores, total] = await Promise.all([

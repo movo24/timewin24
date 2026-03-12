@@ -1,22 +1,27 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireAdmin, requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { employeeCreateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 // GET /api/employees
+// RBAC: Manager sees only employees from their assigned stores
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
     const search = searchParams.get("search") || "";
     const storeId = searchParams.get("storeId") || "";
     const activeOnly = searchParams.get("active") === "true";
+
+    // RBAC: Manager can only see employees from their assigned stores
+    const { storeIds: accessibleStoreIds } = await getAccessibleStoreIds();
 
     const where: Record<string, unknown> = {};
     if (search) {
@@ -27,7 +32,14 @@ export async function GET(req: NextRequest) {
       ];
     }
     if (storeId) {
+      // Validate manager has access to the requested store
+      if (accessibleStoreIds && !accessibleStoreIds.includes(storeId)) {
+        return errorResponse("Accès refusé à ce magasin", 403);
+      }
       where.stores = { some: { storeId } };
+    } else if (accessibleStoreIds) {
+      // Manager without storeId filter: scope to their assigned stores
+      where.stores = { some: { storeId: { in: accessibleStoreIds } } };
     }
     if (activeOnly) {
       where.active = true;
