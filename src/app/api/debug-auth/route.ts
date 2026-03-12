@@ -6,34 +6,28 @@ import { authOptions } from "@/lib/auth";
 export async function GET(req: NextRequest) {
   const secret = process.env.NEXTAUTH_SECRET || "";
 
-  // Try with explicit secret
-  const token1 = await getToken({ req, secret });
+  // Try with explicit cookie name (the fix)
+  const isSecure = req.nextUrl.protocol === "https:";
+  const cookieName = isSecure
+    ? "__Secure-next-auth.session-token"
+    : "next-auth.session-token";
 
-  // Try without explicit secret (uses NEXTAUTH_SECRET env auto)
-  const token2 = await getToken({ req });
+  const tokenFixed = await getToken({ req, secret, cookieName });
 
-  // Try with trimmed secret
-  const token3 = await getToken({ req, secret: secret.trim() });
+  // Try original way (broken on Vercel due to NEXTAUTH_URL)
+  const tokenOriginal = await getToken({ req, secret });
 
   const session = await getServerSession(authOptions);
-
   const cookies = req.cookies.getAll().map(c => ({ name: c.name, length: c.value.length }));
 
   return NextResponse.json({
-    token1_explicit: !!token1,
-    token2_auto: !!token2,
-    token3_trimmed: !!token3,
-    token3_role: token3?.role || null,
+    tokenFixed: !!tokenFixed,
+    tokenFixedRole: tokenFixed?.role || null,
+    tokenOriginal: !!tokenOriginal,
     hasSession: !!session,
     sessionRole: session?.user?.role || null,
-    secretLength: secret.length,
-    secretTrimmedLength: secret.trim().length,
-    secretFirst3: secret.substring(0, 3),
-    secretLast3: secret.substring(secret.length - 3),
-    secretHasNewline: secret.includes('\n'),
-    secretHasReturn: secret.includes('\r'),
+    cookieName,
+    isSecure,
     cookies,
-    nextauthUrl: process.env.NEXTAUTH_URL || 'NOT_SET',
-    nextauthUrlLength: (process.env.NEXTAUTH_URL || '').length,
   });
 }
