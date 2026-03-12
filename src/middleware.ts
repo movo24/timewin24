@@ -37,6 +37,8 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = !!(token && role);
   const isEmployeeRole = role === "EMPLOYEE";
 
+  console.log(`[MW] path=${pathname} token=${!!token} role=${role} auth=${isAuthenticated}`);
+
   // --- Login pages: redirect already-authenticated users to their dashboard ---
   if (LOGIN_PAGES.some((r) => pathname === r)) {
     if (isAuthenticated) {
