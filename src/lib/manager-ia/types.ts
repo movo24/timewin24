@@ -37,6 +37,10 @@ export interface ParsedIntent {
   endTimeExpr: string | null;     // explicit end: "17h", "18h00"
   duration: number | null;        // in minutes (e.g. 60 for "1h")
   rawCommand: string;
+  /** Score de confiance du parsing (0-1, ajouté par AI Engine) */
+  confidence?: number;
+  /** Source du parsing (ajouté par AI Engine) */
+  source?: "deterministic" | "gemini";
 }
 
 // ─── Layer 2: Resolver Output ───────────────────

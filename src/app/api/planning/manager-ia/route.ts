@@ -11,9 +11,9 @@ const managerIaSchema = z.object({
   execute: z.boolean().optional().default(false),
 });
 import { toUTCDate, getWeekBounds, formatDate } from "@/lib/utils";
-import { parseCommand } from "@/lib/manager-ia/parser";
 import { resolveCommand } from "@/lib/manager-ia/resolver";
 import { planCommand } from "@/lib/manager-ia/planner";
+import { enhancedParse } from "@/lib/ai-engine/nlp/enhanced-pipeline";
 import type { Proposal, ExecutionResult } from "@/lib/manager-ia/types";
 import type { ResolverContext } from "@/lib/manager-ia/resolver";
 import type { PlannerContext } from "@/lib/manager-ia/planner";
@@ -171,7 +171,11 @@ export async function POST(req: NextRequest) {
       knownStores: stores.map((s) => s.name),
     };
 
-    const parsed = parseCommand(command, parseContext);
+    const parsed = await enhancedParse(command, parseContext, {
+      fallbackToGemini: true,
+      today,
+      weekStart,
+    });
     const resolved = resolveCommand(parsed, resolverCtx);
     const proposal = planCommand(resolved, plannerCtx, parsed);
 

@@ -106,7 +106,12 @@ export type Permission =
   | "view_audit"
   | "manage_integrations"
   // Indisponibilités
-  | "manage_unavailabilities";
+  | "manage_unavailabilities"
+  // AI Engine
+  | "use_ai_assistant"
+  | "view_ai_metrics"
+  | "manage_ai_anomalies"
+  | "admin_ai_engine";
 
 /** Matrice rôle → permissions */
 export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
@@ -129,6 +134,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
     "manage_journal",
     "view_audit", "manage_integrations",
     "manage_unavailabilities",
+    "use_ai_assistant", "view_ai_metrics", "manage_ai_anomalies", "admin_ai_engine",
   ],
   MANAGER: [
     "view_own_schedule", "view_team_schedule", "edit_schedule", "generate_planning",
@@ -146,6 +152,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
     "manage_alerts",
     "manage_journal",
     "manage_unavailabilities",
+    "use_ai_assistant", "view_ai_metrics", "manage_ai_anomalies",
   ],
   EMPLOYEE: [
     "view_own_schedule",

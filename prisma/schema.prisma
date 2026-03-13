@@ -157,6 +157,7 @@ model Employee {
   clockIns              ClockIn[]
   absenceDeclarations   AbsenceDeclaration[]
   replacementCandidates ReplacementCandidate[]
+  aiMetrics             EmployeeAiMetrics?
   reliabilityScore    Int?
   profileCategory     String?        // "A", "B", "C" — dérivé du score de fiabilité
   scoreUpdatedAt      DateTime?
@@ -932,6 +933,7 @@ enum ManagerAlertType {
   ABSENCE_NOT_REPLACED
   SIGNIFICANT_LATENESS
   INCOMPLETE_TEAM
+  AI_ANOMALY_DETECTED
 }
 
 enum ManagerAlertStatus {
@@ -1054,4 +1056,136 @@ model NotificationLog {
   @@index([status])
   @@index([eventType])
   @@index([createdAt])
+}
+
+// ─── AI Engine ──────────────────────────────────────────
+
+// Stockage d'embeddings vectoriels (pgvector)
+// Note: la colonne "embedding vector(768)" est ajoutée via raw SQL migration
+model AiEmbedding {
+  id         String   @id @default(cuid())
+  entityType String   // "employee", "store", "shift", "journal", "conversation"
+  entityId   String
+  content    String   // Texte source de l'embedding
+  metadata   Json?    // Données structurées associées
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([entityType])
+}
+
+// Scores IA calculés par employé
+model EmployeeAiMetrics {
+  id               String   @id @default(cuid())
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId       String   @unique
+  performanceScore Float    @default(0) // 0-100
+  upsellScore      Float    @default(0) // 0-100
+  riskScore        Float    @default(0) // 0-100
+  regularityScore  Float    @default(0) // 0-100
+  fraudRiskScore   Float    @default(0) // 0-100
+  breakdown        Json?    // Détail des calculs (PerformanceBreakdown)
+  periodStart      DateTime?
+  periodEnd        DateTime?
+  calculatedAt     DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([calculatedAt])
+}
+
+// Anomalies détectées par le moteur IA
+enum AiAnomalyType {
+  CLOCK_DISCREPANCY
+  REVENUE_DROP
+  GHOST_SHIFT
+  PATTERN_BREAK
+  OVERTIME_ABUSE
+  LOCATION_MISMATCH
+}
+
+enum AiAnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AiAnomalyStatus {
+  DETECTED
+  CONFIRMED
+  REJECTED
+  RESOLVED
+}
+
+model AiAnomaly {
+  id            String            @id @default(cuid())
+  type          AiAnomalyType
+  severity      AiAnomalySeverity @default(MEDIUM)
+  status        AiAnomalyStatus   @default(DETECTED)
+  employeeId    String?
+  storeId       String
+  date          DateTime          @db.Date
+  description   String
+  evidence      Json              // AnomalyEvidence
+  suggestedAction String?
+  reviewedBy    String?           // User.id
+  reviewedAt    DateTime?
+  reviewNote    String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([storeId, date])
+  @@index([employeeId])
+  @@index([type, status])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Conversations avec l'assistant IA
+model AiConversation {
+  id        String      @id @default(cuid())
+  userId    String      // User.id
+  storeId   String?     // Contexte magasin (optionnel)
+  title     String?     // Titre auto-généré
+  messages  AiMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Messages dans une conversation IA
+model AiMessage {
+  id             String         @id @default(cuid())
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  role           String         // "user" | "assistant"
+  content        String
+  sources        Json?          // AssistantSource[]
+  tokensUsed     Int            @default(0)
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+// Suivi de consommation API Gemini
+model AiApiUsage {
+  id           String   @id @default(cuid())
+  model        String   // "gemini-2.0-flash", "text-embedding-004"
+  operation    String   // "generateText", "embedContent", etc.
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  totalTokens  Int      @default(0)
+  durationMs   Int      @default(0)
+  success      Boolean  @default(true)
+  error        String?
+  createdAt    DateTime @default(now())
+
+  @@index([model])
+  @@index([createdAt])
+  @@index([success])
 }
