@@ -27,9 +27,9 @@ export const AI_CONFIG = {
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || "",
     /** Modèle pour la génération (NLP fallback, assistant) */
-    generationModel: "gemini-2.0-flash",
+    generationModel: "gemini-2.5-flash",
     /** Modèle pour les embeddings */
-    embeddingModel: "text-embedding-004",
+    embeddingModel: "gemini-embedding-001",
     /** Dimension des embeddings */
     embeddingDimension: 768,
   },

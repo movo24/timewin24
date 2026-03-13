@@ -8,6 +8,10 @@
  * Usage: npx tsx scripts/test-ai-engine.ts
  */
 
+// ─── Load .env ────────────────────────────────────
+import dotenv from "dotenv";
+dotenv.config();
+
 // ─── Setup path aliases ────────────────────────────
 import path from "path";
 import { pathToFileURL } from "url";
