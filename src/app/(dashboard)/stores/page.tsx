@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Clock, X, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Clock, X, MapPin, Power, PowerOff, AlertTriangle } from "lucide-react";
 
 // Day names in French, indexed 0=Dim ... 6=Sam
 const DAY_NAMES = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -46,6 +46,7 @@ interface StoreSchedule {
 interface Store {
   id: string;
   name: string;
+  status: "ACTIVE" | "INACTIVE";
   city: string | null;
   address: string | null;
   timezone: string | null;
@@ -157,12 +158,20 @@ export default function StoresPage() {
   const [schedules, setSchedules] = useState<DaySchedule[]>(getDefaultSchedules());
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
+  const [toggleStore, setToggleStore] = useState<Store | null>(null);
+  const [toggleWarnings, setToggleWarnings] = useState<string[]>([]);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   const loadStores = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/stores?page=${page}&limit=20&search=${encodeURIComponent(search)}`
-      );
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        search,
+      });
+      if (showInactive) params.set("includeInactive", "true");
+      const res = await fetch(`/api/stores?${params}`);
       if (res.ok) {
         const data = await res.json();
         setStores(data.stores || []);
@@ -171,7 +180,7 @@ export default function StoresPage() {
     } catch {
       console.error("Erreur chargement magasins");
     }
-  }, [page, search]);
+  }, [page, search, showInactive]);
 
   useEffect(() => {
     loadStores();
@@ -309,6 +318,36 @@ export default function StoresPage() {
     }
   }
 
+  async function handleToggleStatus(store: Store, confirm = false) {
+    setToggleLoading(true);
+    try {
+      const res = await fetch(`/api/stores/${store.id}/toggle-status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Erreur");
+        setToggleLoading(false);
+        return;
+      }
+      if (data.requireConfirmation) {
+        setToggleStore(store);
+        setToggleWarnings(data.warnings || []);
+        setToggleLoading(false);
+        return;
+      }
+      // Success
+      setToggleStore(null);
+      setToggleWarnings([]);
+      loadStores();
+    } catch {
+      alert("Erreur réseau");
+    }
+    setToggleLoading(false);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -319,17 +358,31 @@ export default function StoresPage() {
         </Button>
       </div>
 
-      <div className="mb-4 relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Rechercher..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+      <div className="mb-4 flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Rechercher..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          variant={showInactive ? "default" : "outline"}
+          size="sm"
+          className="shrink-0 text-xs h-10"
+          onClick={() => {
+            setShowInactive(!showInactive);
             setPage(1);
           }}
-          className="pl-9"
-        />
+        >
+          <PowerOff className="h-3.5 w-3.5 mr-1" />
+          {showInactive ? "Tous" : "Voir inactifs"}
+        </Button>
       </div>
 
       {/* Mobile card layout */}
@@ -342,9 +395,15 @@ export default function StoresPage() {
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-900 truncate">
+                  <span className={`font-semibold truncate ${store.status === "INACTIVE" ? "text-gray-400" : "text-gray-900"}`}>
                     {store.name}
                   </span>
+                  <Badge
+                    variant={store.status === "ACTIVE" ? "secondary" : "destructive"}
+                    className="shrink-0 text-[10px]"
+                  >
+                    {store.status === "ACTIVE" ? "Actif" : "Inactif"}
+                  </Badge>
                   <Badge variant="secondary" className="shrink-0 text-[10px]">
                     {store._count.employees} emp.
                   </Badge>
@@ -363,6 +422,19 @@ export default function StoresPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title={store.status === "ACTIVE" ? "Désactiver" : "Réactiver"}
+                  onClick={() => handleToggleStatus(store)}
+                >
+                  {store.status === "ACTIVE" ? (
+                    <PowerOff className="h-3.5 w-3.5 text-orange-500" />
+                  ) : (
+                    <Power className="h-3.5 w-3.5 text-green-500" />
+                  )}
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -422,6 +494,7 @@ export default function StoresPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Nom</th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">Statut</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Ville</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Horaires</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Fuseau</th>
@@ -439,7 +512,17 @@ export default function StoresPage() {
                   key={store.id}
                   className="border-b border-gray-100 hover:bg-gray-50"
                 >
-                  <td className="px-4 py-3 font-medium">{store.name}</td>
+                  <td className={`px-4 py-3 font-medium ${store.status === "INACTIVE" ? "text-gray-400" : ""}`}>
+                    {store.name}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge
+                      variant={store.status === "ACTIVE" ? "secondary" : "destructive"}
+                      className={`text-[10px] ${store.status === "ACTIVE" ? "bg-green-100 text-green-700" : ""}`}
+                    >
+                      {store.status === "ACTIVE" ? "Actif" : "Inactif"}
+                    </Badge>
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{store.city || "-"}</td>
                   <td className="px-4 py-3 text-gray-600 text-xs">
                     {summarizeSchedule(store.schedules)}
@@ -449,6 +532,18 @@ export default function StoresPage() {
                     <Badge variant="secondary">{store._count.employees}</Badge>
                   </td>
                   <td className="px-4 py-3 text-right space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={store.status === "ACTIVE" ? "Désactiver" : "Réactiver"}
+                      onClick={() => handleToggleStatus(store)}
+                    >
+                      {store.status === "ACTIVE" ? (
+                        <PowerOff className="h-4 w-4 text-orange-500" />
+                      ) : (
+                        <Power className="h-4 w-4 text-green-500" />
+                      )}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -468,7 +563,7 @@ export default function StoresPage() {
               ))}
               {stores.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     Aucun magasin trouvé
                   </td>
                 </tr>
@@ -501,6 +596,45 @@ export default function StoresPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation dialog for deactivation */}
+      <Dialog open={!!toggleStore} onOpenChange={(open) => { if (!open) { setToggleStore(null); setToggleWarnings([]); } }}>
+        <DialogContent className="mx-2 sm:mx-auto max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Désactiver {toggleStore?.name} ?
+            </DialogTitle>
+            <DialogDescription>
+              Le magasin sera masqué dans les sélections (POS, planning, pointage) mais restera dans la base de données et pourra être réactivé.
+            </DialogDescription>
+          </DialogHeader>
+          {toggleWarnings.length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-1">
+              <p className="text-sm font-medium text-orange-800">Points d&apos;attention :</p>
+              <ul className="text-sm text-orange-700 list-disc list-inside space-y-0.5">
+                {toggleWarnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => { setToggleStore(null); setToggleWarnings([]); }}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={toggleLoading}
+              onClick={() => {
+                if (toggleStore) handleToggleStatus(toggleStore, true);
+              }}
+            >
+              {toggleLoading ? "..." : "Confirmer la désactivation"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="mx-2 sm:mx-auto max-w-2xl max-h-[90vh] overflow-y-auto">

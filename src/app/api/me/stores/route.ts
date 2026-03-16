@@ -10,7 +10,10 @@ export async function GET() {
     if (error) return error;
 
     const stores = await prisma.storeEmployee.findMany({
-      where: { employeeId: employeeId! },
+      where: {
+        employeeId: employeeId!,
+        store: { status: "ACTIVE" },
+      },
       select: {
         storeId: true,
         store: { select: { id: true, name: true, city: true, latitude: true, longitude: true } },

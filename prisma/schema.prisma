@@ -13,6 +13,11 @@ enum Role {
   EMPLOYEE
 }
 
+enum StoreStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -65,6 +70,7 @@ model User {
 model Store {
   id            String          @id @default(cuid())
   name          String
+  status        StoreStatus     @default(ACTIVE)
   city          String?
   address       String?
   timezone      String?         @default("Europe/Paris")
@@ -89,6 +95,7 @@ model Store {
 
   @@index([name])
   @@index([city])
+  @@index([status])
 }
 
 // Horaires d'ouverture par jour de la semaine

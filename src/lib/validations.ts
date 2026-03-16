@@ -4,8 +4,11 @@ import { z } from "zod";
 const emptyToNull = (val: unknown) => (val === "" || val === undefined ? null : val);
 
 // Store
+const storeStatuses = ["ACTIVE", "INACTIVE"] as const;
+
 export const storeCreateSchema = z.object({
   name: z.string().min(1, "Le nom est obligatoire").max(100),
+  status: z.enum(storeStatuses).optional().default("ACTIVE"),
   city: z.string().max(100).optional().nullable(),
   address: z.string().max(255).optional().nullable(),
   timezone: z.string().max(50).optional().nullable(),

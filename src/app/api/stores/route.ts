@@ -15,12 +15,19 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
     const search = searchParams.get("search") || "";
+    const includeInactive = searchParams.get("includeInactive") === "true";
 
     // RBAC: Manager sees only their assigned stores
     const { storeIds: accessibleStoreIds } = await getAccessibleStoreIds();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conditions: any[] = [];
+
+    // By default, only show active stores (admin can request all)
+    if (!includeInactive) {
+      conditions.push({ status: "ACTIVE" });
+    }
+
     if (search) {
       conditions.push({
         OR: [
