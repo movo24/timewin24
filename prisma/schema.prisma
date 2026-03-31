@@ -8,7 +8,8 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
+  SUPER_ADMIN  // Super admin groupe — accès total multi-org
+  ADMIN        // Admin unité/réseau
   MANAGER
   EMPLOYEE
 }
@@ -16,6 +17,55 @@ enum Role {
 enum StoreStatus {
   ACTIVE
   INACTIVE
+}
+
+enum OrgStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+// ─── Hiérarchie Réseau : Organisation > Unité > Magasin ───
+
+model Organization {
+  id          String    @id @default(cuid())
+  name        String    // "Groupe AddX"
+  legalName   String?   // Raison sociale
+  status      OrgStatus @default(ACTIVE)
+  siret       String?   // SIRET entreprise
+  siren       String?   // SIREN
+  vatNumber   String?   // Numéro TVA intracommunautaire
+  country     String    @default("FR")
+  currency    String    @default("EUR")
+  logo        String?   // URL logo
+  notes       String?
+
+  units       Unit[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+  @@index([status])
+}
+
+model Unit {
+  id             String       @id @default(cuid())
+  name           String       // "Île-de-France", "Sud-Est", "Division Luxe"
+  type           String       @default("region") // region, division, franchise, brand
+  status         OrgStatus    @default(ACTIVE)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  country        String       @default("FR")
+  currency       String       @default("EUR")
+  notes          String?
+
+  stores         Store[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([name])
+  @@index([status])
 }
 
 model User {
@@ -63,6 +113,8 @@ model User {
   notificationPreferences NotificationPreference[]
   notificationLogs        NotificationLog[]
 
+  labelPrintJobs     LabelPrintJob[]
+
   @@index([email])
   @@index([passwordResetToken])
 }
@@ -70,32 +122,55 @@ model User {
 model Store {
   id            String          @id @default(cuid())
   name          String
+  storeCode     String?         @unique // Code magasin unique (ex: "PAR-001")
   status        StoreStatus     @default(ACTIVE)
+
+  // Hiérarchie réseau
+  unit          Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unitId        String?
+
+  // Localisation
   city          String?
   address       String?
+  country       String?         @default("FR")
   timezone      String?         @default("Europe/Paris")
-  latitude      Float?          // Latitude GPS du magasin (pour pointage géolocalisé)
-  longitude     Float?          // Longitude GPS du magasin (pour pointage géolocalisé)
-  minEmployees  Int?            @default(1) // Nb minimum employés par créneau
-  maxEmployees  Int?            // Max employés par jour (null = illimité)
-  needsManager      Boolean         @default(false) // Manager obligatoire ?
-  allowOverlap      Boolean         @default(false) // Autoriser chevauchement entre employés ?
-  maxOverlapMinutes Int             @default(0)     // Durée max chevauchement (0/15/30/60 min)
-  maxSimultaneous   Int             @default(1)     // Max employés présents en même temps (1 = pas de chevauchement)
+  latitude      Float?
+  longitude     Float?
+
+  // Infos légales/fiscales
+  vatRate       Float?          @default(20) // Taux TVA par défaut (%)
+  currency      String?         @default("EUR")
+  openedAt      DateTime?       // Date d'ouverture du magasin
+
+  // Contraintes staffing
+  minEmployees  Int?            @default(1)
+  maxEmployees  Int?
+  needsManager      Boolean         @default(false)
+  allowOverlap      Boolean         @default(false)
+  maxOverlapMinutes Int             @default(0)
+  maxSimultaneous   Int             @default(1)
+
+  // Relations
   employees       StoreEmployee[]
   shifts          Shift[]
   schedules       StoreSchedule[]
-  importance        Int             @default(2) // 1=critique, 2=standard, 3=secondaire
+  importance        Int             @default(2)
   broadcastStores   BroadcastStore[]
   clockIns          ClockIn[]
   replacementOffers ReplacementOffer[]
   managerAlerts     ManagerAlert[]
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  connectedApps      ConnectedApp[]
+  posEvents          PosEvent[]
+  inventorySessions  InventorySession[]
+  products           Product[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   @@index([name])
   @@index([city])
   @@index([status])
+  @@index([unitId])
+  @@index([storeCode])
 }
 
 // Horaires d'ouverture par jour de la semaine
@@ -129,6 +204,12 @@ enum ShiftPreference {
   JOURNEE     // Journée complète (défaut)
 }
 
+enum AccessStatus {
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
 enum SkillType {
   CAISSE
   OUVERTURE
@@ -155,7 +236,22 @@ model Employee {
   minRestBetween   Float?           @default(11) // Min repos entre 2 shifts (h) — légal FR = 11h
   skills           SkillType[]      // Compétences
   preferredStoreId String?          // ID magasin préféré
-  shiftPreference  ShiftPreference  @default(JOURNEE) // Matin, Après-midi ou Journée complète
+  shiftPreference  ShiftPreference  @default(JOURNEE)
+
+  // ─── Profil Caissier POS (synchro vers la caisse) ───
+  posPin           String?          // PIN caisse (4-6 chiffres) — hashé bcrypt
+  posRole          String?          // Rôle POS: "cashier", "manager", "admin"
+  maxDiscountPct   Float?           @default(0) // Remise max autorisée en %
+  posQrCode        String?          // QR code employé pour login rapide POS
+
+  // ─── Accès terrain ───────────────────────────────────
+  accessStatus     AccessStatus     @default(ACTIVE)
+  blockedAt        DateTime?        // Date de blocage
+  blockedReason    String?          // Motif
+  forceCodeChange  Boolean          @default(false) // Force changement code au prochain login
+  lastLoginAt      DateTime?        // Dernière connexion POS
+
+  // Relations
   stores           StoreEmployee[]
   shifts           Shift[]
   user             User?
@@ -166,10 +262,16 @@ model Employee {
   replacementCandidates ReplacementCandidate[]
   aiMetrics             EmployeeAiMetrics?
   reliabilityScore    Int?
-  profileCategory     String?        // "A", "B", "C" — dérivé du score de fiabilité
+  profileCategory     String?        // "A", "B", "C"
   scoreUpdatedAt      DateTime?
+  inventorySessions   InventorySession[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+
+  // Performance analytics
+  performanceDaily   EmployeePerformanceDaily[]
+  performanceHourly  EmployeePerformanceHourly[]
+  performanceScores  EmployeePerformanceScore[]
 
   @@index([email])
   @@index([employeeCode])
@@ -444,6 +546,11 @@ model PosSalesData {
   revenue        Float       // CA en € pour ce créneau
   transactions   Int         @default(0) // Nombre de transactions
   itemsSold      Int         @default(0) // Nombre d'articles vendus
+
+  // Répartition paiements
+  cardAmount     Float       @default(0) // Montant CB
+  cashAmount     Float       @default(0) // Montant espèces
+  otherAmount    Float       @default(0) // Autres (chèques, tickets resto...)
 
   importedAt     DateTime    @default(now())
 
@@ -1179,6 +1286,83 @@ model AiMessage {
   @@index([createdAt])
 }
 
+// ─── Centre de Contrôle Applications ──────────────────
+
+enum ConnectedAppStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+}
+
+model ConnectedApp {
+  id          String             @id @default(cuid())
+  name        String             // "POS Caisse Paris", "Comptabilité Sage"
+  type        String             // "pos", "accounting", "hr", "erp", "custom"
+  provider    String?            // "caisse-addx", "sage", "lightspeed"
+  status      ConnectedAppStatus @default(DISCONNECTED)
+  internal    Boolean            @default(false) // true = app interne AddX
+
+  // Connexion
+  apiUrl      String?
+  apiKey      String?
+  webhookUrl  String?
+  webhookSecret String?          @unique
+
+  // Scope
+  store       Store?             @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeId     String?            // null = app globale (toutes les unités)
+
+  // Sync
+  lastSyncAt   DateTime?
+  lastErrorMsg String?
+  syncInterval Int               @default(60) // minutes, 0 = manuel
+  config       String?           // JSON libre
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([storeId])
+}
+
+// ─── Events POS reçus en temps réel ───────────────────
+
+model PosEvent {
+  id          String   @id @default(cuid())
+  eventType   String   // "sale.completed", "sale.voided", "session.opened", "session.closed", "stock.alert"
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  employeeId  String?  // FK vers Employee.id (si applicable)
+  payload     Json     // Données brutes de l'event
+  processedAt DateTime? // null = pas encore traité
+  error       String?  // Message d'erreur si traitement échoué
+  createdAt   DateTime @default(now())
+
+  @@index([storeId, createdAt])
+  @@index([eventType])
+  @@index([processedAt])
+  @@index([createdAt])
+}
+
+// ─── Service API Keys (service-to-service auth) ──────
+
+model ServiceApiKey {
+  id          String   @id @default(cuid())
+  name        String   // "POS CAISSE Backoffice", "Accounting Sync"
+  key         String   @unique // Le token Bearer envoyé par le service
+  service     String   // "pos-caisse", "accounting", "erp"
+  role        Role     @default(ADMIN) // Rôle simulé pour les permissions RBAC
+  active      Boolean  @default(true)
+  lastUsedAt  DateTime?
+  createdBy   String   // userId qui a créé la clé
+  createdAt   DateTime @default(now())
+
+  @@index([key])
+  @@index([active])
+}
+
 // Suivi de consommation API Gemini
 model AiApiUsage {
   id           String   @id @default(cuid())
@@ -1195,4 +1379,249 @@ model AiApiUsage {
   @@index([model])
   @@index([createdAt])
   @@index([success])
+}
+
+// ─── Inventaire Mobile ─────────────────────────────────
+// Sessions d'inventaire réalisées par un employé dans un magasin
+
+enum InventoryStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  ABANDONED
+}
+
+model InventorySession {
+  id          String          @id @default(cuid())
+  store       Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId     String
+  employee    Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId  String
+  status      InventoryStatus @default(IN_PROGRESS)
+  notes       String?
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+
+  counts      InventoryCount[]
+
+  @@index([storeId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model InventoryCount {
+  id             String           @id @default(cuid())
+  session        InventorySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId      String
+  barcode        String
+  productName    String?
+  quantity       Int              @default(1)
+  scannedAt      DateTime         @default(now())
+  idempotencyKey String?          @unique  // Technical dedup key from mobile client
+
+  @@index([sessionId])
+  @@index([barcode])
+}
+
+// ─── Idempotency Keys ─────────────────────────────────
+// Prevents duplicate API requests during network retries
+
+model IdempotencyKey {
+  key        String   @id
+  endpoint   String
+  storeId    String
+  statusCode Int
+  response   Json
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([storeId])
+}
+
+// ─── Product Catalogue ─────────────────────────────────
+
+model Product {
+  id              String    @id @default(cuid())
+  name            String
+  barcode         String?
+  sku             String?
+  price           Float?
+  oldPrice        Float?
+  currency        String    @default("EUR")
+  vatRate         Float?
+  category        String?
+  variantName     String?
+  imageUrl        String?
+  active          Boolean   @default(true)
+  source          String    @default("manual")
+  sourceRef       String?
+
+  store           Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeId         String?
+
+  labelPrintItems LabelPrintItem[]
+
+  priceUpdatedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([barcode, storeId])
+  @@index([name])
+  @@index([barcode])
+  @@index([sku])
+  @@index([storeId])
+  @@index([active])
+}
+
+// ─── Label Templates ───────────────────────────────────
+
+model LabelTemplate {
+  id              String    @id @default(cuid())
+  name            String
+  type            String
+
+  labelsPerPage   Int?
+  columns         Int?      @default(3)
+  rows            Int?      @default(8)
+
+  widthMm         Float?
+  heightMm        Float?
+
+  showBarcode     Boolean   @default(true)
+  showPrice       Boolean   @default(true)
+  showOldPrice    Boolean   @default(false)
+  showSku         Boolean   @default(false)
+  showStoreName   Boolean   @default(false)
+  showDate        Boolean   @default(false)
+  showPromoLabel  Boolean   @default(false)
+  showVariant     Boolean   @default(false)
+  barcodeFormat   String    @default("EAN13")
+
+  fontSize        Int       @default(10)
+  priceFontSize   Int       @default(14)
+  isDefault       Boolean   @default(false)
+  isSystem        Boolean   @default(true)
+
+  printJobs       LabelPrintJob[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([type])
+  @@index([isDefault])
+}
+
+// ─── Label Print Jobs ──────────────────────────────────
+
+model LabelPrintJob {
+  id              String          @id @default(cuid())
+  userId          String?
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  storeId         String?
+  templateId      String
+  template        LabelTemplate   @relation(fields: [templateId], references: [id])
+  format          String          @default("pdf")
+  totalLabels     Int
+  status          String          @default("completed")
+  notes           String?
+
+  items           LabelPrintItem[]
+
+  createdAt       DateTime        @default(now())
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([createdAt])
+}
+
+model LabelPrintItem {
+  id              String         @id @default(cuid())
+  printJob        LabelPrintJob  @relation(fields: [printJobId], references: [id], onDelete: Cascade)
+  printJobId      String
+  product         Product        @relation(fields: [productId], references: [id])
+  productId       String
+  quantity        Int            @default(1)
+  priceAtPrint    Float?
+  promoLabel      String?
+
+  @@index([printJobId])
+  @@index([productId])
+}
+
+// ─── Employee Performance Analytics ────────────────
+
+enum PerformanceBadge {
+  EXCELLENT
+  BON
+  MOYEN
+  FAIBLE
+}
+
+model EmployeePerformanceDaily {
+  id             String   @id @default(cuid())
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId     String
+  storeId        String
+  date           DateTime @db.Date
+  totalSales     Float    @default(0)
+  transactions   Int      @default(0)
+  itemsSold      Int      @default(0)
+  avgBasket      Float    @default(0)
+  cashAmount     Float    @default(0)
+  cardAmount     Float    @default(0)
+  workingHours   Float    @default(0)
+  salesPerHour   Float    @default(0)
+  upsellRate     Float    @default(0)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([employeeId, storeId, date])
+  @@index([employeeId])
+  @@index([storeId, date])
+  @@index([date])
+}
+
+model EmployeePerformanceHourly {
+  id             String   @id @default(cuid())
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId     String
+  storeId        String
+  date           DateTime @db.Date
+  hour           Int
+  sales          Float    @default(0)
+  transactions   Int      @default(0)
+
+  createdAt      DateTime @default(now())
+
+  @@unique([employeeId, storeId, date, hour])
+  @@index([storeId, date])
+  @@index([employeeId, date])
+}
+
+model EmployeePerformanceScore {
+  id                String           @id @default(cuid())
+  employee          Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId        String
+  storeId           String
+  periodStart       DateTime
+  periodEnd         DateTime
+  overallScore      Float            @default(0)
+  salesScore        Float            @default(0)
+  productivityScore Float            @default(0)
+  upsellScore       Float            @default(0)
+  disciplineScore   Float            @default(0)
+  inventoryScore    Float            @default(0)
+  rank              Int?
+  badge             PerformanceBadge @default(MOYEN)
+  breakdown         Json?
+
+  calculatedAt      DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([employeeId, storeId, periodStart])
+  @@index([employeeId])
+  @@index([storeId])
+  @@index([overallScore(sort: Desc)])
 }

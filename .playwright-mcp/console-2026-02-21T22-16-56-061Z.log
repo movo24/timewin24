@@ -1,0 +1,13 @@
+[   18507ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rD (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:42472)
+    at oK (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:92518)
+    at uS (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:123605)
+    at https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:123450
+    at uw (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:123458)
+    at uc (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:118833)
+    at uZ (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:141971)
+    at MessagePort.N (https://www.ovhcloud.com/_next-menu/_next/static/chunks/framework-d7de93249215fb06.js:1:186982)
+[   20151ms] [ERROR] Failed to load resource: the server responded with a status of 429 () @ https://sentry.ovhcloud.com/api/15/envelope/?sentry_key=d9e77d2673834a0f83e8a881e42237a3&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.118.0:0
+[   20184ms] Error: Cannot find './session-handler' module
+    at https://www.ovhcloud.com/7af16cdb/contrib/ovh_theme_patternlab/dist/js/webcallback-federation.min.js?v=1.0.13:5:804
+[   20688ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ https://chatbot.ovhcloud.com/api/session/start:0

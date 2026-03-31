@@ -68,24 +68,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/stores - Create store
-export async function POST(req: NextRequest) {
-  try {
-    const { session, error } = await requireAdmin();
-    if (error) return error;
-
-    const body = await req.json();
-    const parsed = storeCreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
-    }
-
-    const store = await prisma.store.create({ data: parsed.data });
-    await logAudit(session!.user.id, "CREATE", "Store", store.id, parsed.data);
-
-    return successResponse(store, 201);
-  } catch (err) {
-    console.error("POST /api/stores error:", err);
-    return errorResponse("Erreur serveur", 500);
-  }
+// POST /api/stores - DISABLED
+// Les magasins sont gérés exclusivement depuis POS Caisse.
+// TimeWin24 reçoit les magasins via synchronisation POS → TimeWin24.
+// Pour créer un magasin, utilisez le backoffice POS Caisse.
+export async function POST() {
+  return errorResponse(
+    "Création de magasin désactivée. Les magasins sont gérés depuis POS Caisse et synchronisés automatiquement.",
+    403,
+  );
 }

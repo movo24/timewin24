@@ -1,0 +1,31 @@
+[   32436ms] [ERROR] Failed to load resource: the server responded with a status of 400 (400) @ https://hed.ionos.fr/brands/IONOS/producers/shop/events:0
+[   32984ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://trck-ipv6.spoteffects.net/analytics/ip_to_idvisit.php?ipt=6&v=0.5.0&vid=1006832&idsite=696:0
+[   34212ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[   34213ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[   46579ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/:0
+[   55991ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1734696167105650. @ https://www.ionos.fr/domainshop/script/main.min.js:68
+[   70754ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/domainshop/result?skipContractSelection=true:0
+[   94979ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[   95219ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[   95236ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[   95237ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[   95337ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[  103156ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[  141203ms] [ERROR] Failed to load resource: the server responded with a status of 400 (400) @ https://hed.ionos.fr/brands/IONOS/producers/shop/events:0
+[  142122ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[  142122ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[  155710ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/:0
+[  156597ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1734696167105650. @ https://www.ionos.fr/domainshop/script/main.min.js:68
+[  171286ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/domainshop/result?skipContractSelection=true:0
+[  242783ms] [ERROR] Failed to load resource: the server responded with a status of 400 (400) @ https://hed.ionos.fr/brands/IONOS/producers/shop/events:0
+[  244366ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[  244366ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[  257507ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/:0
+[  262288ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1734696167105650. @ https://www.ionos.fr/domainshop/script/main.min.js:68
+[  262384ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[  265037ms] [ERROR] Failed to load resource: the server responded with a status of 403 (Forbidden) @ https://sentry.ionos.com/api/9/envelope/?sentry_key=e66ec08e0b1f456899b2a3e09471e018&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.120.4:0
+[  276996ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/domainshop/result?skipContractSelection=true:0
+[  369953ms] [ERROR] Failed to load resource: the server responded with a status of 400 (400) @ https://hed.ionos.fr/brands/IONOS/producers/shop/events:0
+[  371511ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[  371514ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/ed747d80e57530c4.js:1652
+[  384747ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/:0

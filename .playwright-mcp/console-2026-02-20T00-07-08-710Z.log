@@ -1,0 +1,6 @@
+[ 1209511ms] [ERROR] The final argument passed to %s changed size between renders. The order and size of this array must remain constant.
+
+Previous: %s
+Incoming: %s useEffect [, , , , false] [, , , 09:00, , false] @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1239936ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=hq6a7lUmYVovV3XJmnwQQ' failed:  @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 1240949ms] [ERROR] WebSocket connection to 'ws://localhost:3001/_next/webpack-hmr?id=hq6a7lUmYVovV3XJmnwQQ' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878

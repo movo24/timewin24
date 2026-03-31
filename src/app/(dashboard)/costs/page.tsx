@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import {
   Settings,
   Users,
   AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 
 interface CostBreakdown {
@@ -92,6 +94,14 @@ export default function CostsPage() {
             Simulateur de charges et suivi des coûts
           </p>
         </div>
+        <Link
+          href="/performance"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <BarChart3 className="h-4 w-4" />
+          Analytics & Performance
+          <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+        </Link>
       </div>
 
       {/* Tabs */}

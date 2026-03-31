@@ -1,0 +1,5 @@
+[    2761ms] [WARNING] pixel already configured. @ https://www.ionos.fr/_next/static/chunks/cbb05fca531e065e.js:1652
+[    4690ms] [ERROR] Failed to load resource: the server responded with a status of 400 (400) @ https://hed.ionos.fr/brands/IONOS/producers/shop/events:0
+[    5748ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/cbb05fca531e065e.js:1652
+[    5749ms] [ERROR] %cCan't register plugin %cJourney%c -- Name is already taken @ https://www.ionos.fr/_next/static/chunks/cbb05fca531e065e.js:1652
+[   17854ms] [ERROR] Attestation check for Attribution Reporting on https://trc.taboola.com failed. @ https://www.ionos.fr/:0

@@ -107,10 +107,21 @@ export async function POST(req: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Generate unique 6-digit employee code
+    let employeeCode: string;
+    let codeAttempts = 0;
+    do {
+      employeeCode = String(Math.floor(100000 + Math.random() * 900000));
+      const exists = await prisma.employee.findUnique({ where: { employeeCode } });
+      if (!exists) break;
+      codeAttempts++;
+    } while (codeAttempts < 20);
+
     // Create Employee + User in atomic transaction
     const employee = await prisma.$transaction(async (tx) => {
       const emp = await tx.employee.create({
         data: {
+          employeeCode,
           firstName: data.firstName,
           lastName: data.lastName,
           email,

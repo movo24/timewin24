@@ -12,17 +12,19 @@
 // RÔLES
 // ============================================================
 
-export type AppRole = "ADMIN" | "MANAGER" | "EMPLOYEE";
+export type AppRole = "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE";
 
 /** Hiérarchie des rôles (plus le nombre est élevé, plus les droits sont élevés) */
 export const ROLE_HIERARCHY: Record<AppRole, number> = {
   EMPLOYEE: 1,
   MANAGER: 2,
   ADMIN: 3,
+  SUPER_ADMIN: 4,
 };
 
 /** Labels lisibles pour l'UI */
 export const ROLE_LABELS: Record<AppRole, string> = {
+  SUPER_ADMIN: "Super Admin",
   ADMIN: "Administrateur",
   MANAGER: "Manager",
   EMPLOYEE: "Employé",
@@ -38,12 +40,17 @@ export function hasMinimumRole(userRole: string, minimumRole: AppRole): boolean 
 
 /** Vérifie si un rôle est admin ou manager */
 export function isAdminOrManager(role: string): boolean {
-  return role === "ADMIN" || role === "MANAGER";
+  return role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER";
 }
 
 /** Vérifie si un rôle est admin */
 export function isAdmin(role: string): boolean {
-  return role === "ADMIN";
+  return role === "SUPER_ADMIN" || role === "ADMIN";
+}
+
+/** Vérifie si un rôle est super admin */
+export function isSuperAdmin(role: string): boolean {
+  return role === "SUPER_ADMIN";
 }
 
 /** Vérifie si un rôle est employé */
@@ -111,12 +118,22 @@ export type Permission =
   | "use_ai_assistant"
   | "view_ai_metrics"
   | "manage_ai_anomalies"
-  | "admin_ai_engine";
+  | "admin_ai_engine"
+  // Organisation / Unités
+  | "manage_organizations"
+  | "view_organizations"
+  | "manage_units"
+  | "view_units"
+  // Applications connectées
+  | "manage_connected_apps"
+  | "view_connected_apps"
+  // POS Events
+  | "view_pos_events";
 
 /** Matrice rôle → permissions */
 export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
-  ADMIN: [
-    // Tout
+  SUPER_ADMIN: [
+    // Tout, y compris multi-org
     "view_own_schedule", "view_team_schedule", "edit_schedule", "generate_planning",
     "manage_employees", "view_employee_list", "view_employee_reliability",
     "manage_stores", "view_stores",
@@ -135,6 +152,35 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
     "view_audit", "manage_integrations",
     "manage_unavailabilities",
     "use_ai_assistant", "view_ai_metrics", "manage_ai_anomalies", "admin_ai_engine",
+    "manage_organizations", "view_organizations",
+    "manage_units", "view_units",
+    "manage_connected_apps", "view_connected_apps",
+    "view_pos_events",
+  ],
+  ADMIN: [
+    // Tout sauf gestion orgs (scope unité)
+    "view_own_schedule", "view_team_schedule", "edit_schedule", "generate_planning",
+    "manage_employees", "view_employee_list", "view_employee_reliability",
+    "manage_stores", "view_stores",
+    "manage_accounts",
+    "view_costs", "manage_costs", "view_analytics",
+    "create_absence", "manage_absences",
+    "clock_in", "view_all_clockins",
+    "create_replacement", "manage_replacements",
+    "create_shift_exchange", "manage_shift_exchanges",
+    "view_market", "claim_market_listing", "manage_market",
+    "send_message", "manage_messages",
+    "view_feed", "post_feed", "manage_broadcasts",
+    "view_notification_logs",
+    "manage_alerts",
+    "manage_journal",
+    "view_audit", "manage_integrations",
+    "manage_unavailabilities",
+    "use_ai_assistant", "view_ai_metrics", "manage_ai_anomalies", "admin_ai_engine",
+    "view_organizations",
+    "manage_units", "view_units",
+    "manage_connected_apps", "view_connected_apps",
+    "view_pos_events",
   ],
   MANAGER: [
     "view_own_schedule", "view_team_schedule", "edit_schedule", "generate_planning",
@@ -189,6 +235,7 @@ export function hasAllPermissions(role: string, permissions: Permission[]): bool
 
 /** Routes accessibles uniquement par ADMIN et MANAGER */
 export const ADMIN_ROUTES = [
+  "/dashboard",
   "/planning",
   "/employees",
   "/stores",
@@ -204,6 +251,12 @@ export const ADMIN_ROUTES = [
   "/absences",
   "/notifications",
   "/messages",
+  "/organizations",
+  "/units",
+  "/connected-apps",
+  "/pos-events",
+  "/etiquettes",
+  "/performance",
 ];
 
 /** Routes accessibles uniquement par EMPLOYEE */
@@ -239,9 +292,11 @@ export const PUBLIC_ROUTES = ["/login", "/admin-login", "/api/auth", "/changer-m
 /** Route par défaut après login selon le rôle */
 export function getDefaultRouteForRole(role: string): string {
   switch (role) {
+    case "SUPER_ADMIN":
+      return "/organizations";
     case "ADMIN":
     case "MANAGER":
-      return "/planning";
+      return "/dashboard";
     case "EMPLOYEE":
       return "/mon-planning";
     default:

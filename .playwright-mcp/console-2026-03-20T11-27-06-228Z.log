@@ -1,0 +1,156 @@
+[     157ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4435
+[     157ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4435
+[   20500ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[   20501ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/sales?date=2026-03-20:0
+[   20501ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/employees:0
+[   20502ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/employees:0
+[   20502ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[   20502ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/sales?date=2026-03-20:0
+[   43231ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/subscriptions/a0000000-0000-4000-8000-000000000001/usage:0
+[   43236ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/subscriptions/a0000000-0000-4000-8000-000000000001/usage:0
+[   95613ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/subscriptions/a0000000-0000-4000-8000-000000000001/usage:0
+[   95619ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/subscriptions/a0000000-0000-4000-8000-000000000001/usage:0
+[   99405ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[   99412ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  101748ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  101753ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/employees:0
+[  101754ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/sales?date=2026-03-20:0
+[  101758ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/api/employees:0
+[  101761ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  101766ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/sales?date=2026-03-20:0
+[  103554ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  103561ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  287123ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4435
+[  287123ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4435
+[  287137ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  287139ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[  287155ms] [ERROR] Warning: React has detected a change in the order of Hooks called by %s. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://reactjs.org/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+%s   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+%s StoreSwitcher 1. useRef                     useRef
+2. useMemo                    useMemo
+3. useSyncExternalStore       useSyncExternalStore
+4. useEffect                  useEffect
+5. useDebugValue              useDebugValue
+6. useDebugValue              useDebugValue
+7. useState                   useState
+8. useState                   useState
+9. useRef                     useRef
+10. undefined                 useEffect
+ 
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx:23:65)
+    at div
+    at aside
+    at div
+    at Layout (http://localhost:5173/src/components/Layout.tsx:75:20)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4131:5)
+    at Outlet (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4537:26)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx:23:47)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4131:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4601:5)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4544:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:5290:5) @ http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:520
+[  287156ms] Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11678:21)
+    at updateEffectImpl (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12074:22)
+    at updateEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12099:18)
+    at Object.useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12703:22)
+    at useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-PZHMDCWN.js?v=4807a8d3:1078:29)
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx:32:3)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11548:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14582:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:3674:22)
+[  287157ms] Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11678:21)
+    at updateEffectImpl (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12074:22)
+    at updateEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12099:18)
+    at Object.useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12703:22)
+    at useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-PZHMDCWN.js?v=4807a8d3:1078:29)
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx:32:3)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11548:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14582:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:3674:22)
+[  287157ms] [ERROR] The above error occurred in the <StoreSwitcher> component:
+
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx:23:65)
+    at div
+    at aside
+    at div
+    at Layout (http://localhost:5173/src/components/Layout.tsx:75:20)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4131:5)
+    at Outlet (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4537:26)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx:23:47)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4131:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4601:5)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4544:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:5290:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14031
+[  287157ms] Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11678:21)
+    at updateEffectImpl (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12074:22)
+    at updateEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12099:18)
+    at Object.useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12703:22)
+    at useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-PZHMDCWN.js?v=4807a8d3:1078:29)
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx:32:3)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11548:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14582:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:15924:22)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:19753:22)
+[ 1230490ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[ 1230502ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:3001/api/products?storeId=a0000000-0000-4000-8000-000000000001:0
+[ 1230532ms] Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11678:21)
+    at updateEffectImpl (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12074:22)
+    at updateEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12099:18)
+    at Object.useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12703:22)
+    at useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-PZHMDCWN.js?v=4807a8d3:1078:29)
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx?t=1774007256563:32:3)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11548:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14582:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:3674:22)
+[ 1230533ms] Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11678:21)
+    at updateEffectImpl (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12074:22)
+    at updateEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12099:18)
+    at Object.useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12703:22)
+    at useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-PZHMDCWN.js?v=4807a8d3:1078:29)
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx?t=1774007256563:32:3)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11548:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14582:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:15924:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:3674:22)
+[ 1230530ms] [ERROR] The above error occurred in the <StoreSwitcher> component:
+
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx?t=1774007256563:23:65)
+    at div
+    at aside
+    at div
+    at Layout (http://localhost:5173/src/components/Layout.tsx?t=1774007256563:75:20)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4131:5)
+    at Outlet (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4537:26)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx?t=1774007256563:23:47)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4131:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4601:5)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:4544:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9395c4ed:5290:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14031
+[ 1230534ms] Error: Rendered more hooks than during the previous render.
+    at updateWorkInProgressHook (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11678:21)
+    at updateEffectImpl (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12074:22)
+    at updateEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12099:18)
+    at Object.useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:12703:22)
+    at useEffect (http://localhost:5173/node_modules/.vite/deps/chunk-PZHMDCWN.js?v=4807a8d3:1078:29)
+    at StoreSwitcher (http://localhost:5173/src/components/StoreSwitcher.tsx?t=1774007256563:32:3)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:11548:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:14582:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:15924:22)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-WNHV52DQ.js?v=4807a8d3:19753:22)

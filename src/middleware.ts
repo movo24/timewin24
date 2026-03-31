@@ -1,11 +1,15 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-// Route classifications — mirrored from rbac.ts (middleware can't import from src/lib)
+// Route classifications — mirrored from rbac.ts (middleware can't import from src/lib due to Edge Runtime)
+// IMPORTANT: keep in sync with ADMIN_ROUTES in src/lib/rbac.ts
 const ADMIN_ROUTES = [
+  "/dashboard",
   "/planning", "/employees", "/stores", "/costs", "/pointages",
   "/remplacements", "/echanges", "/alertes", "/audit", "/accounts",
   "/integrations", "/journal", "/absences", "/notifications", "/messages",
+  "/organizations", "/units", "/connected-apps", "/pos-events",
+  "/etiquettes", "/performance",
 ];
 
 const EMPLOYEE_ROUTES = [
@@ -22,10 +26,11 @@ const PUBLIC_ROUTES = ["/login", "/admin-login", "/api/auth", "/changer-mot-de-p
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Skip static assets
+  // Skip static assets and inventory routes (own JWT auth)
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
+    pathname.startsWith("/inventory") ||
     pathname === "/"
   ) {
     return NextResponse.next();
@@ -51,7 +56,7 @@ export async function middleware(req: NextRequest) {
   // --- Login pages: redirect already-authenticated users to their dashboard ---
   if (LOGIN_PAGES.some((r) => pathname === r)) {
     if (isAuthenticated) {
-      const target = isEmployeeRole ? "/mon-planning" : "/planning";
+      const target = isEmployeeRole ? "/mon-planning" : "/dashboard";
       return NextResponse.redirect(new URL(target, req.url));
     }
     return NextResponse.next();

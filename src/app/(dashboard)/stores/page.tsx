@@ -352,10 +352,9 @@ export default function StoresPage() {
     <div>
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Magasins</h1>
-        <Button size="sm" className="sm:size-default" onClick={openCreate}>
-          <Plus className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Nouveau magasin</span>
-        </Button>
+        <span className="text-xs text-gray-400 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+          Magasins gérés depuis POS Caisse
+        </span>
       </div>
 
       <div className="mb-4 flex gap-2">

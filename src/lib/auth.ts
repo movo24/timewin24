@@ -20,78 +20,88 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email et mot de passe requis");
         }
 
-        console.log(`[AUTH] Login attempt — email: ${credentials.email}`);
+        // Login attempt logged at debug level only
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-          include: { employee: true },
-        });
-
-        if (!user) {
-          throw new Error("Aucun compte avec cet email");
-        }
-
-        // Check if account is active
-        if (!user.active) {
-          throw new Error("Compte désactivé. Contactez votre administrateur.");
-        }
-
-        // Check if account is locked
-        if (user.lockedUntil && user.lockedUntil > new Date()) {
-          const minutesLeft = Math.ceil(
-            (user.lockedUntil.getTime() - Date.now()) / 60000
-          );
-          throw new Error(
-            `Compte verrouillé. Réessayez dans ${minutesLeft} minute(s).`
-          );
-        }
-
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        );
-
-        if (!isValid) {
-          const newAttempts = user.failedAttempts + 1;
-          const updateData: { failedAttempts: number; lockedUntil?: Date } = {
-            failedAttempts: newAttempts,
-          };
-
-          if (newAttempts >= MAX_FAILED_ATTEMPTS) {
-            updateData.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
-          }
-
-          await prisma.user.update({
-            where: { id: user.id },
-            data: updateData,
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            include: { employee: true },
           });
 
-          throw new Error("Mot de passe incorrect");
+          if (!user) {
+            throw new Error("Aucun compte avec cet email");
+          }
+
+          // Check if account is active
+          if (!user.active) {
+            throw new Error("Compte désactivé. Contactez votre administrateur.");
+          }
+
+          // Check if account is locked
+          if (user.lockedUntil && user.lockedUntil > new Date()) {
+            const minutesLeft = Math.ceil(
+              (user.lockedUntil.getTime() - Date.now()) / 60000
+            );
+            throw new Error(
+              `Compte verrouillé. Réessayez dans ${minutesLeft} minute(s).`
+            );
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          );
+
+          if (!isValid) {
+            const newAttempts = user.failedAttempts + 1;
+            const updateData: { failedAttempts: number; lockedUntil?: Date } = {
+              failedAttempts: newAttempts,
+            };
+
+            if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+              updateData.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS);
+            }
+
+            await prisma.user.update({
+              where: { id: user.id },
+              data: updateData,
+            });
+
+            throw new Error("Mot de passe incorrect");
+          }
+
+          // password validated
+
+          // Reset failed attempts + update login audit on successful login
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedAttempts: 0,
+              lockedUntil: null,
+              lastLoginAt: new Date(),
+              loginCount: { increment: 1 },
+            },
+          });
+
+          // Auth success — no sensitive data logged
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            employeeId: user.employeeId,
+            mustChangePassword: user.mustChangePassword,
+            passwordChangedAt: user.passwordChangedAt,
+          };
+        } catch (err) {
+          // Si c'est une erreur qu'on a throw nous-même, la re-throw
+          if (err instanceof Error && !err.message.includes("prisma") && !err.message.includes("connect")) {
+            throw err;
+          }
+          // Erreur DB/Prisma — message propre
+          console.error("[AUTH] Database error:", err);
+          throw new Error("Service temporairement indisponible. Vérifiez la connexion à la base de données.");
         }
-
-        console.log(`[AUTH] Password OK — role: ${user.role}`);
-
-        // Reset failed attempts + update login audit on successful login
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            failedAttempts: 0,
-            lockedUntil: null,
-            lastLoginAt: new Date(),
-            loginCount: { increment: 1 },
-          },
-        });
-
-        console.log(`[AUTH] SUCCESS — user: ${user.email}, role: ${user.role}`);
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          employeeId: user.employeeId,
-          mustChangePassword: user.mustChangePassword,
-          passwordChangedAt: user.passwordChangedAt,
-        };
       },
     }),
   ],
@@ -102,33 +112,38 @@ export const authOptions: NextAuthOptions = {
         token.employeeId = user.employeeId;
         token.mustChangePassword = user.mustChangePassword;
         token.passwordChangedAt = user.passwordChangedAt;
-        console.log(`[JWT] Fresh token created — role: ${user.role}, email: ${user.email}`);
+        // JWT created for user
       }
 
       // On token refresh (no user), verify user is still active and password hasn't changed
       if (!user && token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { passwordChangedAt: true, active: true, role: true },
-        });
-        if (!dbUser || !dbUser.active) {
-          console.log(`[JWT] INVALIDATED — user ${token.sub} not found or inactive`);
-          return {} as JWT;
-        }
-        const dbPwdAt = dbUser.passwordChangedAt?.toISOString() || null;
-        const tokenPwdAt = token.passwordChangedAt
-          ? (typeof token.passwordChangedAt === "string"
-              ? token.passwordChangedAt
-              : (token.passwordChangedAt as Date).toISOString())
-          : null;
-        if (dbPwdAt !== tokenPwdAt) {
-          console.log(`[JWT] INVALIDATED — password changed. DB: ${dbPwdAt}, Token: ${tokenPwdAt}`);
-          return {} as JWT;
-        }
-        // Also sync role in case it changed in DB
-        if (dbUser.role !== token.role) {
-          console.log(`[JWT] Role synced: ${token.role} → ${dbUser.role}`);
-          token.role = dbUser.role;
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { passwordChangedAt: true, active: true, role: true },
+          });
+          if (!dbUser || !dbUser.active) {
+            // Token invalidated — user not found or inactive
+            return {} as JWT;
+          }
+          const dbPwdAt = dbUser.passwordChangedAt?.toISOString() || null;
+          const tokenPwdAt = token.passwordChangedAt
+            ? (typeof token.passwordChangedAt === "string"
+                ? token.passwordChangedAt
+                : (token.passwordChangedAt as Date).toISOString())
+            : null;
+          if (dbPwdAt !== tokenPwdAt) {
+            // Token invalidated — password changed
+            return {} as JWT;
+          }
+          // Also sync role in case it changed in DB
+          if (dbUser.role !== token.role) {
+            // Role synced from DB
+            token.role = dbUser.role;
+          }
+        } catch (err) {
+          // DB unreachable — keep existing token valid to avoid logout storm
+          console.error("[JWT] DB unreachable during refresh, keeping token:", err);
         }
       }
 

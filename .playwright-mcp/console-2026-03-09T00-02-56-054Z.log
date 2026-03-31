@@ -1,0 +1,120 @@
+[    6437ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary name="planning/" loading={Promise}>
+          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/planning" tree={[...]} params={{}} cacheNode={{rsc:Promise, ...}} ...>
+                  <SegmentViewNode type="page" pagePath="(dashboard...">
+                    <SegmentTrieNode>
+                    <ClientPageRoot Component={function PlanningPage} serverProvidedParams={{...}}>
+                      <PlanningPage params={Promise} searchParams={Promise}>
+                        <div>
+                          <div>
+                          <div>
+                          <PlanningHealth weekStart="2026-03-09" storeId={undefined} shiftsVersion={1}>
+                            <div className="bg-white b...">
+>                             <button
+>                               className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+>                               onClick={function onClick}
+>                             >
+                                <div>
+                                <div>
+>                               <button
+>                                 onClick={function onClick}
+>                                 className="text-gray-400 hover:text-gray-600 p-1 shrink-0"
+>                                 title="Rafraîchir"
+>                               >
+                                ...
+                          ...
+                  ...
+                ...
+      ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  179774ms] [ERROR] Failed to load resource: the server responded with a status of 409 (Conflict) @ http://localhost:3000/api/shifts/cmmh4r5n3000st8sdeugn2fnw:0
+[  262260ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=oQRiIQ_d8hgBs7wROJLLv' failed:  @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  263273ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=oQRiIQ_d8hgBs7wROJLLv' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  264276ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=oQRiIQ_d8hgBs7wROJLLv' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  265279ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=oQRiIQ_d8hgBs7wROJLLv' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  266282ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=oQRiIQ_d8hgBs7wROJLLv' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  268900ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary name="planning/" loading={null}>
+          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/planning" tree={[...]} params={{}} cacheNode={{rsc:<Fragment>, ...}} ...>
+                  <SegmentViewNode type="page" pagePath="(dashboard...">
+                    <SegmentTrieNode>
+                    <ClientPageRoot Component={function PlanningPage} serverProvidedParams={{...}}>
+                      <PlanningPage params={Promise} searchParams={Promise}>
+                        <div>
+                          <div>
+                          <div>
+                          <PlanningHealth weekStart="2026-03-09" storeId={undefined} shiftsVersion={1}>
+                            <div className="bg-white b...">
+>                             <button
+>                               className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+>                               onClick={function onClick}
+>                             >
+                                <div>
+                                <div>
+>                               <button
+>                                 onClick={function onClick}
+>                                 className="text-gray-400 hover:text-gray-600 p-1 shrink-0"
+>                                 title="Rafraîchir"
+>                               >
+                                ...
+                          ...
+                  ...
+                ...
+      ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2169212ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=h7t2vn-aPIDNeBpJsxtXC' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 2170217ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=h7t2vn-aPIDNeBpJsxtXC' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 2171221ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=h7t2vn-aPIDNeBpJsxtXC' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 2173945ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary name="planning/" loading={null}>
+          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/planning" tree={[...]} params={{}} cacheNode={{rsc:<Fragment>, ...}} ...>
+                  <SegmentViewNode type="page" pagePath="(dashboard...">
+                    <SegmentTrieNode>
+                    <ClientPageRoot Component={function PlanningPage} serverProvidedParams={{...}}>
+                      <PlanningPage params={Promise} searchParams={Promise}>
+                        <div>
+                          <div>
+                          <div>
+                          <PlanningHealth weekStart="2026-03-09" storeId={undefined} shiftsVersion={1}>
+                            <div className="bg-white b...">
+>                             <button
+>                               className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+>                               onClick={function onClick}
+>                             >
+                                <div>
+                                <div>
+>                               <button
+>                                 onClick={function onClick}
+>                                 className="text-gray-400 hover:text-gray-600 p-1 shrink-0"
+>                                 title="Rafraîchir"
+>                               >
+                                ...
+                          ...
+                  ...
+                ...
+      ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

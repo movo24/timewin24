@@ -1,0 +1,4 @@
+[    2460ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://resend.com/docs/dashboard/api-keys/introduction?_rsc=1tskm:0
+[    8161ms] [WARNING] Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}. @ https://resend.com/relay-qWzP/static/posthog-recorder.js?v=1.335.0:0
+[   38408ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://resend.com/docs/dashboard/api-keys/introduction?_rsc=1tskm:0
+[   54748ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://resend.com/docs/dashboard/api-keys/introduction?_rsc=1tskm:0

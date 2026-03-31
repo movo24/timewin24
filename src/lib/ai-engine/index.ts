@@ -68,5 +68,9 @@ export { generateAlerts } from "./anomaly/alert-generator";
 // Assistant
 export { askAssistant } from "./assistant/rag";
 
+// POS Business Analysis
+export { collectPosData, analyzePosData } from "./pos-analysis";
+export type { PosAnalysisData, PosAnalysisResult } from "./pos-analysis";
+
 // API Usage tracking initialization
 export { initApiUsageTracking } from "./api-usage";

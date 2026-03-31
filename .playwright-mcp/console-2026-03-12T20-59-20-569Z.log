@@ -1,0 +1,2 @@
+[   18416ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://timewin24.vercel.app/api/auth/callback/credentials:0
+[   35356ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://timewin24.vercel.app/api/auth/callback/credentials:0

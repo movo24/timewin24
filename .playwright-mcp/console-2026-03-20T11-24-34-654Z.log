@@ -1,0 +1,2 @@
+[    6571ms] [ERROR] Sending form data to 'http://192.168.1.190:3000/api/auth/signout' violates the following Content Security Policy directive: "form-action 'self'". The request has been blocked.
+ @ http://localhost:3000/api/auth/signout:0

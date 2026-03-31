@@ -1,0 +1,3180 @@
+[ 1231316ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231383ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231434ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231486ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231538ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231592ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231643ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231694ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231745ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231796ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231845ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231897ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231946ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1231996ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232045ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232095ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232145ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232194ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232244ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232293ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232342ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232393ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232445ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232494ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232543ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232592ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232640ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232688ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232738ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232786ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232835ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232885ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232935ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1232984ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233030ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233080ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233129ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233178ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233227ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233275ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233323ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233372ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233422ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233472ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233524ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233572ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233622ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233671ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233720ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233769ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233817ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233865ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233912ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1233962ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234010ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234058ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234109ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234158ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234209ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234258ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234308ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234357ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234403ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234453ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234500ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234552ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234603ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234651ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234702ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234750ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234799ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234850ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234899ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234948ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1234997ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235044ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235094ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235143ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235190ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235238ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235286ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235334ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235381ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235431ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235479ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235528ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235577ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235625ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235676ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235726ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235776ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235825ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235874ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235923ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1235971ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236021ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236071ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236122ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236173ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236224ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236276ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236329ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236376ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236426ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236476ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236527ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236573ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236622ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236672ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236723ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236774ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236827ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236877ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236927ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1236974ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237021ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237071ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237120ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237172ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237222ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237271ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237315ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237363ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237414ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237464ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237515ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237566ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237615ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237667ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237714ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237763ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237813ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237865ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237913ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1237965ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238016ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238067ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238118ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238165ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238214ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238270ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238320ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238370ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1238419ms] [ERROR] ./src/components/planning/auto-plan-modal.tsx:437:32
+Parsing ecmascript source code failed
+  435 |                                   )}
+  436 |                                 </label>
+> 437 |                               ))}
+      |                                ^
+  438 |                             </div>
+  439 |                           </div>
+  440 |                         ))}
+
+Expected '</', got ')'
+
+Import traces:
+  Client Component Browser:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/planning/auto-plan-modal.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/planning/page.tsx [Server Component] @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 6384284ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6385287ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6386290ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6387293ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6388297ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6393305ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6398317ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6403331ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6408371ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6413418ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6418567ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 6423655ms] [ERROR] WebSocket connection to 'ws://192.168.1.190:3000/_next/webpack-hmr?id=anJJD7wGiIvOP1yOkKqtm' failed: Error in connection establishment: net::ERR_INTERNET_DISCONNECTED @ http://192.168.1.190:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878

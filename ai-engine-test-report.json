@@ -1,0 +1,352 @@
+{
+  "timestamp": "2026-03-13T21:47:14.677Z",
+  "summary": {
+    "total": 55,
+    "passed": 51,
+    "failed": 0,
+    "skipped": 4
+  },
+  "geminiApiKeyConfigured": true,
+  "results": [
+    {
+      "section": "Config",
+      "test": "AI_CONFIG loaded",
+      "status": "PASS",
+      "detail": "enabled=true"
+    },
+    {
+      "section": "Config",
+      "test": "Feature flags",
+      "status": "PASS",
+      "detail": "nlp=true, perf=true, anomaly=true, assistant=true"
+    },
+    {
+      "section": "Config",
+      "test": "Gemini API Key",
+      "status": "PASS",
+      "detail": "configured"
+    },
+    {
+      "section": "Config",
+      "test": "isAiAvailable()",
+      "status": "PASS",
+      "detail": "returns true (expected: true)"
+    },
+    {
+      "section": "Config",
+      "test": "isFeatureEnabled('enhancedNlp')",
+      "status": "PASS",
+      "detail": "returns true"
+    },
+    {
+      "section": "Config",
+      "test": "Model config",
+      "status": "PASS",
+      "detail": "gen=gemini-2.5-flash, emb=gemini-embedding-001, dim=768"
+    },
+    {
+      "section": "Config",
+      "test": "Rate limit config",
+      "status": "PASS",
+      "detail": "max=30/min, retries=3"
+    },
+    {
+      "section": "Types",
+      "test": "Types module imports",
+      "status": "PASS",
+      "detail": "all type definitions valid"
+    },
+    {
+      "section": "NLP Confidence",
+      "test": "High confidence CREATE",
+      "status": "PASS",
+      "detail": "score=0.98, action=0.9, entity=1, date=1, time=1"
+    },
+    {
+      "section": "NLP Confidence",
+      "test": "Low confidence (missing employee)",
+      "status": "PASS",
+      "detail": "score=0.7, reasons=[Employé requis mais non trouvé]"
+    },
+    {
+      "section": "NLP Confidence",
+      "test": "Unknown employee penalty",
+      "status": "PASS",
+      "detail": "score=0.75, entity=0.5, reasons=[Action \"MOVE\" complexe (0.7); Employé \"Pierre\" non reconnu]"
+    },
+    {
+      "section": "NLP Confidence",
+      "test": "Threshold logic",
+      "status": "PASS",
+      "detail": "threshold=0.7, clear=0.98≥0.7=true, vague=0.51<0.7=true"
+    },
+    {
+      "section": "Parser",
+      "test": "\"Crée un shift demain de 9h à 17h pour Yassin...\"",
+      "status": "PASS",
+      "detail": "action=CREATE✓, employee=Yassin✓, date=tomorrow, time=09:00, 4ms",
+      "durationMs": 4
+    },
+    {
+      "section": "Parser",
+      "test": "\"Supprime le shift de Zakaria lundi...\"",
+      "status": "PASS",
+      "detail": "action=DELETE✓, employee=Zakaria✓, date=weekday:1, time=null, 2ms",
+      "durationMs": 2
+    },
+    {
+      "section": "Parser",
+      "test": "\"Qui travaille demain ?...\"",
+      "status": "PASS",
+      "detail": "action=QUERY_SCHEDULE✓, employee=null✓, date=tomorrow, time=null, 1ms",
+      "durationMs": 1
+    },
+    {
+      "section": "Parser",
+      "test": "\"Déplace Sarah de mardi à jeudi...\"",
+      "status": "PASS",
+      "detail": "action=MOVE✓, employee=Sarah✓, date=weekday:2, time=null, 1ms",
+      "durationMs": 1
+    },
+    {
+      "section": "Parser",
+      "test": "\"Combien d'heures a Zakaria cette semaine ?...\"",
+      "status": "PASS",
+      "detail": "action=QUERY_HOURS✓, employee=Zakaria✓, date=null, time=null, 0ms",
+      "durationMs": 0
+    },
+    {
+      "section": "Enhanced NLP",
+      "test": "Deterministic-only mode",
+      "status": "PASS",
+      "detail": "action=CREATE, source=deterministic, confidence=1, employee=Yassin, 1ms",
+      "durationMs": 1
+    },
+    {
+      "section": "Enhanced NLP",
+      "test": "High confidence stays deterministic",
+      "status": "PASS",
+      "detail": "action=DELETE, source=deterministic, confidence=0.99, 1ms",
+      "durationMs": 1
+    },
+    {
+      "section": "Enhanced NLP",
+      "test": "Ambiguous command triggers fallback logic",
+      "status": "PASS",
+      "detail": "action=CREATE, confidence=0.66, threshold=0.7, wouldFallback=true, reasons=[Employé requis mais non trouvé; Horaire requis mais non trouvé], 0ms",
+      "durationMs": 0
+    },
+    {
+      "section": "Fraud Scorer",
+      "test": "Calculates scores",
+      "status": "PASS",
+      "detail": "2 employee(s) scored"
+    },
+    {
+      "section": "Fraud Scorer",
+      "test": "emp-1 scored higher than emp-2",
+      "status": "PASS",
+      "detail": "emp-1=100/100 (3 anomalies), emp-2=8/100 (1 anomalies)"
+    },
+    {
+      "section": "Fraud Scorer",
+      "test": "Store-level anomaly excluded",
+      "status": "PASS",
+      "detail": "Anomalies without employeeId correctly excluded from fraud scores"
+    },
+    {
+      "section": "Fraud Scorer",
+      "test": "Breakdown structure",
+      "status": "PASS",
+      "detail": "3 types: GHOST_SHIFT=1x(+50), LOCATION_MISMATCH=1x(+45), CLOCK_DISCREPANCY=1x(+22.5)"
+    },
+    {
+      "section": "Fraud Scorer",
+      "test": "Severity multipliers",
+      "status": "PASS",
+      "detail": "CRITICAL GHOST_SHIFT weight=25*2.0=50, HIGH LOCATION_MISMATCH weight=30*1.5=45, HIGH CLOCK_DISCREPANCY=15*1.5=22.5"
+    },
+    {
+      "section": "Alert Gen",
+      "test": "Module imports",
+      "status": "PASS",
+      "detail": "alert-generator.ts loaded"
+    },
+    {
+      "section": "Alert Gen",
+      "test": "C2 fix: toDateOnly helper",
+      "status": "PASS",
+      "detail": "All dates normalized to midnight UTC for @db.Date columns"
+    },
+    {
+      "section": "Alert Gen",
+      "test": "C3 fix: storeId validation",
+      "status": "PASS",
+      "detail": "Anomalies with empty/unknown storeId are skipped (prevents FK violation)"
+    },
+    {
+      "section": "Gemini",
+      "test": "Text generation",
+      "status": "PASS",
+      "detail": "response=\"P\", tokens=8, 554ms",
+      "durationMs": 554
+    },
+    {
+      "section": "Gemini",
+      "test": "Embedding generation",
+      "status": "PASS",
+      "detail": "dim=768, tokens=10, first3=[-0.0188,0.0076,0.0153], 558ms",
+      "durationMs": 558
+    },
+    {
+      "section": "Gemini",
+      "test": "Embedding dimension",
+      "status": "PASS",
+      "detail": "expected=768, got=768"
+    },
+    {
+      "section": "Embeddings",
+      "test": "buildEmployeeText",
+      "status": "PASS",
+      "detail": "length=121chars, contains_name=true, contains_hours=true"
+    },
+    {
+      "section": "Embeddings",
+      "test": "M7 fix: weeklyHours=0",
+      "status": "PASS",
+      "detail": "weeklyHours=0 included in text (not falsy-skipped): true"
+    },
+    {
+      "section": "Embeddings",
+      "test": "buildStoreText",
+      "status": "PASS",
+      "detail": "length=93chars, contains_name=true"
+    },
+    {
+      "section": "Embeddings",
+      "test": "buildJournalText",
+      "status": "PASS",
+      "detail": "length=113chars"
+    },
+    {
+      "section": "Vector Store",
+      "test": "Module imports",
+      "status": "PASS",
+      "detail": "exports: deleteEmbedding, deleteEmbeddingsByType, getEmbeddingStats, searchSimilar, upsertEmbedding, upsertEmbeddings"
+    },
+    {
+      "section": "Vector Store",
+      "test": "C4 fix: batch upsert with error handling",
+      "status": "PASS",
+      "detail": "upsertEmbeddings function available with try/catch per item"
+    },
+    {
+      "section": "Vector Store",
+      "test": "pgvector operations",
+      "status": "SKIP",
+      "detail": "Requires live DB with pgvector extension"
+    },
+    {
+      "section": "Performance",
+      "test": "metrics-calculator imports",
+      "status": "PASS",
+      "detail": "exports: calculateAllMetrics, persistMetrics"
+    },
+    {
+      "section": "Performance",
+      "test": "pos-correlator imports",
+      "status": "PASS",
+      "detail": "exports: correlateEmployeeSales, getStoreSalesAverages"
+    },
+    {
+      "section": "Performance",
+      "test": "performance/embeddings imports",
+      "status": "PASS",
+      "detail": "exports: syncEmployeeEmbeddings, syncJournalEmbeddings, syncStoreEmbeddings"
+    },
+    {
+      "section": "Performance",
+      "test": "Runtime metrics calculation",
+      "status": "SKIP",
+      "detail": "Requires live DB with employee/POS data"
+    },
+    {
+      "section": "Anomaly",
+      "test": "detector imports",
+      "status": "PASS",
+      "detail": "exports: detectAnomalies"
+    },
+    {
+      "section": "Anomaly",
+      "test": "C1 fix: z-score uses raw values",
+      "status": "PASS",
+      "detail": "calculateZScore uses raw deltaMinutes, checks Math.abs(zScore) for threshold"
+    },
+    {
+      "section": "Anomaly",
+      "test": "H4 fix: ghost shift excludes today",
+      "status": "PASS",
+      "detail": "Ghost shift detection uses yesterday as upper bound"
+    },
+    {
+      "section": "Anomaly",
+      "test": "C3 fix: overtime storeId fallback",
+      "status": "PASS",
+      "detail": "Uses 'unknown' instead of empty string for storeId fallback"
+    },
+    {
+      "section": "Anomaly",
+      "test": "Runtime anomaly detection",
+      "status": "SKIP",
+      "detail": "Requires live DB with time clock data"
+    },
+    {
+      "section": "RAG",
+      "test": "rag module imports",
+      "status": "PASS",
+      "detail": "exports: askAssistant"
+    },
+    {
+      "section": "RAG",
+      "test": "context-builder imports",
+      "status": "PASS",
+      "detail": "exports: buildContext"
+    },
+    {
+      "section": "RAG",
+      "test": "response-generator imports",
+      "status": "PASS",
+      "detail": "exports: generateResponse"
+    },
+    {
+      "section": "RAG",
+      "test": "Full RAG pipeline",
+      "status": "SKIP",
+      "detail": "Requires Gemini API + pgvector DB"
+    },
+    {
+      "section": "Usage",
+      "test": "api-usage module imports",
+      "status": "PASS",
+      "detail": "initApiUsageTracking available"
+    },
+    {
+      "section": "Usage",
+      "test": "onApiUsage callback hook",
+      "status": "PASS",
+      "detail": "Callback registration function available"
+    },
+    {
+      "section": "Usage",
+      "test": "Callback registration",
+      "status": "PASS",
+      "detail": "Usage callback registered successfully"
+    },
+    {
+      "section": "Index",
+      "test": "All expected exports present",
+      "status": "PASS",
+      "detail": "30 exports verified"
+    }
+  ]
+}
