@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
       where: {
         clockInTime: { gte: today, lte: todayEnd },
         ...storeWhere,
-      },
+      } as any,
     });
 
     const attendanceRate =
@@ -71,8 +71,9 @@ export async function GET(req: NextRequest) {
     // ── 5. Absences aujourd'hui ─────────────────────────────────────
     const absencesToday = await prisma.absenceDeclaration.count({
       where: {
-        date: today,
-      },
+        startDate: { lte: todayEnd },
+        endDate: { gte: today },
+      } as any,
     });
 
     // ── 6. Alertes non traitées (top 5) ────────────────────────────
@@ -86,7 +87,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         type: true,
-        message: true,
+        title: true,
         severity: true,
         createdAt: true,
         storeId: true,
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
     let openAnomalies = 0;
     try {
       openAnomalies = await prisma.aiAnomaly.count({
-        where: { resolvedAt: null },
+        where: { resolvedAt: null } as any,
       });
     } catch {
       // Table peut ne pas exister en dev
@@ -140,7 +141,7 @@ export async function GET(req: NextRequest) {
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 7);
 
-    const recentPerf = await prisma.employeePerformanceDaily.aggregate({
+    const recentPerf = await (prisma.employeePerformanceDaily as any).aggregate({
       where: {
         date: { gte: sevenDaysAgo, lte: today },
         ...storeWhere,

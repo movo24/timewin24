@@ -135,7 +135,6 @@ export async function GET(req: NextRequest) {
     });
 
     const hourlyDistribution = hourlyRaw.map((h) => ({
-      hour: h.hour,
       hour: h.hourSlot,
       revenue: Math.round((h._sum.revenue || 0) * 100) / 100,
       transactions: h._sum.transactions || 0,

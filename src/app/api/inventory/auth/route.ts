@@ -49,10 +49,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Vérifier le mot de passe
-    const passwordValid = await bcrypt.compare(
-      password,
-      employee.user.passwordHash
-    );
+    const passwordValid = employee.user?.passwordHash
+      ? await (bcrypt.compare as any)(String(password), String(employee.user.passwordHash))
+      : false;
     if (!passwordValid) {
       return NextResponse.json(
         { error: "Mot de passe incorrect" },
