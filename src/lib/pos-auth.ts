@@ -4,36 +4,20 @@ import { validateHmac } from "./hmac";
 import { errorResponse } from "./api-helpers";
 
 /**
- * Validate POS authentication — supports both HMAC (preferred) and legacy X-POS-Secret.
+ * Validate POS authentication — HMAC only.
  *
- * HMAC headers: X-POS-Timestamp, X-POS-Nonce, X-POS-Signature, X-POS-Key-Id
- * Legacy header: X-POS-Secret (direct secret comparison — will be deprecated)
+ * Required headers: X-POS-Timestamp, X-POS-Nonce, X-POS-Signature, X-POS-Key-Id
  *
  * Returns null on success, NextResponse error on failure.
  */
 export async function validatePosAuth(req: NextRequest, body?: string) {
   const hmacSignature = req.headers.get("x-pos-signature");
 
-  if (hmacSignature) {
-    return validatePosHmac(req, body || "");
+  if (!hmacSignature) {
+    return errorResponse("Authentification POS requise (HMAC: X-POS-Signature, X-POS-Timestamp, X-POS-Nonce, X-POS-Key-Id)", 401);
   }
 
-  // Legacy: direct secret
-  const secret = req.headers.get("x-pos-secret");
-  if (!secret) {
-    return errorResponse("Authentification POS requise (HMAC ou X-POS-Secret)", 401);
-  }
-
-  const app = await prisma.connectedApp.findUnique({ where: { webhookSecret: secret } });
-  const provider = !app
-    ? await prisma.posProvider.findUnique({ where: { webhookSecret: secret } })
-    : null;
-
-  if (!app && !provider) {
-    return errorResponse("Secret invalide", 401);
-  }
-
-  return null; // success
+  return validatePosHmac(req, body || "");
 }
 
 async function validatePosHmac(req: NextRequest, body: string) {

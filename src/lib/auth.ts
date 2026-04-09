@@ -4,6 +4,15 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
+/** Errors thrown intentionally by authorize — safe to surface to the client */
+class AuthBusinessError extends Error {
+  readonly isBusinessError = true as const;
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthBusinessError";
+  }
+}
+
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -17,7 +26,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email et mot de passe requis");
+          throw new AuthBusinessError("Email et mot de passe requis");
         }
 
         // Login attempt logged at debug level only
@@ -29,12 +38,12 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!user) {
-            throw new Error("Aucun compte avec cet email");
+            throw new AuthBusinessError("Aucun compte avec cet email");
           }
 
           // Check if account is active
           if (!user.active) {
-            throw new Error("Compte désactivé. Contactez votre administrateur.");
+            throw new AuthBusinessError("Compte désactivé. Contactez votre administrateur.");
           }
 
           // Check if account is locked
@@ -42,7 +51,7 @@ export const authOptions: NextAuthOptions = {
             const minutesLeft = Math.ceil(
               (user.lockedUntil.getTime() - Date.now()) / 60000
             );
-            throw new Error(
+            throw new AuthBusinessError(
               `Compte verrouillé. Réessayez dans ${minutesLeft} minute(s).`
             );
           }
@@ -67,7 +76,7 @@ export const authOptions: NextAuthOptions = {
               data: updateData,
             });
 
-            throw new Error("Mot de passe incorrect");
+            throw new AuthBusinessError("Mot de passe incorrect");
           }
 
           // password validated
@@ -94,12 +103,12 @@ export const authOptions: NextAuthOptions = {
             passwordChangedAt: user.passwordChangedAt,
           };
         } catch (err) {
-          // Si c'est une erreur qu'on a throw nous-même, la re-throw
-          if (err instanceof Error && !err.message.includes("prisma") && !err.message.includes("connect")) {
-            throw err;
+          // Erreurs métier (mauvais mdp, compte verrouillé…) → on les affiche telles quelles
+          if (err instanceof AuthBusinessError) {
+            throw new Error(err.message);
           }
-          // Erreur DB/Prisma — message propre
-          console.error("[AUTH] Database error:", err);
+          // Erreur système/Prisma → log + message générique
+          console.error("[AUTH] Database error:", err instanceof Error ? err.message : err);
           throw new Error("Service temporairement indisponible. Vérifiez la connexion à la base de données.");
         }
       },

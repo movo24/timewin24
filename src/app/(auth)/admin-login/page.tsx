@@ -7,11 +7,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -95,17 +97,28 @@ export default function AdminLoginPage() {
               <Label htmlFor="admin_password" className="text-sm font-medium text-gray-300">
                 Mot de passe
               </Label>
-              <Input
-                id="admin_password"
-                name="admin_password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
-                required
-                autoComplete="section-admin current-password"
-                className="h-11 bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-amber-500 focus:ring-amber-500"
-              />
+              <div className="relative">
+                <Input
+                  id="admin_password"
+                  name="admin_password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+                  required
+                  autoComplete="section-admin current-password"
+                  className="h-11 bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 focus:border-amber-500 focus:ring-amber-500 pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             {error && (
