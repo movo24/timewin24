@@ -277,6 +277,128 @@ async function processEvent(
         });
         break;
       }
+
+      case "pointage": {
+        // Clock-in/out from POS Desktop offline queue
+        // Payload: { punchType: 'clock_in'|'clock_out'|'break_start'|'break_end', employeeId, employeeName, storeId, timestamp }
+        if (!employeeId || !data?.timestamp) break;
+
+        const punchType: string = data.punchType || "clock_in";
+        const today2 = new Date().toISOString().split("T")[0];
+        const recordId = `pointage-${storeId}-${employeeId}-${today2}`;
+
+        if (punchType === "clock_in") {
+          await prisma.posTimeClock.upsert({
+            where: { providerId_posRecordId: { providerId, posRecordId: recordId } },
+            create: {
+              providerId,
+              employeeId,
+              storeId,
+              posRecordId: recordId,
+              date: new Date(today2 + "T00:00:00Z"),
+              clockIn: data.timestamp,
+            },
+            update: { clockIn: data.timestamp },
+          });
+        } else if (punchType === "clock_out") {
+          await prisma.posTimeClock.updateMany({
+            where: { providerId, posRecordId: recordId },
+            data: {
+              clockOut: data.timestamp,
+              workedHours: data.workedMinutes ? Math.round((data.workedMinutes / 60) * 100) / 100 : null,
+              breakMinutes: data.breakMinutes || 0,
+            },
+          });
+        }
+        break;
+      }
+
+      case "cashier_metrics": {
+        // Daily performance metrics flushed from POS Desktop cashier session
+        // Payload: { sessionId, employeeId, employeeName, storeId, totalRevenue, ticketCount, avgBasket, ... }
+        if (!employeeId || !data?.storeId) break;
+
+        const metricsDate = data.flushedAt
+          ? new Date(new Date(data.flushedAt).toISOString().split("T")[0] + "T00:00:00Z")
+          : new Date(new Date().toISOString().split("T")[0] + "T00:00:00Z");
+
+        const employeeExists = await prisma.employee.findUnique({
+          where: { id: employeeId },
+          select: { id: true },
+        });
+        if (!employeeExists) break;
+
+        const existing = await prisma.employeePerformanceDaily.findUnique({
+          where: { employeeId_storeId_date: { employeeId, storeId, date: metricsDate } },
+          select: { id: true, totalSales: true, transactions: true },
+        });
+
+        const totalRevenue = data.totalRevenue || 0;
+        const ticketCount = data.ticketCount || 0;
+
+        if (existing) {
+          const newTotal = existing.totalSales + totalRevenue;
+          const newTx = existing.transactions + ticketCount;
+          await prisma.employeePerformanceDaily.update({
+            where: { id: existing.id },
+            data: {
+              totalSales: newTotal,
+              transactions: newTx,
+              itemsSold: { increment: data.itemCount || 0 },
+              avgBasket: newTx > 0 ? newTotal / newTx : 0,
+            },
+          });
+        } else {
+          await prisma.employeePerformanceDaily.create({
+            data: {
+              employeeId,
+              storeId,
+              date: metricsDate,
+              totalSales: totalRevenue,
+              transactions: ticketCount,
+              itemsSold: data.itemCount || 0,
+              avgBasket: ticketCount > 0 ? totalRevenue / ticketCount : 0,
+            },
+          });
+        }
+        break;
+      }
+
+      case "staffing_snapshot": {
+        // Snapshot of active cashiers on floor — stored as ManagerAlert context for staffing visibility
+        // Payload: { activeCashiers, storeId, snapshotAt, cashierIds: [] }
+        if (!data?.activeCashiers && data?.activeCashiers !== 0) break;
+
+        const snapDate = data.snapshotAt
+          ? new Date(new Date(data.snapshotAt).toISOString().split("T")[0] + "T00:00:00Z")
+          : new Date(new Date().toISOString().split("T")[0] + "T00:00:00Z");
+        const snapHour = data.snapshotAt ? new Date(data.snapshotAt).getHours() : new Date().getHours();
+        const snapKey = `staffing-${storeId}-${snapDate.toISOString().split("T")[0]}-${snapHour}`;
+
+        await prisma.managerAlert.upsert({
+          where: {
+            type_storeId_date_contextKey: {
+              type: "AI_ANOMALY_DETECTED",
+              storeId,
+              date: snapDate,
+              contextKey: snapKey,
+            },
+          },
+          create: {
+            type: "AI_ANOMALY_DETECTED",
+            severity: "INFO",
+            storeId,
+            date: snapDate,
+            title: `Effectif caisse : ${data.activeCashiers} caissier(s) actif(s)`,
+            details: JSON.stringify({ activeCashiers: data.activeCashiers, cashierIds: data.cashierIds || [], hour: snapHour }),
+            contextKey: snapKey,
+          },
+          update: {
+            details: JSON.stringify({ activeCashiers: data.activeCashiers, cashierIds: data.cashierIds || [], hour: snapHour }),
+          },
+        });
+        break;
+      }
     }
 
     // Mark event as processed

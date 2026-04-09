@@ -1,7 +1,7 @@
 import { createHmac } from "crypto";
 
-const MAX_TIMESTAMP_DRIFT_MS = 30_000; // 30 seconds
-const NONCE_EXPIRY_MS = 60_000; // Keep nonces for 60s to catch replays
+const MAX_TIMESTAMP_DRIFT_MS = 5 * 60_000; // 5 minutes — covers network latency + clock drift
+const NONCE_EXPIRY_MS = 10 * 60_000;       // Keep nonces for 10min (> drift window to catch replays)
 
 // In-memory nonce store (single-instance safe; for multi-instance use Redis)
 const usedNonces = new Map<string, number>();

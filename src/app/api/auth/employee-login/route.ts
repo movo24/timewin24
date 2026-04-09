@@ -41,21 +41,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Auth: HMAC, Bearer API key, or legacy X-POS-Secret
+    // Auth: HMAC SHA-256 or Bearer API key (legacy X-POS-Secret removed)
     const bodyText = await req.text();
 
-    // Try HMAC or legacy POS secret first
     const hmacSig = req.headers.get("x-pos-signature");
-    const legacySecret = req.headers.get("x-pos-secret");
-
-    if (hmacSig || legacySecret) {
+    if (hmacSig) {
       const authError = await validatePosAuth(req, bodyText);
       if (authError) return authError;
     } else {
-      // Try Bearer API key
+      // Bearer API key (service-to-service)
       const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
       if (!bearer) {
-        return errorResponse("Authentification service requise (HMAC, Bearer ou X-POS-Secret)", 401);
+        return errorResponse("Authentification requise (HMAC ou Bearer)", 401);
       }
       const key = await prisma.serviceApiKey.findUnique({ where: { key: bearer } });
       if (!key?.active) {
@@ -112,6 +109,14 @@ export async function POST(req: NextRequest) {
 
     if (!employee.active) {
       return errorResponse("Employé désactivé. Contactez votre administrateur.", 403);
+    }
+
+    // Check terrain access status
+    if (employee.accessStatus === "BLOCKED") {
+      return errorResponse(`Accès caisse bloqué${employee.blockedReason ? ` : ${employee.blockedReason}` : ""}`, 403);
+    }
+    if (employee.accessStatus === "SUSPENDED") {
+      return errorResponse("Accès suspendu. Contactez votre responsable.", 403);
     }
 
     // Check store access

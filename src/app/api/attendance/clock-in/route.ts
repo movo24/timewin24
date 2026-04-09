@@ -38,10 +38,16 @@ export async function POST(req: NextRequest) {
 
     const { employeeId, storeId, latitude, longitude, accuracy, photoPath, source } = parsed.data;
 
-    // Verify employee exists and is active
+    // Verify employee exists, is active, and has terrain access
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee || !employee.active) {
       return errorResponse("Employé introuvable ou inactif", 404);
+    }
+    if (employee.accessStatus === "BLOCKED") {
+      return errorResponse(`Accès bloqué${employee.blockedReason ? ` : ${employee.blockedReason}` : ""}`, 403);
+    }
+    if (employee.accessStatus === "SUSPENDED") {
+      return errorResponse("Accès suspendu. Contactez votre responsable.", 403);
     }
 
     // Verify store

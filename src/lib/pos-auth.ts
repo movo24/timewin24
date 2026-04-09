@@ -4,9 +4,10 @@ import { validateHmac } from "./hmac";
 import { errorResponse } from "./api-helpers";
 
 /**
- * Validate POS authentication — HMAC only.
+ * Validate POS authentication — HMAC SHA-256 only.
  *
  * Required headers: X-POS-Timestamp, X-POS-Nonce, X-POS-Signature, X-POS-Key-Id
+ * Legacy X-POS-Secret header is no longer accepted.
  *
  * Returns null on success, NextResponse error on failure.
  */
@@ -14,7 +15,10 @@ export async function validatePosAuth(req: NextRequest, body?: string) {
   const hmacSignature = req.headers.get("x-pos-signature");
 
   if (!hmacSignature) {
-    return errorResponse("Authentification POS requise (HMAC: X-POS-Signature, X-POS-Timestamp, X-POS-Nonce, X-POS-Key-Id)", 401);
+    return errorResponse(
+      "Authentification HMAC requise (X-POS-Signature, X-POS-Timestamp, X-POS-Nonce, X-POS-Key-Id)",
+      401
+    );
   }
 
   return validatePosHmac(req, body || "");
