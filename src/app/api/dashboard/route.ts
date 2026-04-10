@@ -60,9 +60,9 @@ export async function GET(req: NextRequest) {
     // ── 4. Pointages du jour ────────────────────────────────────────
     const clockInsToday = await prisma.clockIn.count({
       where: {
-        clockInTime: { gte: today, lte: todayEnd },
+        clockInAt: { gte: today, lte: todayEnd },
         ...storeWhere,
-      } as any,
+      },
     });
 
     const attendanceRate =
@@ -71,9 +71,9 @@ export async function GET(req: NextRequest) {
     // ── 5. Absences aujourd'hui ─────────────────────────────────────
     const absencesToday = await prisma.absenceDeclaration.count({
       where: {
-        startDate: { lte: todayEnd },
+        startDate: { lte: today },
         endDate: { gte: today },
-      } as any,
+      },
     });
 
     // ── 6. Alertes non traitées (top 5) ────────────────────────────
@@ -141,14 +141,22 @@ export async function GET(req: NextRequest) {
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 7);
 
-    const recentPerf = await (prisma.employeePerformanceDaily as any).aggregate({
-      where: {
-        date: { gte: sevenDaysAgo, lte: today },
-        ...storeWhere,
-      },
-      _avg: { performanceScore: true },
-      _sum: { workingHours: true },
-    });
+    let recentPerf: { _avg: { salesPerHour: number | null }; _sum: { workingHours: number | null } } = {
+      _avg: { salesPerHour: null },
+      _sum: { workingHours: null },
+    };
+    try {
+      recentPerf = await prisma.employeePerformanceDaily.aggregate({
+        where: {
+          date: { gte: sevenDaysAgo, lte: today },
+          ...(storeIds ? { storeId: { in: storeIds } } : {}),
+        },
+        _avg: { salesPerHour: true },
+        _sum: { workingHours: true },
+      });
+    } catch {
+      // Table vide ou non encore alimentée
+    }
 
     // ── 10. Top magasins cette semaine (par shifts couverts) ────────
     const storeList = await prisma.store.findMany({
@@ -203,7 +211,15 @@ export async function GET(req: NextRequest) {
       // Alertes
       alerts: {
         total: totalOpenAlerts,
-        topAlerts: openAlerts,
+        topAlerts: openAlerts.map((a) => ({
+          id: a.id,
+          type: a.type,
+          message: a.title,
+          severity: a.severity,
+          createdAt: a.createdAt,
+          storeId: a.storeId,
+          store: a.store,
+        })),
       },
       // Anomalies IA
       anomalies: {
@@ -211,10 +227,10 @@ export async function GET(req: NextRequest) {
       },
       // Performance récente
       performance: {
-        avgScore: recentPerf._avg.performanceScore
-          ? Math.round((recentPerf._avg.performanceScore || 0) * 10) / 10
+        avgScore: recentPerf._avg.salesPerHour != null
+          ? Math.round((recentPerf._avg.salesPerHour || 0) * 10) / 10
           : null,
-        totalHours: recentPerf._sum.workingHours
+        totalHours: recentPerf._sum.workingHours != null
           ? Math.round((recentPerf._sum.workingHours || 0) * 10) / 10
           : null,
       },
