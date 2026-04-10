@@ -137,11 +137,21 @@ export interface GeneratedShift {
   warnings: string[];
   assignmentReason: string | null; // Manager Brain: reason for this assignment
   slotPhase: SlotPhase; // Manager Brain: slot classification
+  hoursAdjustedReason: string | null; // set when weekly hours were exceeded for this employee
+  mergedFromSlots: number; // 1 = single slot, >1 = merged from N adjacent slots
+}
+
+export interface CoverageGap {
+  date: string;
+  storeName: string;
+  reason: string;
+  suggestion: string;
 }
 
 export interface SolverResult {
   shifts: GeneratedShift[];
   warnings: string[];
+  coverageGaps: CoverageGap[];
   stats: {
     totalShiftsGenerated: number;
     assignedCount: number;

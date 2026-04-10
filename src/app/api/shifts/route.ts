@@ -138,6 +138,17 @@ export async function POST(req: NextRequest) {
     return errorResponse("Impossible de créer un shift : ce magasin est inactif", 422);
   }
 
+  // Verify employee is authorized for this store
+  if (employeeId) {
+    const authorization = await prisma.storeEmployee.findUnique({
+      where: { storeId_employeeId: { storeId, employeeId } },
+      select: { employeeId: true },
+    });
+    if (!authorization) {
+      return errorResponse("Cet employé n'est pas autorisé sur ce magasin", 422);
+    }
+  }
+
   // Check overlap (only if employee is assigned)
   if (employeeId) {
     const overlap = await findOverlappingShift(employeeId, date, startTime, endTime);

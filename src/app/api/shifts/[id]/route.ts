@@ -44,6 +44,17 @@ export async function PUT(
       return errorResponse("Impossible de modifier ce shift : le magasin est inactif", 422);
     }
 
+    // Verify employee is authorized for this store
+    if (employeeId) {
+      const authorization = await prisma.storeEmployee.findUnique({
+        where: { storeId_employeeId: { storeId, employeeId } },
+        select: { employeeId: true },
+      });
+      if (!authorization) {
+        return errorResponse("Cet employé n'est pas autorisé sur ce magasin", 422);
+      }
+    }
+
     // Check overlap (only if employee is assigned, exclude self)
     if (employeeId) {
       const overlap = await findOverlappingShift(

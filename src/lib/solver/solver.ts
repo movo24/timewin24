@@ -488,8 +488,66 @@ function assignBestEmployee(
 }
 
 // ═══════════════════════════════════════════════════
-// STEP 4 — CREATE SHIFTS
+// STEP 4 — CREATE SHIFTS + POST-PROCESSING
 // ═══════════════════════════════════════════════════
+
+/**
+ * Merge adjacent shifts (same employee, store, day) into one continuous shift.
+ * Adjacent = endTime of one matches startTime of next (no gap, no overlap).
+ * Prevents fragmented planning like 07:00-09:00 + gap + 12:00-15:00.
+ */
+function mergeContiguousShifts(shifts: GeneratedShift[]): GeneratedShift[] {
+  // Group by (employeeId, storeId, date) — only assigned shifts
+  const groups = new Map<string, GeneratedShift[]>();
+  const unassigned: GeneratedShift[] = [];
+
+  for (const s of shifts) {
+    if (!s.employeeId) { unassigned.push(s); continue; }
+    const key = `${s.employeeId}||${s.storeId}||${s.date}`;
+    const group = groups.get(key) ?? [];
+    group.push(s);
+    groups.set(key, group);
+  }
+
+  const merged: GeneratedShift[] = [];
+
+  for (const group of groups.values()) {
+    // Sort by startTime
+    group.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    const result: GeneratedShift[] = [];
+    let current = { ...group[0] };
+
+    for (let i = 1; i < group.length; i++) {
+      const next = group[i];
+      // Adjacent = current.endTime === next.startTime
+      if (current.endTime === next.startTime) {
+        // Merge: extend endTime, sum hours, union warnings
+        const totalHours = current.hours + next.hours;
+        const breakMinutes = totalHours > 6 ? 30 : 0;
+        current = {
+          ...current,
+          endTime: next.endTime,
+          hours: totalHours,
+          breakMinutes,
+          warnings: [...new Set([...current.warnings, ...next.warnings])],
+          mergedFromSlots: (current.mergedFromSlots ?? 1) + (next.mergedFromSlots ?? 1),
+          // Keep dominant phase (OUVERTURE > FERMETURE > MILIEU)
+          slotPhase: current.slotPhase === "OUVERTURE" ? "OUVERTURE"
+            : next.slotPhase === "FERMETURE" ? "FERMETURE"
+            : current.slotPhase,
+        };
+      } else {
+        result.push(current);
+        current = { ...next };
+      }
+    }
+    result.push(current);
+    merged.push(...result);
+  }
+
+  return [...merged, ...unassigned];
+}
 
 function createAssignedShift(
   employee: SolverEmployee,
@@ -512,10 +570,11 @@ function createAssignedShift(
   updateState(state, raw);
 
   const warnings: string[] = [];
+  let hoursAdjustedReason: string | null = null;
   if (employee.weeklyHours && state.weeklyHoursAssigned > employee.weeklyHours) {
-    warnings.push(
-      `Dépasse les ${employee.weeklyHours}h contractuelles (${state.weeklyHoursAssigned.toFixed(1)}h cette semaine)`
-    );
+    const excess = (state.weeklyHoursAssigned - employee.weeklyHours).toFixed(1);
+    hoursAdjustedReason = `Heures ajustées automatiquement pour couvrir le besoin (+${excess}h au-delà des ${employee.weeklyHours}h contractuelles)`;
+    warnings.push(hoursAdjustedReason);
   }
 
   const generated: GeneratedShift = {
@@ -531,6 +590,8 @@ function createAssignedShift(
     warnings,
     assignmentReason,
     slotPhase,
+    hoursAdjustedReason,
+    mergedFromSlots: 1,
   };
 
   return { generated, raw };
@@ -564,6 +625,8 @@ function createUnassignedShift(
     warnings: ["Aucun employé éligible"],
     assignmentReason: null,
     slotPhase,
+    hoursAdjustedReason: null,
+    mergedFromSlots: 1,
   };
 
   return { generated, raw };
@@ -829,13 +892,37 @@ export function solve(input: SolverInput, solveOptions: SolveOptions = {}): Solv
   }
 
   const solveTimeMs = performance.now() - startTime;
-  const totalHours = generatedShifts.reduce((sum, s) => sum + s.hours, 0);
+  const mergedShifts = mergeContiguousShifts(generatedShifts);
+  const totalHours = mergedShifts.reduce((sum, s) => sum + s.hours, 0);
+
+  // Build structured coverage gaps from warnings
+  const coverageGaps: import("./types").CoverageGap[] = [];
+  for (const w of warnings) {
+    if (w.includes("aucun employé n'a pu être affecté")) {
+      const date = w.split(":")[0].trim();
+      coverageGaps.push({
+        date,
+        storeName: store.name,
+        reason: "Aucun employé éligible pour cette journée",
+        suggestion: "Vérifiez les autorisations magasin, les heures max et les indisponibilités des employés",
+      });
+    } else if (w.includes("couverture partielle")) {
+      const date = w.split(":")[0].trim();
+      coverageGaps.push({
+        date,
+        storeName: store.name,
+        reason: w.split(":").slice(1).join(":").trim(),
+        suggestion: "Ajoutez des employés autorisés sur ce magasin ou augmentez leurs heures max",
+      });
+    }
+  }
 
   return {
-    shifts: generatedShifts,
+    shifts: mergedShifts,
     warnings,
+    coverageGaps,
     stats: {
-      totalShiftsGenerated: generatedShifts.length,
+      totalShiftsGenerated: mergedShifts.length,
       assignedCount,
       unassignedCount,
       totalHoursGenerated: totalHours,
@@ -887,9 +974,21 @@ export function solveMultiStore(inputs: SolverInput[], solveOptions: SolveOption
 
   const solveTimeMs = performance.now() - startTime;
   const totalHours = allShifts.reduce((sum, s) => sum + s.hours, 0);
+  const allCoverageGaps = inputs.flatMap((inp) => {
+    // re-collect gaps from warnings for this store
+    return allWarnings
+      .filter((w) => w.startsWith(`[${inp.store.name}]`))
+      .filter((w) => w.includes("aucun employé") || w.includes("couverture partielle"))
+      .map((w) => ({
+        date: w.replace(`[${inp.store.name}] `, "").split(":")[0].trim(),
+        storeName: inp.store.name,
+        reason: w.replace(`[${inp.store.name}] `, "").split(":").slice(1).join(":").trim(),
+        suggestion: "Ajoutez des employés autorisés sur ce magasin ou augmentez leurs heures max",
+      }));
+  });
 
   return {
-    shifts: allShifts, warnings: allWarnings,
+    shifts: allShifts, warnings: allWarnings, coverageGaps: allCoverageGaps,
     stats: { totalShiftsGenerated: allShifts.length, assignedCount: totalAssigned, unassignedCount: totalUnassigned, totalHoursGenerated: totalHours, daysFullyCovered: totalDaysFullyCovered, daysPartiallyCovered: totalDaysPartiallyCovered, daysUncovered: totalDaysUncovered, employeesUsed: allEmployeesUsed.size, solveTimeMs: Math.round(solveTimeMs * 100) / 100 },
   };
 }
@@ -901,7 +1000,7 @@ export function solveMultiStore(inputs: SolverInput[], solveOptions: SolveOption
 function emptyScenarioFallback(id: string, params: ScoredScenario["params"]): ScoredScenario {
   return {
     id, params,
-    result: { shifts: [], warnings: ["Erreur interne"], stats: { totalShiftsGenerated: 0, assignedCount: 0, unassignedCount: 0, totalHoursGenerated: 0, daysFullyCovered: 0, daysPartiallyCovered: 0, daysUncovered: 0, employeesUsed: 0, solveTimeMs: 0 } },
+    result: { shifts: [], warnings: ["Erreur interne"], coverageGaps: [], stats: { totalShiftsGenerated: 0, assignedCount: 0, unassignedCount: 0, totalHoursGenerated: 0, daysFullyCovered: 0, daysPartiallyCovered: 0, daysUncovered: 0, employeesUsed: 0, solveTimeMs: 0 } },
     score: { total: 0, breakdown: { coverageCompleteness: 0, shiftDurationQuality: 0, employeeBalance: 0, constraintRespect: 0, costEfficiency: 0, breakQuality: 0, profilePlacementQuality: 0 }, label: "Insuffisant" },
   };
 }
