@@ -876,6 +876,13 @@ export default function PlanningPage() {
           employees={employees}
           stores={allStores.length > 1 ? allStores.map(s => ({ id: s.id, name: s.name })) : undefined}
           storeSchedules={allStores.find(s => s.id === modalStoreId)?.schedules}
+          weekShifts={shifts.map(s => ({
+            id: s.id,
+            employeeId: s.employeeId,
+            date: s.date,
+            startTime: s.startTime,
+            endTime: s.endTime,
+          }))}
         />
       )}
 
