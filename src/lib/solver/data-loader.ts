@@ -300,6 +300,7 @@ export async function loadAllStoresSolverInput(
   options: SolverOptions
 ): Promise<SolverInput[]> {
   const stores = await prisma.store.findMany({
+    where: { status: "ACTIVE" },
     include: { schedules: { orderBy: { dayOfWeek: "asc" } } },
     orderBy: { name: "asc" },
   });

@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       if (storeId) {
         const store = await prisma.store.findUnique({ where: { id: storeId } });
         if (!store) return errorResponse("Magasin non trouvé", 404);
+        if (store.status !== "ACTIVE") return errorResponse("Impossible de générer un planning : ce magasin est inactif", 422);
 
         const solverInput = await loadSolverInput(storeId, weekStart, {
           mode, shiftDurationHours, shiftGranularity,
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
       if (storeId) {
         const store = await prisma.store.findUnique({ where: { id: storeId } });
         if (!store) return errorResponse("Magasin non trouvé", 404);
+        if (store.status !== "ACTIVE") return errorResponse("Impossible de générer un planning : ce magasin est inactif", 422);
 
         const solverInput = await loadSolverInput(storeId, weekStart, {
           mode, shiftDurationHours, shiftGranularity,

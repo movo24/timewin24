@@ -20,6 +20,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { storeId, sourceWeekStart, targetWeekStart } = parsed.data;
+
+    // Reject duplication if target store is inactive
+    if (storeId) {
+      const store = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
+      if (!store) return errorResponse("Magasin non trouvé", 404);
+      if (store.status !== "ACTIVE") return errorResponse("Impossible de dupliquer : ce magasin est inactif", 422);
+    }
+
     const { weekStart: srcStart, weekEnd: srcEnd } = getWeekBounds(sourceWeekStart);
     const targetStart = toUTCDate(targetWeekStart);
 

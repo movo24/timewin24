@@ -37,6 +37,13 @@ export async function PUT(
 
     const { storeId, employeeId, date, startTime, endTime, note } = parsed.data;
 
+    // Reject modifications targeting an inactive store
+    const targetStore = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
+    if (!targetStore) return errorResponse("Magasin non trouvé", 404);
+    if (targetStore.status !== "ACTIVE") {
+      return errorResponse("Impossible de modifier ce shift : le magasin est inactif", 422);
+    }
+
     // Check overlap (only if employee is assigned, exclude self)
     if (employeeId) {
       const overlap = await findOverlappingShift(
