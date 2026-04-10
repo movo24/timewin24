@@ -81,7 +81,19 @@ export async function POST(
       }
     }
 
-    // Proceed with status change
+    // Proceed with status change — cascade cleanup when deactivating
+    let cancelledShifts = 0;
+
+    if (newStatus === "INACTIVE") {
+      // Delete all future shifts for this store — they are no longer valid
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deleted = await prisma.shift.deleteMany({
+        where: { storeId: id, date: { gte: today } },
+      });
+      cancelledShifts = deleted.count;
+    }
+
     const updated = await prisma.store.update({
       where: { id },
       data: { status: newStatus },
@@ -91,14 +103,16 @@ export async function POST(
       action: newStatus === "ACTIVE" ? "reactivate" : "deactivate",
       before: { status: store.status },
       after: { status: newStatus },
+      cancelledShifts,
     });
 
     return successResponse({
       store: updated,
+      cancelledShifts,
       message:
         newStatus === "ACTIVE"
           ? `Le magasin "${store.name}" a été réactivé`
-          : `Le magasin "${store.name}" a été désactivé`,
+          : `Le magasin "${store.name}" a été désactivé${cancelledShifts > 0 ? ` — ${cancelledShifts} shift(s) futur(s) annulé(s)` : ""}`,
     });
   } catch (err) {
     console.error("POST /api/stores/[id]/toggle-status error:", err);

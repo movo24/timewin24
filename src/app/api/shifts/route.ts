@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
     const { weekStart: start, weekEnd: end } = getWeekBounds(weekStart);
     const where: Record<string, unknown> = {
       date: { gte: start, lte: end },
+      // Never return shifts for inactive stores — they are locked
+      store: { status: "ACTIVE" },
     };
     if (storeId) {
       // RBAC: Manager can only see shifts from their assigned stores
