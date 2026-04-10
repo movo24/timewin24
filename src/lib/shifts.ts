@@ -214,7 +214,7 @@ export async function findMaxEmployeesViolation(
 
   if (distinctEmployees.size >= effectiveMax) {
     return {
-      reason: `Max employés par jour atteint (${distinctEmployees.size}/${effectiveMax})`,
+      reason: `Limite quotidienne du magasin atteinte (${distinctEmployees.size}/${effectiveMax} employés distincts)`,
       current: distinctEmployees.size,
       max: effectiveMax,
     };
