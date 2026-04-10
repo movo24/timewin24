@@ -54,12 +54,15 @@ export function generateCrossStoreSuggestions(
   const unassignedShifts = result.shifts.filter((s) => s.employeeId === null);
   if (unassignedShifts.length === 0) return [];
 
-  // Build a map of all employees across all stores
+  // Build a map of all employees across all stores (primary store = first store they appear in)
   const employeeStoreMap = new Map<string, {
     employee: SolverEmployee;
     storeId: string;
     storeName: string;
   }>();
+
+  // Track which stores each employee is authorized for (appears in their StoreEmployee pool)
+  const employeeAuthorizedStores = new Map<string, Set<string>>();
 
   for (const input of inputs) {
     for (const emp of input.employees) {
@@ -70,6 +73,10 @@ export function generateCrossStoreSuggestions(
           storeName: input.store.name,
         });
       }
+      // Register this store as authorized for this employee
+      const authorized = employeeAuthorizedStores.get(emp.id) ?? new Set<string>();
+      authorized.add(input.store.id);
+      employeeAuthorizedStores.set(emp.id, authorized);
     }
   }
 
@@ -83,6 +90,9 @@ export function generateCrossStoreSuggestions(
     );
   }
 
+  // Deduplication key: one suggestion per (employeeId, date, toStoreId)
+  const suggestionKeys = new Set<string>();
+
   // For each unassigned shift, find potential employees from other stores
   for (const unassigned of unassignedShifts) {
     const shiftHours = calculateHoursFromTimes(unassigned.startTime, unassigned.endTime);
@@ -94,10 +104,20 @@ export function generateCrossStoreSuggestions(
     const targetSchedule = targetInput.store.schedules.get(dayOfWeek);
     if (!targetSchedule) continue;
 
+    // Build the authorized employee set for the target store
+    const targetStoreEmployeeIds = new Set(targetInput.employees.map((e) => e.id));
+
     // Check employees from OTHER stores
     for (const [empId, empInfo] of employeeStoreMap) {
-      // Skip employees from the same store
+      // Skip employees from the same store as the unassigned shift
       if (empInfo.storeId === unassigned.storeId) continue;
+
+      // AUTHORIZATION: employee must be in the target store's authorized pool
+      if (!targetStoreEmployeeIds.has(empId)) continue;
+
+      // DEDUPLICATION: skip if we already suggested this employee for this store+day
+      const dedupKey = `${empId}||${unassigned.storeId}||${unassigned.date}`;
+      if (suggestionKeys.has(dedupKey)) continue;
 
       const emp = empInfo.employee;
       const currentHours = employeeAssignedHours.get(empId) || 0;
@@ -140,6 +160,7 @@ export function generateCrossStoreSuggestions(
 
       // Employee is a viable candidate — generate suggestion
       const remainingCapacity = targetWeekly - currentHours;
+      suggestionKeys.add(`${empId}||${unassigned.storeId}||${unassigned.date}`);
       suggestions.push({
         type: "MOVE_EMPLOYEE",
         employeeId: empId,
