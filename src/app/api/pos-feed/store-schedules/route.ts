@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
 import { validatePosAuth } from "@/lib/pos-auth";
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   try {
     const ip = getClientIp(req);
     const rl = checkRateLimit(`posschedules:${ip}`, RATE_LIMITS.heavy);
-    if (rl) return rl;
+    if (!rl.allowed) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } });
 
     const authError = await validatePosAuth(req);
     if (authError) return authError;
@@ -53,7 +53,7 @@ export async function PUT(req: NextRequest) {
   try {
     const ip = getClientIp(req);
     const rl = checkRateLimit(`posschedules:${ip}`, RATE_LIMITS.heavy);
-    if (rl) return rl;
+    if (!rl.allowed) return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } });
 
     const authError = await validatePosAuth(req);
     if (authError) return authError;
