@@ -174,7 +174,12 @@ export default function EmployeesPage() {
       const costRes = await fetch("/api/costs/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId: empId, countryCode: "FR", hourlyRateGross: form.hourlyRateGross, fixedMissionCost: form.fixedMissionCost || null }),
+        body: JSON.stringify({
+          employeeId: empId,
+          countryCode: "FR",
+          hourlyRateGross: parseFloat(form.hourlyRateGross),
+          fixedMissionCost: form.fixedMissionCost ? parseFloat(form.fixedMissionCost) : null,
+        }),
       });
       if (!costRes.ok) {
         const costData = await costRes.json().catch(() => ({}));

@@ -609,7 +609,11 @@ function ConfigTab() {
     const res = await fetch("/api/costs/employees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...empForm, countryCode: "FR" }),
+      body: JSON.stringify({
+        ...empForm,
+        countryCode: "FR",
+        hourlyRateGross: parseFloat(empForm.hourlyRateGross),
+      }),
     });
     const data = await res.json();
     setEmpSaving(false);
