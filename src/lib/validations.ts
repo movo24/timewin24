@@ -129,6 +129,8 @@ export const autoGenerateSchema = z.object({
   idealShiftRange: z.tuple([z.number().min(2).max(12), z.number().min(2).max(12)]).optional(),
   // Manager Brain: intelligent placement based on employee profiles
   useManagerBrain: z.boolean().optional().default(true),
+  // Shift Construction: greedy longest-shift mode instead of fixed slots
+  useShiftConstruction: z.boolean().optional().default(false),
 });
 
 // Types

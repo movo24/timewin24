@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
     }
 
-    const { storeId, weekStart, mode, shiftDurationHours, shiftGranularity, useScenarios, idealShiftRange, useManagerBrain } = parsed.data;
+    const { storeId, weekStart, mode, shiftDurationHours, shiftGranularity, useScenarios, idealShiftRange, useManagerBrain, useShiftConstruction } = parsed.data;
 
     // RBAC: Manager can only generate planning for their assigned stores
     if (user.role === "MANAGER") {
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
           return errorResponse("Aucun jour ouvert cette semaine.", 400);
         }
 
-        result = solve(solverInput, { useManagerBrain });
+        result = solve(solverInput, { useManagerBrain, useShiftConstruction });
       } else {
         const allInputs = await loadAllStoresSolverInput(weekStart, {
           mode, shiftDurationHours, shiftGranularity,
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
           return errorResponse("Aucun magasin avec des employés assignés.", 400);
         }
 
-        result = solveMultiStore(allInputs, { useManagerBrain });
+        result = solveMultiStore(allInputs, { useManagerBrain, useShiftConstruction });
       }
     }
 

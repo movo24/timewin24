@@ -71,6 +71,7 @@ interface SolveOptions {
   weights?: ScoringWeights;
   assignmentOrder?: "score-desc" | "fairness-first";
   useManagerBrain?: boolean;
+  useShiftConstruction?: boolean;
 }
 
 // ─── Time Helpers ───────────────────────────────
@@ -676,10 +677,351 @@ function computePoolStats(employees: SolverEmployee[]) {
 }
 
 // ═══════════════════════════════════════════════════
+// SHIFT CONSTRUCTION MODE
+// ═══════════════════════════════════════════════════
+
+/**
+ * Find the longest valid shift an employee can work starting at rangeStartMin.
+ * Tries from maximum possible duration down to 30min increments.
+ * Returns endMin (minutes from midnight) or null if employee cannot work at all.
+ */
+function buildLongestShiftForEmployee(
+  emp: SolverEmployee,
+  state: EmployeeState,
+  date: string,
+  dayOfWeek: number,
+  rangeStartMin: number,
+  rangeEndMin: number,
+  existingShifts: SolverExistingShift[],
+  generatedShifts: SolverShift[],
+  storeOpenTime: string,
+  storeCloseTime: string,
+  store: SolverStore,
+  storeMaxOverlapMinutes: number,
+  storeMaxEmployees: number | null,
+  storeMaxSimultaneous: number,
+): number | null {
+  const dailyUsed = state.dailyHours.get(date) || 0;
+  const weeklyUsed = state.weeklyHoursAssigned;
+  const rangeDurationHours = (rangeEndMin - rangeStartMin) / 60;
+
+  const maxShiftHours = Math.min(
+    emp.maxHoursPerDay - dailyUsed,
+    emp.maxHoursPerWeek - weeklyUsed,
+    rangeDurationHours,
+    10,
+  );
+
+  if (maxShiftHours < 0.5) return null;
+
+  // Round down to nearest 15 minutes
+  let endMin = rangeStartMin + Math.floor((maxShiftHours * 60) / 15) * 15;
+
+  while (endMin > rangeStartMin) {
+    const shiftHours = (endMin - rangeStartMin) / 60;
+    const startTime = minutesToTime(rangeStartMin);
+    const endTime = minutesToTime(endMin);
+
+    try {
+      if (
+        passesAllHardConstraints(
+          emp, state, date, dayOfWeek, startTime, endTime, shiftHours,
+          existingShifts, generatedShifts, storeOpenTime, storeCloseTime,
+          store.id, storeMaxOverlapMinutes, storeMaxEmployees, storeMaxSimultaneous,
+          undefined, undefined, undefined,
+        )
+      ) {
+        return endMin;
+      }
+    } catch {
+      // skip this duration and try shorter
+    }
+
+    endMin -= 15;
+  }
+
+  return null;
+}
+
+/**
+ * Solve a single day using greedy longest-shift construction.
+ * Instead of fixed slots, finds the longest shift each employee can cover
+ * from the current uncovered range start, picks the best employee, assigns,
+ * then repeats for remaining uncovered ranges.
+ */
+function solveDayWithShiftConstruction(
+  store: SolverStore,
+  daySlot: DaySlot,
+  employees: SolverEmployee[],
+  employeeStates: Map<string, EmployeeState>,
+  existingShifts: SolverExistingShift[],
+  allGeneratedRaw: SolverShift[],
+  weightedScoring?: { weights: ScoringWeights; minCost: number; maxCost: number; avgPoolHours: number },
+): {
+  shifts: GeneratedShift[];
+  assignedCount: number;
+  unassignedCount: number;
+  warnings: string[];
+} {
+  const { date, dayOfWeek, schedule } = daySlot;
+  const openMin = timeToMinutes(schedule.openTime);
+  const closeMin = timeToMinutes(schedule.closeTime);
+  const storeMaxOverlap = store.allowOverlap ? store.maxOverlapMinutes : 0;
+  const storeMaxSimultaneous = schedule.maxSimultaneous ?? store.maxSimultaneous;
+  const storeMaxEmployees = schedule.maxEmployees ?? store.maxEmployees;
+
+  // Start with full day uncovered (minus already existing shifts)
+  let uncoveredRanges = findUncoveredRanges(
+    openMin,
+    closeMin,
+    existingShifts.filter((s) => s.date === date && s.storeId === store.id),
+  );
+
+  const dayShifts: GeneratedShift[] = [];
+  let assignedCount = 0;
+  let unassignedCount = 0;
+  const warnings: string[] = [];
+
+  while (uncoveredRanges.length > 0) {
+    const range = uncoveredRanges[0];
+
+    if ((range.end - range.start) / 60 < 0.5) {
+      uncoveredRanges.shift();
+      continue;
+    }
+
+    // Find best employee + their longest possible shift
+    let bestEmployee: SolverEmployee | null = null;
+    let bestEndMin = 0;
+    let bestScore = -Infinity;
+
+    for (const emp of employees) {
+      const state = employeeStates.get(emp.id);
+      if (!state) continue;
+
+      const endMin = buildLongestShiftForEmployee(
+        emp, state, date, dayOfWeek,
+        range.start, range.end,
+        existingShifts, allGeneratedRaw,
+        schedule.openTime, schedule.closeTime,
+        store, storeMaxOverlap, storeMaxEmployees, storeMaxSimultaneous,
+      );
+
+      if (endMin === null || endMin <= range.start) continue;
+
+      const shiftHours = (endMin - range.start) / 60;
+      const phase = classifySlotPhase(minutesToTime(range.start), minutesToTime(endMin), schedule.openTime, schedule.closeTime);
+
+      let score: number;
+      if (weightedScoring) {
+        score = calculateCandidateScore(
+          emp, state, shiftHours, store.id,
+          weightedScoring.minCost, weightedScoring.maxCost, weightedScoring.avgPoolHours,
+          weightedScoring.weights, phase, store.importance,
+        );
+      } else {
+        score = scoreEmployeeForSlot(emp, state, date, shiftHours, store.id);
+      }
+
+      // Prefer longer shifts (more coverage) when scores are tied
+      const adjustedScore = score + (endMin - range.start) / (closeMin - openMin) * 5;
+
+      if (adjustedScore > bestScore) {
+        bestScore = adjustedScore;
+        bestEmployee = emp;
+        bestEndMin = endMin;
+      }
+    }
+
+    if (!bestEmployee) {
+      // No employee can cover this range — create unassigned shift
+      const rangeHours = (range.end - range.start) / 60;
+      const slot: CoverageSlot = {
+        startTime: minutesToTime(range.start),
+        endTime: minutesToTime(range.end),
+        hours: rangeHours,
+        breakMinutes: rangeHours > 6 ? 30 : 0,
+        label: "non assigné",
+      };
+      const phase = classifySlotPhase(slot.startTime, slot.endTime, schedule.openTime, schedule.closeTime);
+      const { generated, raw } = createUnassignedShift(slot, store, date, phase);
+      dayShifts.push(generated);
+      allGeneratedRaw.push(raw);
+      unassignedCount++;
+      warnings.push(`${date} (${slot.startTime}-${slot.endTime}): aucun employé disponible — shift non assigné`);
+      uncoveredRanges.shift();
+      continue;
+    }
+
+    // Assign best employee with their longest shift
+    const shiftHours = (bestEndMin - range.start) / 60;
+    const dayFractionCovered = (closeMin - openMin) > 0 ? (bestEndMin - range.start) / (closeMin - openMin) : 0;
+    const slot: CoverageSlot = {
+      startTime: minutesToTime(range.start),
+      endTime: minutesToTime(bestEndMin),
+      hours: shiftHours,
+      breakMinutes: shiftHours > 6 ? 30 : 0,
+      label: dayFractionCovered >= 0.8 ? "journée" : range.start === openMin ? "matin" : "après-midi",
+    };
+    const state = employeeStates.get(bestEmployee.id)!;
+    const phase = classifySlotPhase(slot.startTime, slot.endTime, schedule.openTime, schedule.closeTime);
+    const reason = generateAssignmentReason(bestEmployee, phase, store.importance);
+    const { generated, raw } = createAssignedShift(bestEmployee, slot, store, date, state, phase, reason);
+    dayShifts.push(generated);
+    allGeneratedRaw.push(raw);
+    assignedCount++;
+
+    // Update uncovered ranges
+    if (bestEndMin >= range.end) {
+      uncoveredRanges.shift(); // fully covered
+    } else {
+      uncoveredRanges[0] = { start: bestEndMin, end: range.end }; // partial — continue from where we left off
+    }
+  }
+
+  return { shifts: dayShifts, assignedCount, unassignedCount, warnings };
+}
+
+/**
+ * Full solver using shift construction mode for all days.
+ * Same output structure as solve(), but calls solveDayWithShiftConstruction per day.
+ */
+function solveWithShiftConstructionMode(input: SolverInput, solveOptions: SolveOptions): SolverResult {
+  const startTime = performance.now();
+  const { weights, useManagerBrain = true } = solveOptions;
+
+  const { store, employees, existingShifts, weekDays } = input;
+
+  const generatedShifts: GeneratedShift[] = [];
+  const allGeneratedRaw: SolverShift[] = [];
+  const warnings: string[] = [];
+  const employeeStates = initializeStates(employees, existingShifts);
+  const poolStats = computePoolStats(employees);
+  const employeesUsedSet = new Set<string>();
+
+  let daysFullyCovered = 0;
+  let daysPartiallyCovered = 0;
+  let daysUncovered = 0;
+  let assignedCount = 0;
+  let unassignedCount = 0;
+
+  const effectiveWeights = weights ?? (useManagerBrain ? SCORING_PROFILES["manager-brain"] : undefined);
+  const weightedScoring = effectiveWeights
+    ? { weights: effectiveWeights, minCost: poolStats.minCost, maxCost: poolStats.maxCost, avgPoolHours: poolStats.avgPoolHours }
+    : undefined;
+
+  for (const daySlot of weekDays) {
+    const { date } = daySlot;
+    try {
+      const openMin = timeToMinutes(daySlot.schedule.openTime);
+      const closeMin = timeToMinutes(daySlot.schedule.closeTime);
+
+      // Check if day is already fully covered by existing shifts
+      const uncoveredBefore = findUncoveredRanges(
+        openMin, closeMin,
+        existingShifts.filter((s) => s.date === date && s.storeId === store.id),
+      );
+      const totalUncoveredHours = uncoveredBefore.reduce((sum, r) => sum + (r.end - r.start) / 60, 0);
+
+      if (totalUncoveredHours < 0.5) {
+        daysFullyCovered++;
+        continue;
+      }
+
+      const dayResult = solveDayWithShiftConstruction(
+        store, daySlot, employees, employeeStates,
+        existingShifts, allGeneratedRaw, weightedScoring,
+      );
+
+      generatedShifts.push(...dayResult.shifts);
+      warnings.push(...dayResult.warnings);
+      assignedCount += dayResult.assignedCount;
+      unassignedCount += dayResult.unassignedCount;
+
+      for (const s of dayResult.shifts) {
+        if (s.employeeId) employeesUsedSet.add(s.employeeId);
+      }
+
+      // Coverage tracking
+      if (dayResult.unassignedCount === 0 && dayResult.assignedCount > 0) {
+        daysFullyCovered++;
+      } else if (dayResult.assignedCount > 0) {
+        daysPartiallyCovered++;
+        warnings.push(`${date}: couverture partielle`);
+      } else {
+        daysUncovered++;
+        warnings.push(`${date}: aucun employé n'a pu être affecté`);
+      }
+
+      // Manager check
+      if (store.needsManager) {
+        const existingForDay = existingShifts.filter((s) => s.date === date && s.storeId === store.id);
+        const hasManager = existingForDay.some((s) => employees.find((e) => e.id === s.employeeId)?.skills.includes("MANAGER"))
+          || dayResult.shifts.some((s) => employees.find((e) => e.id === s.employeeId)?.skills.includes("MANAGER"));
+        if (!hasManager) {
+          warnings.push(`${date}: aucun manager planifié (magasin requiert un manager)`);
+        }
+      }
+    } catch (dayErr) {
+      console.warn(`[Solver/ShiftConstruction] Erreur jour ${date}:`, dayErr);
+      daysUncovered++;
+      warnings.push(`${date}: erreur interne — jour non planifié`);
+    }
+  }
+
+  const solveTimeMs = performance.now() - startTime;
+  const mergedShifts = mergeContiguousShifts(generatedShifts);
+  const totalHours = mergedShifts.reduce((sum, s) => sum + s.hours, 0);
+
+  // Build structured coverage gaps from warnings
+  const coverageGaps: import("./types").CoverageGap[] = [];
+  for (const w of warnings) {
+    if (w.includes("aucun employé n'a pu être affecté")) {
+      const date = w.split(":")[0].trim();
+      coverageGaps.push({
+        date,
+        storeName: store.name,
+        reason: "Aucun employé éligible pour cette journée",
+        suggestion: "Vérifiez les autorisations magasin, les heures max et les indisponibilités des employés",
+      });
+    } else if (w.includes("couverture partielle")) {
+      const date = w.split(":")[0].trim();
+      coverageGaps.push({
+        date,
+        storeName: store.name,
+        reason: w.split(":").slice(1).join(":").trim(),
+        suggestion: "Ajoutez des employés autorisés sur ce magasin ou augmentez leurs heures max",
+      });
+    }
+  }
+
+  return {
+    shifts: mergedShifts,
+    warnings,
+    coverageGaps,
+    stats: {
+      totalShiftsGenerated: mergedShifts.length,
+      assignedCount,
+      unassignedCount,
+      totalHoursGenerated: totalHours,
+      daysFullyCovered,
+      daysPartiallyCovered,
+      daysUncovered,
+      employeesUsed: employeesUsedSet.size,
+      solveTimeMs: Math.round(solveTimeMs * 100) / 100,
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════
 // MAIN SOLVER
 // ═══════════════════════════════════════════════════
 
 export function solve(input: SolverInput, solveOptions: SolveOptions = {}): SolverResult {
+  if (solveOptions.useShiftConstruction) {
+    return solveWithShiftConstructionMode(input, solveOptions);
+  }
+
   const startTime = performance.now();
   const { weights, assignmentOrder = "score-desc", useManagerBrain = true } = solveOptions;
 
