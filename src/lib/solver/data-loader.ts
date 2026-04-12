@@ -269,6 +269,7 @@ export async function loadSolverInput(
   // ─── 4. Build Week Days (open days only) ─────────
 
   const weekDays: DaySlot[] = [];
+  const DAY_NAMES = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
   for (const dt of weekDates) {
     const dow = getDayOfWeek(dt);
@@ -279,6 +280,17 @@ export async function loadSolverInput(
         dayOfWeek: dow,
         schedule,
       });
+    } else {
+      // Log silently-skipped days — helps diagnose "quai" stores with missing schedules
+      const rawSched = store.schedules.find((s) => s.dayOfWeek === dow);
+      if (!rawSched) {
+        console.warn(
+          `[DataLoader] Magasin "${store.name}" (${store.id}): ` +
+          `aucune configuration horaire pour le ${DAY_NAMES[dow]} (${formatDate(dt)}) — ` +
+          `jour ignoré par le solver. Configurez les horaires dans Paramètres > Magasins.`
+        );
+      }
+      // (Closed days are expected and not logged)
     }
   }
 
@@ -309,9 +321,23 @@ export async function loadAllStoresSolverInput(
 
   for (const store of stores) {
     const input = await loadSolverInput(store.id, weekStart, options);
-    // Only include stores that have employees assigned
+    // Only include stores that have employees assigned AND scheduled days
     if (input.employees.length > 0 && input.weekDays.length > 0) {
       inputs.push(input);
+    } else {
+      if (input.employees.length === 0) {
+        console.warn(
+          `[DataLoader] Magasin "${store.name}" (${store.id}): ` +
+          `aucun employé actif assigné — exclu du planning. ` +
+          `Assignez des employés via Employés > Magasins autorisés.`
+        );
+      } else if (input.weekDays.length === 0) {
+        console.warn(
+          `[DataLoader] Magasin "${store.name}" (${store.id}): ` +
+          `aucun horaire configuré pour la semaine du ${weekStart} — exclu du planning. ` +
+          `Configurez les horaires dans Paramètres > Magasins > Horaires.`
+        );
+      }
     }
   }
 

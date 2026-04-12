@@ -14,7 +14,9 @@ import type {
   SolverInput,
   CrossStoreSuggestion,
   SolverEmployee,
+  SolverShift,
 } from "./types";
+import { isStoreOverlapCompliant, isUnderMaxSimultaneous, isUnderMaxDistinctEmployees } from "./constraints";
 
 /**
  * Time helper
@@ -49,6 +51,18 @@ export function generateCrossStoreSuggestions(
   if (inputs.length < 2) return []; // Need at least 2 stores for cross-store suggestions
 
   const suggestions: CrossStoreSuggestion[] = [];
+
+  // Pre-build a SolverShift[] view of all assigned result shifts (for constraint helpers)
+  const assignedResultShifts: SolverShift[] = result.shifts
+    .filter((s) => s.employeeId !== null)
+    .map((s) => ({
+      employeeId: s.employeeId,
+      storeId: s.storeId,
+      date: s.date,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      hours: s.hours,
+    }));
 
   // Find unassigned shifts
   const unassignedShifts = result.shifts.filter((s) => s.employeeId === null);
@@ -147,16 +161,54 @@ export function generateCrossStoreSuggestions(
       }
       if (!available) continue;
 
-      // Check no overlap with employee's existing/generated shifts
-      let hasOverlap = false;
+      // Check no overlap with employee's existing/generated shifts (employee can't be in two places)
+      let hasEmployeeOverlap = false;
       for (const s of result.shifts) {
         if (s.employeeId !== empId || s.date !== unassigned.date) continue;
         if (unassigned.startTime < s.endTime && s.startTime < unassigned.endTime) {
-          hasOverlap = true;
+          hasEmployeeOverlap = true;
           break;
         }
       }
-      if (hasOverlap) continue;
+      if (hasEmployeeOverlap) continue;
+
+      // Check target store overlap compliance (respects maxOverlapMinutes, not just boolean overlap)
+      if (!isStoreOverlapCompliant(
+        unassigned.storeId,
+        unassigned.date,
+        unassigned.startTime,
+        unassigned.endTime,
+        empId,
+        targetInput.store.maxOverlapMinutes,
+        [], // no DB-loaded existing shifts in this context
+        assignedResultShifts,
+      )) continue;
+
+      // Check target store maxSimultaneous constraint
+      // (targetSchedule already resolved in outer loop scope)
+      const effectiveMaxSimultaneous =
+        targetSchedule?.maxSimultaneous ?? targetInput.store.maxSimultaneous;
+      if (!isUnderMaxSimultaneous(
+        unassigned.storeId,
+        unassigned.date,
+        unassigned.startTime,
+        unassigned.endTime,
+        effectiveMaxSimultaneous,
+        [],
+        assignedResultShifts,
+      )) continue;
+
+      // Check target store maxEmployees (distinct employees per day) constraint
+      const effectiveMaxEmployees =
+        targetSchedule?.maxEmployees ?? targetInput.store.maxEmployees;
+      if (!isUnderMaxDistinctEmployees(
+        empId,
+        unassigned.storeId,
+        unassigned.date,
+        effectiveMaxEmployees,
+        [],
+        assignedResultShifts,
+      )) continue;
 
       // Employee is a viable candidate — generate suggestion
       const remainingCapacity = targetWeekly - currentHours;
