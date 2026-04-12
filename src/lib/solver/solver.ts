@@ -42,7 +42,17 @@ import type {
   ClassifiedSlot,
 } from "./types";
 import { DEFAULT_SCENARIO_CONFIG } from "./types";
-import { passesAllHardConstraints } from "./constraints";
+import {
+  passesAllHardConstraints,
+  isNoOverlap,
+  isAvailable,
+  isUnderDailyMax,
+  isUnderWeeklyMax,
+  hasEnoughRest,
+  isStoreOverlapCompliant,
+  isUnderMaxDistinctEmployees,
+  isUnderMaxSimultaneous,
+} from "./constraints";
 import {
   calculateCandidateScore,
   DEFAULT_WEIGHTS,
@@ -723,16 +733,28 @@ function buildLongestShiftForEmployee(
     const endTime = minutesToTime(endMin);
 
     try {
-      if (
-        passesAllHardConstraints(
-          emp, state, date, dayOfWeek, startTime, endTime, shiftHours,
-          existingShifts, generatedShifts, storeOpenTime, storeCloseTime,
-          store.id, storeMaxOverlapMinutes, storeMaxEmployees, storeMaxSimultaneous,
-          undefined, undefined, undefined,
-        )
-      ) {
-        return endMin;
-      }
+      // Check hard constraints individually.
+      // NOTE: isShiftPreferenceCompatible is intentionally EXCLUDED here — it is a
+      // soft preference that influences scoring, not a hard blocker. Treating it as
+      // hard would truncate shifts at midday (e.g. a MATIN employee can never fill
+      // 07:00-17:00) causing coverage gaps even when the employee is physically available.
+      const passes =
+        isNoOverlap(emp.id, date, startTime, endTime, existingShifts, generatedShifts) &&
+        isAvailable(emp.unavailabilities, date, dayOfWeek, startTime, endTime) &&
+        isUnderDailyMax(state, date, shiftHours, emp.maxHoursPerDay) &&
+        isUnderWeeklyMax(state, shiftHours, emp.maxHoursPerWeek) &&
+        hasEnoughRest(state, date, startTime, endTime, emp.minRestBetween) &&
+        (storeMaxOverlapMinutes == null || isStoreOverlapCompliant(
+          store.id, date, startTime, endTime, emp.id, storeMaxOverlapMinutes, existingShifts, generatedShifts
+        )) &&
+        (storeMaxEmployees === null || isUnderMaxDistinctEmployees(
+          emp.id, store.id, date, storeMaxEmployees, existingShifts, generatedShifts
+        )) &&
+        (storeMaxSimultaneous == null || isUnderMaxSimultaneous(
+          store.id, date, startTime, endTime, storeMaxSimultaneous, existingShifts, generatedShifts
+        ));
+
+      if (passes) return endMin;
     } catch {
       // skip this duration and try shorter
     }
@@ -1018,7 +1040,8 @@ function solveWithShiftConstructionMode(input: SolverInput, solveOptions: SolveO
 // ═══════════════════════════════════════════════════
 
 export function solve(input: SolverInput, solveOptions: SolveOptions = {}): SolverResult {
-  if (solveOptions.useShiftConstruction) {
+  // Shift construction is the default mode (use old slot-filling only when explicitly disabled)
+  if (solveOptions.useShiftConstruction !== false) {
     return solveWithShiftConstructionMode(input, solveOptions);
   }
 
