@@ -31,6 +31,7 @@ import type {
   SolverShift,
   SolverExistingShift,
   SolverStore,
+  SolverStoreSchedule,
   SolverEmployee,
   EmployeeState,
   DaySlot,
@@ -765,11 +766,133 @@ function buildLongestShiftForEmployee(
   return null;
 }
 
+// ─── Human-Quality Shift Constants ──────────────────
+const MIN_SHIFT_HOURS = 4;      // hard minimum — never create shifts shorter than this
+const IDEAL_SHIFT_MIN_H = 5;    // soft ideal minimum (penalty below)
+const IDEAL_SHIFT_MAX_H = 8;    // soft ideal maximum (mild penalty above)
+
 /**
- * Solve a single day using greedy longest-shift construction.
- * Instead of fixed slots, finds the longest shift each employee can cover
- * from the current uncovered range start, picks the best employee, assigns,
- * then repeats for remaining uncovered ranges.
+ * Score a shift duration for human attractiveness.
+ * Returns a positive score for ideal shifts (5–8h) and penalises extremes.
+ */
+function scoreShiftDurationQuality(hours: number): number {
+  if (hours < MIN_SHIFT_HOURS) return -1000; // hard block
+  if (hours < IDEAL_SHIFT_MIN_H) return (hours - MIN_SHIFT_HOURS) / (IDEAL_SHIFT_MIN_H - MIN_SHIFT_HOURS) * 30; // 0→30
+  if (hours <= IDEAL_SHIFT_MAX_H) return 50; // ideal range
+  return Math.max(10, 50 - (hours - IDEAL_SHIFT_MAX_H) * 4); // gentle penalty for very long
+}
+
+/**
+ * Find the best balanced 2-employee relay split for a range that no single
+ * employee can cover entirely.
+ *
+ * Strategy: search relay points within ±2.5h of the range centre.
+ * For each relay, score the split by:
+ *   - balance (how equal the two shift durations are)
+ *   - human quality (each shift ≥ 5h ideally)
+ *   - employee fit (priority, hours-remaining, cost)
+ * Returns the best (emp1, emp2, relay) triple, or null if none found.
+ */
+function findBalancedTwoEmployeeSplit(
+  range: TimeRange,
+  employees: SolverEmployee[],
+  employeeStates: Map<string, EmployeeState>,
+  date: string,
+  dayOfWeek: number,
+  schedule: SolverStoreSchedule,
+  store: SolverStore,
+  existingShifts: SolverExistingShift[],
+  generatedShifts: SolverShift[],
+  storeMaxOverlap: number,
+  storeMaxEmployees: number | null,
+  storeMaxSimultaneous: number,
+  weightedScoring?: { weights: ScoringWeights; minCost: number; maxCost: number; avgPoolHours: number },
+): { emp1: SolverEmployee; emp2: SolverEmployee; relayMin: number } | null {
+  const rangeHours = (range.end - range.start) / 60;
+  if (rangeHours < MIN_SHIFT_HOURS * 2) return null;
+
+  // Centre of the range — ideal relay for equal split
+  const centerMin = Math.round((range.start + range.end) / 2 / 15) * 15;
+  const searchWindowMin = 2.5 * 60; // ±2.5h from centre
+  const searchStart = Math.max(range.start + MIN_SHIFT_HOURS * 60, centerMin - searchWindowMin);
+  const searchEnd   = Math.min(range.end   - MIN_SHIFT_HOURS * 60, centerMin + searchWindowMin);
+
+  let bestScore = -Infinity;
+  let best: { emp1: SolverEmployee; emp2: SolverEmployee; relayMin: number } | null = null;
+
+  for (let relay = searchStart; relay <= searchEnd; relay += 15) {
+    const dur1 = (relay - range.start) / 60;
+    const dur2 = (range.end - relay) / 60;
+
+    if (dur1 < MIN_SHIFT_HOURS || dur2 < MIN_SHIFT_HOURS) continue;
+
+    // Split quality: balance + human shift quality
+    const balance = 1 - Math.abs(dur1 - dur2) / (dur1 + dur2); // 0–1
+    const splitQuality = balance * 40 + scoreShiftDurationQuality(dur1) + scoreShiftDurationQuality(dur2);
+    if (splitQuality < -500) continue; // skip obviously bad splits before pair search
+
+    for (let i = 0; i < employees.length; i++) {
+      const emp1 = employees[i];
+      const state1 = employeeStates.get(emp1.id);
+      if (!state1) continue;
+
+      // emp1 must be able to cover range.start → relay exactly
+      const emp1End = buildLongestShiftForEmployee(
+        emp1, state1, date, dayOfWeek,
+        range.start, relay, existingShifts, generatedShifts,
+        schedule.openTime, schedule.closeTime,
+        store, storeMaxOverlap, storeMaxEmployees, storeMaxSimultaneous,
+      );
+      if (emp1End === null || emp1End < relay) continue;
+
+      for (let j = 0; j < employees.length; j++) {
+        if (i === j) continue;
+        const emp2 = employees[j];
+        const state2 = employeeStates.get(emp2.id);
+        if (!state2) continue;
+
+        // emp2 must be able to cover relay → range.end exactly
+        const emp2End = buildLongestShiftForEmployee(
+          emp2, state2, date, dayOfWeek,
+          relay, range.end, existingShifts, generatedShifts,
+          schedule.openTime, schedule.closeTime,
+          store, storeMaxOverlap, storeMaxEmployees, storeMaxSimultaneous,
+        );
+        if (emp2End === null || emp2End < range.end) continue;
+
+        // Score employee pair fit
+        const phase1 = classifySlotPhase(minutesToTime(range.start), minutesToTime(relay), schedule.openTime, schedule.closeTime);
+        const phase2 = classifySlotPhase(minutesToTime(relay), minutesToTime(range.end), schedule.openTime, schedule.closeTime);
+        let empScore1: number, empScore2: number;
+        if (weightedScoring) {
+          empScore1 = calculateCandidateScore(emp1, state1, dur1, store.id, weightedScoring.minCost, weightedScoring.maxCost, weightedScoring.avgPoolHours, weightedScoring.weights, phase1, store.importance);
+          empScore2 = calculateCandidateScore(emp2, state2, dur2, store.id, weightedScoring.minCost, weightedScoring.maxCost, weightedScoring.avgPoolHours, weightedScoring.weights, phase2, store.importance);
+        } else {
+          empScore1 = scoreEmployeeForSlot(emp1, state1, date, dur1, store.id);
+          empScore2 = scoreEmployeeForSlot(emp2, state2, date, dur2, store.id);
+        }
+
+        const totalScore = splitQuality + (empScore1 + empScore2) * 0.3;
+        if (totalScore > bestScore) {
+          bestScore = totalScore;
+          best = { emp1, emp2, relayMin: relay };
+        }
+      }
+    }
+  }
+
+  return best;
+}
+
+/**
+ * Solve a single day using human-quality shift construction.
+ *
+ * 3-step logic per uncovered range:
+ *   1. Full coverage — find the best employee who can cover the entire range alone.
+ *   2. Balanced relay — when no single employee suffices, find the best 2-employee
+ *      split that maximises balance and human shift quality (avoids 10h/3.5h splits).
+ *   3. Greedy fallback — assign the best employee for as long as possible,
+ *      continue with the remainder.
  */
 function solveDayWithShiftConstruction(
   store: SolverStore,
@@ -806,13 +929,110 @@ function solveDayWithShiftConstruction(
 
   while (uncoveredRanges.length > 0) {
     const range = uncoveredRanges[0];
+    const rangeHours = (range.end - range.start) / 60;
 
-    if ((range.end - range.start) / 60 < 0.5) {
+    if (rangeHours < 0.5) {
       uncoveredRanges.shift();
       continue;
     }
 
-    // Find best employee + their longest possible shift
+    // ─── Step 1: Full coverage — find the best single employee who covers the whole range ───
+
+    let fullCoverEmployee: SolverEmployee | null = null;
+    let fullCoverScore = -Infinity;
+
+    for (const emp of employees) {
+      const state = employeeStates.get(emp.id);
+      if (!state) continue;
+
+      const endMin = buildLongestShiftForEmployee(
+        emp, state, date, dayOfWeek,
+        range.start, range.end,
+        existingShifts, allGeneratedRaw,
+        schedule.openTime, schedule.closeTime,
+        store, storeMaxOverlap, storeMaxEmployees, storeMaxSimultaneous,
+      );
+      if (endMin === null || endMin < range.end) continue;
+
+      // Quality check: the resulting shift must meet minimum duration
+      if (scoreShiftDurationQuality(rangeHours) < -500) continue;
+
+      const phase = classifySlotPhase(minutesToTime(range.start), minutesToTime(range.end), schedule.openTime, schedule.closeTime);
+      const score = weightedScoring
+        ? calculateCandidateScore(emp, state, rangeHours, store.id, weightedScoring.minCost, weightedScoring.maxCost, weightedScoring.avgPoolHours, weightedScoring.weights, phase, store.importance)
+        : scoreEmployeeForSlot(emp, state, date, rangeHours, store.id);
+
+      if (score > fullCoverScore) {
+        fullCoverScore = score;
+        fullCoverEmployee = emp;
+      }
+    }
+
+    if (fullCoverEmployee) {
+      const slot: CoverageSlot = {
+        startTime: minutesToTime(range.start),
+        endTime: minutesToTime(range.end),
+        hours: rangeHours,
+        breakMinutes: rangeHours > 6 ? 30 : 0,
+        label: rangeHours >= (closeMin - openMin) / 60 * 0.8 ? "journée" : range.start === openMin ? "matin" : "après-midi",
+      };
+      const state = employeeStates.get(fullCoverEmployee.id)!;
+      const phase = classifySlotPhase(slot.startTime, slot.endTime, schedule.openTime, schedule.closeTime);
+      const reason = generateAssignmentReason(fullCoverEmployee, phase, store.importance);
+      const { generated, raw } = createAssignedShift(fullCoverEmployee, slot, store, date, state, phase, reason);
+      dayShifts.push(generated);
+      allGeneratedRaw.push(raw);
+      assignedCount++;
+      uncoveredRanges.shift();
+      continue;
+    }
+
+    // ─── Step 2: Balanced relay — find the best 2-employee split ────────────
+
+    if (rangeHours >= MIN_SHIFT_HOURS * 2) {
+      const split = findBalancedTwoEmployeeSplit(
+        range, employees, employeeStates, date, dayOfWeek,
+        schedule, store, existingShifts, allGeneratedRaw,
+        storeMaxOverlap, storeMaxEmployees, storeMaxSimultaneous,
+        weightedScoring,
+      );
+
+      if (split) {
+        const { emp1, emp2, relayMin } = split;
+
+        // Assign emp1: range.start → relay
+        const dur1 = (relayMin - range.start) / 60;
+        const slot1: CoverageSlot = {
+          startTime: minutesToTime(range.start), endTime: minutesToTime(relayMin),
+          hours: dur1, breakMinutes: dur1 > 6 ? 30 : 0, label: "matin",
+        };
+        const state1 = employeeStates.get(emp1.id)!;
+        const phase1 = classifySlotPhase(slot1.startTime, slot1.endTime, schedule.openTime, schedule.closeTime);
+        const { generated: gen1, raw: raw1 } = createAssignedShift(emp1, slot1, store, date, state1, phase1, generateAssignmentReason(emp1, phase1, store.importance));
+        dayShifts.push(gen1);
+        allGeneratedRaw.push(raw1);
+        assignedCount++;
+
+        // Assign emp2: relay → range.end
+        const dur2 = (range.end - relayMin) / 60;
+        const slot2: CoverageSlot = {
+          startTime: minutesToTime(relayMin), endTime: minutesToTime(range.end),
+          hours: dur2, breakMinutes: dur2 > 6 ? 30 : 0, label: "après-midi",
+        };
+        const state2 = employeeStates.get(emp2.id)!;
+        const phase2 = classifySlotPhase(slot2.startTime, slot2.endTime, schedule.openTime, schedule.closeTime);
+        const { generated: gen2, raw: raw2 } = createAssignedShift(emp2, slot2, store, date, state2, phase2, generateAssignmentReason(emp2, phase2, store.importance));
+        dayShifts.push(gen2);
+        allGeneratedRaw.push(raw2);
+        assignedCount++;
+
+        uncoveredRanges.shift();
+        continue;
+      }
+    }
+
+    // ─── Step 3: Greedy fallback — assign longest viable shift, continue with remainder ──
+
     let bestEmployee: SolverEmployee | null = null;
     let bestEndMin = 0;
     let bestScore = -Infinity;
@@ -828,26 +1048,23 @@ function solveDayWithShiftConstruction(
         schedule.openTime, schedule.closeTime,
         store, storeMaxOverlap, storeMaxEmployees, storeMaxSimultaneous,
       );
-
       if (endMin === null || endMin <= range.start) continue;
 
       const shiftHours = (endMin - range.start) / 60;
-      const phase = classifySlotPhase(minutesToTime(range.start), minutesToTime(endMin), schedule.openTime, schedule.closeTime);
 
+      // Reject shifts shorter than the hard minimum in greedy mode too
+      if (scoreShiftDurationQuality(shiftHours) < -500) continue;
+
+      const phase = classifySlotPhase(minutesToTime(range.start), minutesToTime(endMin), schedule.openTime, schedule.closeTime);
       let score: number;
       if (weightedScoring) {
-        score = calculateCandidateScore(
-          emp, state, shiftHours, store.id,
-          weightedScoring.minCost, weightedScoring.maxCost, weightedScoring.avgPoolHours,
-          weightedScoring.weights, phase, store.importance,
-        );
+        score = calculateCandidateScore(emp, state, shiftHours, store.id, weightedScoring.minCost, weightedScoring.maxCost, weightedScoring.avgPoolHours, weightedScoring.weights, phase, store.importance);
       } else {
         score = scoreEmployeeForSlot(emp, state, date, shiftHours, store.id);
       }
 
       // Prefer longer shifts (more coverage) when scores are tied
-      const adjustedScore = score + (endMin - range.start) / (closeMin - openMin) * 5;
-
+      const adjustedScore = score + (endMin - range.start) / Math.max(1, closeMin - openMin) * 5;
       if (adjustedScore > bestScore) {
         bestScore = adjustedScore;
         bestEmployee = emp;
@@ -856,8 +1073,7 @@ function solveDayWithShiftConstruction(
     }
 
     if (!bestEmployee) {
-      // No employee can cover this range — create unassigned shift
-      const rangeHours = (range.end - range.start) / 60;
+      // Nobody can work here at all — unassigned
       const slot: CoverageSlot = {
         startTime: minutesToTime(range.start),
         endTime: minutesToTime(range.end),
@@ -875,7 +1091,7 @@ function solveDayWithShiftConstruction(
       continue;
     }
 
-    // Assign best employee with their longest shift
+    // Greedy: assign and continue with leftover range
     const shiftHours = (bestEndMin - range.start) / 60;
     const dayFractionCovered = (closeMin - openMin) > 0 ? (bestEndMin - range.start) / (closeMin - openMin) : 0;
     const slot: CoverageSlot = {
@@ -887,17 +1103,15 @@ function solveDayWithShiftConstruction(
     };
     const state = employeeStates.get(bestEmployee.id)!;
     const phase = classifySlotPhase(slot.startTime, slot.endTime, schedule.openTime, schedule.closeTime);
-    const reason = generateAssignmentReason(bestEmployee, phase, store.importance);
-    const { generated, raw } = createAssignedShift(bestEmployee, slot, store, date, state, phase, reason);
+    const { generated, raw } = createAssignedShift(bestEmployee, slot, store, date, state, phase, generateAssignmentReason(bestEmployee, phase, store.importance));
     dayShifts.push(generated);
     allGeneratedRaw.push(raw);
     assignedCount++;
 
-    // Update uncovered ranges
     if (bestEndMin >= range.end) {
-      uncoveredRanges.shift(); // fully covered
+      uncoveredRanges.shift();
     } else {
-      uncoveredRanges[0] = { start: bestEndMin, end: range.end }; // partial — continue from where we left off
+      uncoveredRanges[0] = { start: bestEndMin, end: range.end };
     }
   }
 
