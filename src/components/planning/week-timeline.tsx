@@ -15,6 +15,8 @@ import {
 import { ShiftDragGhost } from "./shift-drag-ghost";
 import type { DragState } from "@/hooks/useShiftDrag";
 import { Plus } from "lucide-react";
+import { ShiftSendBadge } from "./shift-send-badge";
+import type { NotificationStatus } from "@/app/api/planning/notifications/route";
 
 interface WeekTimelineProps {
   weekStart: string;
@@ -41,6 +43,8 @@ interface WeekTimelineProps {
   didDrag?: boolean;
   clearDidDrag?: () => void;
   gridRef?: React.RefObject<HTMLDivElement | null>;
+  /** Per-employee send status — used to show a colored dot on each shift. */
+  sendStatusByEmployee?: Map<string, NotificationStatus>;
 }
 
 export function WeekTimeline({
@@ -58,6 +62,7 @@ export function WeekTimeline({
   didDrag,
   clearDidDrag,
   gridRef,
+  sendStatusByEmployee,
 }: WeekTimelineProps) {
   const days = getWeekDays(weekStart);
   const totalHours = gridEndHour - gridStartHour;
@@ -360,6 +365,13 @@ export function WeekTimeline({
                       <div className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize z-20 flex items-start justify-center">
                         <div className="w-6 h-0.5 bg-current opacity-20 rounded-full mt-0.5" />
                       </div>
+                    )}
+                    {/* Send-status indicator (top-right corner) */}
+                    {shift.employeeId && (
+                      <ShiftSendBadge
+                        status={sendStatusByEmployee?.get(shift.employeeId)}
+                        compact={height < 30}
+                      />
                     )}
                     <div className="px-0.5 sm:px-1 py-0.5 leading-tight">
                       <div className="text-[9px] sm:text-[11px] font-bold truncate">

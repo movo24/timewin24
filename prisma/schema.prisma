@@ -8,8 +8,8 @@ datasource db {
 }
 
 enum Role {
-  SUPER_ADMIN  // Super admin groupe — accès total multi-org
-  ADMIN        // Admin unité/réseau
+  SUPER_ADMIN // Super admin groupe — accès total multi-org
+  ADMIN // Admin unité/réseau
   MANAGER
   EMPLOYEE
 }
@@ -28,21 +28,21 @@ enum OrgStatus {
 // ─── Hiérarchie Réseau : Organisation > Unité > Magasin ───
 
 model Organization {
-  id          String    @id @default(cuid())
-  name        String    // "Groupe AddX"
-  legalName   String?   // Raison sociale
-  status      OrgStatus @default(ACTIVE)
-  siret       String?   // SIRET entreprise
-  siren       String?   // SIREN
-  vatNumber   String?   // Numéro TVA intracommunautaire
-  country     String    @default("FR")
-  currency    String    @default("EUR")
-  logo        String?   // URL logo
-  notes       String?
+  id        String    @id @default(cuid())
+  name      String // "Groupe AddX"
+  legalName String? // Raison sociale
+  status    OrgStatus @default(ACTIVE)
+  siret     String? // SIRET entreprise
+  siren     String? // SIREN
+  vatNumber String? // Numéro TVA intracommunautaire
+  country   String    @default("FR")
+  currency  String    @default("EUR")
+  logo      String? // URL logo
+  notes     String?
 
-  units       Unit[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  units     Unit[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name])
   @@index([status])
@@ -50,7 +50,7 @@ model Organization {
 
 model Unit {
   id             String       @id @default(cuid())
-  name           String       // "Île-de-France", "Sud-Est", "Division Luxe"
+  name           String // "Île-de-France", "Sud-Est", "Division Luxe"
   type           String       @default("region") // region, division, franchise, brand
   status         OrgStatus    @default(ACTIVE)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -59,9 +59,9 @@ model Unit {
   currency       String       @default("EUR")
   notes          String?
 
-  stores         Store[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  stores    Store[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([name])
@@ -88,83 +88,85 @@ model User {
   passwordChangedAt DateTime?
 
   // Rate limiting: track failed login attempts
-  failedAttempts Int      @default(0)
+  failedAttempts Int       @default(0)
   lockedUntil    DateTime?
 
   // Login audit
-  lastLoginAt    DateTime?
-  lastLoginIp    String?
-  loginCount     Int      @default(0)
+  lastLoginAt         DateTime?
+  lastLoginIp         String?
+  loginCount          Int       @default(0)
   passwordResetToken  String?   @unique
   passwordResetExpiry DateTime?
 
   // Messages RH
-  hrMessagesSent     HrMessage[]  @relation("MessageSender")
-  hrMessagesReceived HrMessage[]  @relation("MessageHandler")
+  hrMessagesSent     HrMessage[] @relation("MessageSender")
+  hrMessagesReceived HrMessage[] @relation("MessageHandler")
 
   // Feed & Broadcasts
-  feedPosts      FeedPost[]
-  feedComments   FeedComment[]
-  broadcasts     Broadcast[]
+  feedPosts    FeedPost[]
+  feedComments FeedComment[]
+  broadcasts   Broadcast[]
 
   // Notifications
-  phone                   String?
-  pushSubscriptions       PushSubscription[]
-  notificationPreferences NotificationPreference[]
-  notificationLogs        NotificationLog[]
+  phone                     String?
+  pushSubscriptions         PushSubscription[]
+  notificationPreferences   NotificationPreference[]
+  notificationLogs          NotificationLog[]
+  planningNotificationsSent PlanningNotification[]   @relation("PlanningNotificationSentBy")
 
-  labelPrintJobs     LabelPrintJob[]
+  labelPrintJobs LabelPrintJob[]
 
   @@index([email])
   @@index([passwordResetToken])
 }
 
 model Store {
-  id            String          @id @default(cuid())
-  name          String
-  storeCode     String?         @unique // Code magasin unique (ex: "PAR-001")
-  status        StoreStatus     @default(ACTIVE)
+  id        String      @id @default(cuid())
+  name      String
+  storeCode String?     @unique // Code magasin unique (ex: "PAR-001")
+  status    StoreStatus @default(ACTIVE)
 
   // Hiérarchie réseau
-  unit          Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  unitId        String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unitId String?
 
   // Localisation
-  city          String?
-  address       String?
-  country       String?         @default("FR")
-  timezone      String?         @default("Europe/Paris")
-  latitude      Float?
-  longitude     Float?
+  city      String?
+  address   String?
+  country   String? @default("FR")
+  timezone  String? @default("Europe/Paris")
+  latitude  Float?
+  longitude Float?
 
   // Infos légales/fiscales
-  vatRate       Float?          @default(20) // Taux TVA par défaut (%)
-  currency      String?         @default("EUR")
-  openedAt      DateTime?       // Date d'ouverture du magasin
+  vatRate  Float?    @default(20) // Taux TVA par défaut (%)
+  currency String?   @default("EUR")
+  openedAt DateTime? // Date d'ouverture du magasin
 
   // Contraintes staffing
-  minEmployees  Int?            @default(1)
-  maxEmployees  Int?
-  needsManager      Boolean         @default(false)
-  allowOverlap      Boolean         @default(false)
-  maxOverlapMinutes Int             @default(0)
-  maxSimultaneous   Int             @default(1)
+  minEmployees      Int?    @default(1)
+  maxEmployees      Int?
+  needsManager      Boolean @default(false)
+  allowOverlap      Boolean @default(false)
+  maxOverlapMinutes Int     @default(0)
+  maxSimultaneous   Int     @default(1)
 
   // Relations
-  employees       StoreEmployee[]
-  shifts          Shift[]
-  schedules       StoreSchedule[]
-  importance        Int             @default(2)
-  broadcastStores   BroadcastStore[]
-  clockIns          ClockIn[]
-  replacementOffers ReplacementOffer[]
-  managerAlerts     ManagerAlert[]
-  connectedApps      ConnectedApp[]
-  posEvents          PosEvent[]
-  inventorySessions  InventorySession[]
-  products           Product[]
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  employees             StoreEmployee[]
+  shifts                Shift[]
+  schedules             StoreSchedule[]
+  importance            Int                    @default(2)
+  broadcastStores       BroadcastStore[]
+  clockIns              ClockIn[]
+  replacementOffers     ReplacementOffer[]
+  managerAlerts         ManagerAlert[]
+  connectedApps         ConnectedApp[]
+  posEvents             PosEvent[]
+  inventorySessions     InventorySession[]
+  products              Product[]
+  planningNotifications PlanningNotification[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 
   @@index([name])
   @@index([city])
@@ -175,15 +177,15 @@ model Store {
 
 // Horaires d'ouverture par jour de la semaine
 model StoreSchedule {
-  id           String  @id @default(cuid())
-  store        Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  storeId      String
-  dayOfWeek    Int     // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam
-  closed       Boolean @default(false) // Fermé ce jour ?
-  openTime     String? @default("09:00") // "HH:mm"
-  closeTime    String? @default("20:00") // "HH:mm"
-  minEmployees Int?    // Override du min employés pour ce jour (null = utilise le défaut du magasin)
-  maxEmployees Int?    // Override du max employés pour ce jour (null = utilise le défaut du magasin)
+  id              String  @id @default(cuid())
+  store           Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId         String
+  dayOfWeek       Int // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam
+  closed          Boolean @default(false) // Fermé ce jour ?
+  openTime        String? @default("09:00") // "HH:mm"
+  closeTime       String? @default("20:00") // "HH:mm"
+  minEmployees    Int? // Override du min employés pour ce jour (null = utilise le défaut du magasin)
+  maxEmployees    Int? // Override du max employés pour ce jour (null = utilise le défaut du magasin)
   maxSimultaneous Int? // Override du max simultané pour ce jour (null = utilise le défaut du magasin)
 
   @@unique([storeId, dayOfWeek])
@@ -199,9 +201,9 @@ enum ContractType {
 }
 
 enum ShiftPreference {
-  MATIN       // Matin uniquement
-  APRES_MIDI  // Après-midi uniquement
-  JOURNEE     // Journée complète (défaut)
+  MATIN // Matin uniquement
+  APRES_MIDI // Après-midi uniquement
+  JOURNEE // Journée complète (défaut)
 }
 
 enum AccessStatus {
@@ -222,56 +224,59 @@ enum SkillType {
 }
 
 model Employee {
-  id               String           @id @default(cuid())
-  employeeCode     String           @unique @default(cuid()) // EmployeeID interne immuable (ex: EMP-001)
+  id               String          @id @default(cuid())
+  employeeCode     String          @unique @default(cuid()) // EmployeeID interne immuable (ex: EMP-001)
   firstName        String
   lastName         String
-  email            String?          @unique
-  active           Boolean          @default(true)
-  weeklyHours      Float?           // Heures contractuelles / semaine (ex: 35)
-  contractType     ContractType?    // CDI, CDD, INTERIM, EXTRA, STAGE
-  priority         Int              @default(1) // 1=haute (CDI), 2=moyenne, 3=basse (extra)
-  maxHoursPerDay   Float?           @default(11) // Max heures par jour
-  maxHoursPerWeek  Float?           @default(48) // Max heures par semaine (légal FR)
-  minRestBetween   Float?           @default(11) // Min repos entre 2 shifts (h) — légal FR = 11h
-  skills           SkillType[]      // Compétences
-  preferredStoreId String?          // ID magasin préféré
-  shiftPreference  ShiftPreference  @default(JOURNEE)
+  email            String?         @unique
+  active           Boolean         @default(true)
+  weeklyHours      Float? // Heures contractuelles / semaine (ex: 35)
+  contractType     ContractType? // CDI, CDD, INTERIM, EXTRA, STAGE
+  priority         Int             @default(1) // 1=haute (CDI), 2=moyenne, 3=basse (extra)
+  maxHoursPerDay   Float?          @default(11) // Max heures par jour
+  maxHoursPerWeek  Float?          @default(48) // Max heures par semaine (légal FR)
+  minRestBetween   Float?          @default(11) // Min repos entre 2 shifts (h) — légal FR = 11h
+  skills           SkillType[] // Compétences
+  preferredStoreId String? // ID magasin préféré
+  shiftPreference  ShiftPreference @default(JOURNEE)
 
   // ─── Profil Caissier POS (synchro vers la caisse) ───
-  posPin           String?          // PIN caisse (4-6 chiffres) — hashé bcrypt
-  posRole          String?          // Rôle POS: "cashier", "manager", "admin"
-  maxDiscountPct   Float?           @default(0) // Remise max autorisée en %
-  posQrCode        String?          // QR code employé pour login rapide POS
+  posPin         String? // PIN caisse (4-6 chiffres) — hashé bcrypt
+  posRole        String? // Rôle POS: "cashier", "manager", "admin"
+  maxDiscountPct Float?  @default(0) // Remise max autorisée en %
+  posQrCode      String? // QR code employé pour login rapide POS
 
   // ─── Accès terrain ───────────────────────────────────
-  accessStatus     AccessStatus     @default(ACTIVE)
-  blockedAt        DateTime?        // Date de blocage
-  blockedReason    String?          // Motif
-  forceCodeChange  Boolean          @default(false) // Force changement code au prochain login
-  lastLoginAt      DateTime?        // Dernière connexion POS
+  accessStatus    AccessStatus @default(ACTIVE)
+  blockedAt       DateTime? // Date de blocage
+  blockedReason   String? // Motif
+  forceCodeChange Boolean      @default(false) // Force changement code au prochain login
+  lastLoginAt     DateTime? // Dernière connexion POS
 
   // Relations
-  stores           StoreEmployee[]
-  shifts           Shift[]
-  user             User?
-  costConfig       EmployeeCost?
+  stores                StoreEmployee[]
+  shifts                Shift[]
+  user                  User?
+  costConfig            EmployeeCost?
   unavailabilities      Unavailability[]
   clockIns              ClockIn[]
   absenceDeclarations   AbsenceDeclaration[]
   replacementCandidates ReplacementCandidate[]
   aiMetrics             EmployeeAiMetrics?
-  reliabilityScore    Int?
-  profileCategory     String?        // "A", "B", "C"
-  scoreUpdatedAt      DateTime?
-  inventorySessions   InventorySession[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  reliabilityScore      Int?
+  profileCategory       String? // "A", "B", "C"
+  scoreUpdatedAt        DateTime?
+  inventorySessions     InventorySession[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 
   // Performance analytics
-  performanceDaily   EmployeePerformanceDaily[]
-  performanceHourly  EmployeePerformanceHourly[]
-  performanceScores  EmployeePerformanceScore[]
+  performanceDaily  EmployeePerformanceDaily[]
+  performanceHourly EmployeePerformanceHourly[]
+  performanceScores EmployeePerformanceScore[]
+
+  // Planning email notifications received
+  planningNotifications PlanningNotification[]
 
   @@index([email])
   @@index([employeeCode])
@@ -283,7 +288,7 @@ model Employee {
 // Fixed (recurring weekly) or variable (specific dates)
 
 enum UnavailabilityType {
-  FIXED    // Récurrent chaque semaine (ex: mardi + mercredi)
+  FIXED // Récurrent chaque semaine (ex: mardi + mercredi)
   VARIABLE // Date spécifique (ex: 15/03/2026)
 }
 
@@ -292,11 +297,11 @@ model Unavailability {
   employee   Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId String
   type       UnavailabilityType
-  dayOfWeek  Int?               // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam (FIXED)
-  date       DateTime?  @db.Date // Date spécifique (VARIABLE)
-  startTime  String?            // "HH:mm" — si null = journée entière
-  endTime    String?            // "HH:mm"
-  reason     String?            // Raison (optionnel)
+  dayOfWeek  Int? // 0=Dim, 1=Lun, 2=Mar, 3=Mer, 4=Jeu, 5=Ven, 6=Sam (FIXED)
+  date       DateTime?          @db.Date // Date spécifique (VARIABLE)
+  startTime  String? // "HH:mm" — si null = journée entière
+  endTime    String? // "HH:mm"
+  reason     String? // Raison (optionnel)
   createdAt  DateTime           @default(now())
 
   @@index([employeeId])
@@ -317,20 +322,20 @@ model StoreEmployee {
 }
 
 model Shift {
-  id         String    @id @default(cuid())
-  store      Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  storeId    String
-  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  employeeId String?
-  date       DateTime  @db.Date
-  startTime  String    // "HH:mm" format
-  endTime    String    // "HH:mm" format
+  id               String            @id @default(cuid())
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId          String
+  employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId       String?
+  date             DateTime          @db.Date
+  startTime        String // "HH:mm" format
+  endTime          String // "HH:mm" format
   note             String?
-  assignmentReason String?   // Raison du placement auto (ex: "Profil A fiable pour l'ouverture")
+  assignmentReason String? // Raison du placement auto (ex: "Profil A fiable pour l'ouverture")
   clockIn          ClockIn?
   replacementOffer ReplacementOffer?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([storeId, date])
   @@index([employeeId, date])
@@ -341,22 +346,22 @@ model Shift {
 // Country-level rules for employer cost calculation
 
 model CountryConfig {
-  id              String   @id @default(cuid())
-  code            String   @unique // "FR", "BE", "ES", etc.
-  name            String   // "France", "Belgique", etc.
-  currency        String   @default("EUR")
-  minimumWageHour Float    // SMIC horaire brut (ex: 12.02 for FR 2026)
-  employerRate    Float    // Taux charges patronales global "plein pot" (ex: 0.45)
+  id              String @id @default(cuid())
+  code            String @unique // "FR", "BE", "ES", etc.
+  name            String // "France", "Belgique", etc.
+  currency        String @default("EUR")
+  minimumWageHour Float // SMIC horaire brut (ex: 12.02 for FR 2026)
+  employerRate    Float // Taux charges patronales global "plein pot" (ex: 0.45)
 
   // Fillon-style reduction parameters
-  reductionEnabled    Boolean @default(true)
-  reductionMaxCoeff   Float   @default(0.3206) // Coefficient max de réduction (au SMIC)
-  reductionThreshold  Float   @default(1.6)    // Seuil en multiple du SMIC (1.6x = fin de réduction)
+  reductionEnabled   Boolean @default(true)
+  reductionMaxCoeff  Float   @default(0.3206) // Coefficient max de réduction (au SMIC)
+  reductionThreshold Float   @default(1.6) // Seuil en multiple du SMIC (1.6x = fin de réduction)
 
   // Extra fixed costs per hour (mutuelle, transport, etc.)
-  extraHourlyCost Float   @default(0)
+  extraHourlyCost Float @default(0)
 
-  notes         String?  // Notes libres (ex: "MAJ 01/01/2026")
+  notes         String? // Notes libres (ex: "MAJ 01/01/2026")
   effectiveFrom DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -368,16 +373,16 @@ model CountryConfig {
 
 // Per-employee cost parameters (overrides country defaults if needed)
 model EmployeeCost {
-  id              String   @id @default(cuid())
-  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId      String   @unique
-  country         CountryConfig @relation(fields: [countryCode], references: [code])
-  countryCode     String
-  hourlyRateGross Float    // Taux horaire brut de l'employé
-  fixedMissionCost Float?  // Coût fixe par mission (€) — optionnel
+  id               String        @id @default(cuid())
+  employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId       String        @unique
+  country          CountryConfig @relation(fields: [countryCode], references: [code])
+  countryCode      String
+  hourlyRateGross  Float // Taux horaire brut de l'employé
+  fixedMissionCost Float? // Coût fixe par mission (€) — optionnel
 
   // Optional overrides (null = use country defaults)
-  employerRateOverride Float?
+  employerRateOverride    Float?
   extraHourlyCostOverride Float?
 
   createdAt DateTime @default(now())
@@ -391,10 +396,10 @@ model AuditLog {
   id        String   @id @default(cuid())
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId    String?
-  action    String   // CREATE, UPDATE, DELETE
-  entity    String   // Shift, Store, Employee
+  action    String // CREATE, UPDATE, DELETE
+  entity    String // Shift, Store, Employee
   entityId  String
-  diff      String?  // JSON string of changes
+  diff      String? // JSON string of changes
   createdAt DateTime @default(now())
 
   @@index([entity, entityId])
@@ -410,7 +415,7 @@ enum PosProviderType {
   SQUARE
   ZELTY
   SUMUP
-  CUSTOM_API   // API custom (webhook entrant)
+  CUSTOM_API // API custom (webhook entrant)
 }
 
 enum PosSyncStatus {
@@ -418,53 +423,53 @@ enum PosSyncStatus {
   RUNNING
   SUCCESS
   FAILED
-  PARTIAL    // Certains éléments échoués
+  PARTIAL // Certains éléments échoués
 }
 
 enum PosSyncDirection {
-  PUSH       // TimeWin → POS
-  PULL       // POS → TimeWin
-  BOTH       // Bidirectionnel
+  PUSH // TimeWin → POS
+  PULL // POS → TimeWin
+  BOTH // Bidirectionnel
 }
 
 // Configuration d'un fournisseur POS (un par enseigne/société)
 model PosProvider {
-  id             String          @id @default(cuid())
-  name           String          // "Lightspeed - The Wesley", "Square Main"
-  type           PosProviderType
-  active         Boolean         @default(true)
+  id     String          @id @default(cuid())
+  name   String // "Lightspeed - The Wesley", "Square Main"
+  type   PosProviderType
+  active Boolean         @default(true)
 
   // Authentification POS (stockée chiffrée en prod)
-  apiUrl         String?         // Base URL de l'API POS
-  apiKey         String?         // Clé API / Client ID
-  apiSecret      String?         // Secret API / Client Secret
-  accessToken    String?         // Token OAuth (si applicable)
-  refreshToken   String?         // Refresh token OAuth
-  tokenExpiresAt DateTime?       // Expiration du token
+  apiUrl         String? // Base URL de l'API POS
+  apiKey         String? // Clé API / Client ID
+  apiSecret      String? // Secret API / Client Secret
+  accessToken    String? // Token OAuth (si applicable)
+  refreshToken   String? // Refresh token OAuth
+  tokenExpiresAt DateTime? // Expiration du token
 
   // Configuration de sync
-  syncEmployees  Boolean         @default(true)  // Synchro employés TimeWin → POS
-  syncTimeClock  Boolean         @default(true)  // Import pointages POS → TimeWin
-  syncSales      Boolean         @default(false) // Import ventes POS → TimeWin
-  syncInterval   Int             @default(60)    // Minutes entre chaque sync auto (0 = manuel)
+  syncEmployees Boolean @default(true) // Synchro employés TimeWin → POS
+  syncTimeClock Boolean @default(true) // Import pointages POS → TimeWin
+  syncSales     Boolean @default(false) // Import ventes POS → TimeWin
+  syncInterval  Int     @default(60) // Minutes entre chaque sync auto (0 = manuel)
 
   // Webhooks entrants
-  webhookSecret  String?         @unique // Secret pour valider les webhooks POS entrants
+  webhookSecret String? @unique // Secret pour valider les webhooks POS entrants
 
   // Métadonnées
-  lastSyncAt     DateTime?
-  config         String?         // JSON libre pour params spécifiques au POS
-  notes          String?
+  lastSyncAt DateTime?
+  config     String? // JSON libre pour params spécifiques au POS
+  notes      String?
 
   // Relations
-  storeLinks     PosStoreLink[]
-  employeeLinks  PosEmployeeLink[]
-  timeClocks     PosTimeClock[]
-  salesData      PosSalesData[]
-  syncLogs       PosSyncLog[]
+  storeLinks    PosStoreLink[]
+  employeeLinks PosEmployeeLink[]
+  timeClocks    PosTimeClock[]
+  salesData     PosSalesData[]
+  syncLogs      PosSyncLog[]
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
   @@index([active])
@@ -472,16 +477,16 @@ model PosProvider {
 
 // Liaison magasin TimeWin ↔ identifiant côté POS
 model PosStoreLink {
-  id             String      @id @default(cuid())
-  provider       PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId     String
-  storeId        String      // FK vers Store.id de TimeWin
-  posStoreId     String      // ID du magasin côté POS
-  posStoreName   String?     // Nom côté POS (pour vérification)
-  active         Boolean     @default(true)
-  createdAt      DateTime    @default(now())
+  id           String      @id @default(cuid())
+  provider     PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId   String
+  storeId      String // FK vers Store.id de TimeWin
+  posStoreId   String // ID du magasin côté POS
+  posStoreName String? // Nom côté POS (pour vérification)
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
 
-  @@unique([providerId, storeId])    // Un magasin TimeWin ne peut être lié qu'une fois par provider
+  @@unique([providerId, storeId]) // Un magasin TimeWin ne peut être lié qu'une fois par provider
   @@unique([providerId, posStoreId]) // Un magasin POS ne peut être lié qu'une fois par provider
   @@index([storeId])
 }
@@ -491,11 +496,11 @@ model PosEmployeeLink {
   id              String      @id @default(cuid())
   provider        PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   providerId      String
-  employeeId      String      // FK vers Employee.id de TimeWin
-  posEmployeeId   String      // ID de l'employé côté POS
-  posEmployeeName String?     // Nom côté POS (pour vérification)
+  employeeId      String // FK vers Employee.id de TimeWin
+  posEmployeeId   String // ID de l'employé côté POS
+  posEmployeeName String? // Nom côté POS (pour vérification)
   active          Boolean     @default(true)
-  syncedAt        DateTime?   // Dernière synchro réussie
+  syncedAt        DateTime? // Dernière synchro réussie
   createdAt       DateTime    @default(now())
 
   @@unique([providerId, employeeId])
@@ -506,25 +511,25 @@ model PosEmployeeLink {
 // Pointages réels importés du POS
 // Comparés aux shifts planifiés pour détecter retards, absences, heures sup
 model PosTimeClock {
-  id             String      @id @default(cuid())
-  provider       PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId     String
-  employeeId     String      // FK vers Employee.id de TimeWin
-  storeId        String      // FK vers Store.id de TimeWin
-  posRecordId    String?     // ID unique côté POS (pour dédoublonnage)
+  id          String      @id @default(cuid())
+  provider    PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId  String
+  employeeId  String // FK vers Employee.id de TimeWin
+  storeId     String // FK vers Store.id de TimeWin
+  posRecordId String? // ID unique côté POS (pour dédoublonnage)
 
-  date           DateTime    @db.Date
-  clockIn        String      // "HH:mm" — heure réelle d'arrivée
-  clockOut       String?     // "HH:mm" — heure réelle de départ (null = encore en cours)
-  breakMinutes   Int         @default(0)  // Minutes de pause
-  workedHours    Float?      // Heures effectives calculées (clockOut - clockIn - pause)
+  date         DateTime @db.Date
+  clockIn      String // "HH:mm" — heure réelle d'arrivée
+  clockOut     String? // "HH:mm" — heure réelle de départ (null = encore en cours)
+  breakMinutes Int      @default(0) // Minutes de pause
+  workedHours  Float? // Heures effectives calculées (clockOut - clockIn - pause)
 
   // Comparaison avec le planning
-  shiftId        String?     // FK vers Shift.id (si matchable)
-  deltaMinutes   Int?        // Écart en minutes vs shift planifié (négatif = retard, positif = avance)
-  status         String?     // "on_time", "late", "early", "no_show", "extra"
+  shiftId      String? // FK vers Shift.id (si matchable)
+  deltaMinutes Int? // Écart en minutes vs shift planifié (négatif = retard, positif = avance)
+  status       String? // "on_time", "late", "early", "no_show", "extra"
 
-  importedAt     DateTime    @default(now())
+  importedAt DateTime @default(now())
 
   @@unique([providerId, posRecordId]) // Pas de doublon d'import
   @@index([employeeId, date])
@@ -535,24 +540,24 @@ model PosTimeClock {
 // Données de vente importées du POS
 // Agrégées par créneau horaire pour analyse de productivité
 model PosSalesData {
-  id             String      @id @default(cuid())
-  provider       PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId     String
-  storeId        String      // FK vers Store.id
-  posRecordId    String?     // ID unique côté POS
+  id          String      @id @default(cuid())
+  provider    PosProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId  String
+  storeId     String // FK vers Store.id
+  posRecordId String? // ID unique côté POS
 
-  date           DateTime    @db.Date
-  hourSlot       Int         // 0-23 : créneau horaire (ex: 14 = 14h00-14h59)
-  revenue        Float       // CA en € pour ce créneau
-  transactions   Int         @default(0) // Nombre de transactions
-  itemsSold      Int         @default(0) // Nombre d'articles vendus
+  date         DateTime @db.Date
+  hourSlot     Int // 0-23 : créneau horaire (ex: 14 = 14h00-14h59)
+  revenue      Float // CA en € pour ce créneau
+  transactions Int      @default(0) // Nombre de transactions
+  itemsSold    Int      @default(0) // Nombre d'articles vendus
 
   // Répartition paiements
-  cardAmount     Float       @default(0) // Montant CB
-  cashAmount     Float       @default(0) // Montant espèces
-  otherAmount    Float       @default(0) // Autres (chèques, tickets resto...)
+  cardAmount  Float @default(0) // Montant CB
+  cashAmount  Float @default(0) // Montant espèces
+  otherAmount Float @default(0) // Autres (chèques, tickets resto...)
 
-  importedAt     DateTime    @default(now())
+  importedAt DateTime @default(now())
 
   @@unique([providerId, storeId, date, hourSlot]) // Un seul enregistrement par créneau
   @@index([storeId, date])
@@ -561,27 +566,27 @@ model PosSalesData {
 
 // Journal de synchronisation (audit trail)
 model PosSyncLog {
-  id             String           @id @default(cuid())
-  provider       PosProvider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId     String
-  direction      PosSyncDirection
-  status         PosSyncStatus
-  entityType     String           // "employees", "timeclock", "sales", "stores"
+  id         String           @id @default(cuid())
+  provider   PosProvider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String
+  direction  PosSyncDirection
+  status     PosSyncStatus
+  entityType String // "employees", "timeclock", "sales", "stores"
 
   // Stats
-  totalRecords   Int              @default(0)
-  created        Int              @default(0)
-  updated        Int              @default(0)
-  skipped        Int              @default(0)
-  failed         Int              @default(0)
+  totalRecords Int @default(0)
+  created      Int @default(0)
+  updated      Int @default(0)
+  skipped      Int @default(0)
+  failed       Int @default(0)
 
   // Détails
-  errorMessage   String?
-  details        String?          // JSON détaillé des erreurs individuelles
-  durationMs     Int?             // Temps d'exécution en ms
+  errorMessage String?
+  details      String? // JSON détaillé des erreurs individuelles
+  durationMs   Int? // Temps d'exécution en ms
 
-  startedAt      DateTime         @default(now())
-  completedAt    DateTime?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
 
   @@index([providerId, startedAt])
   @@index([status])
@@ -591,40 +596,40 @@ model PosSyncLog {
 // Un employé propose un échange, l'autre accepte/refuse, puis le manager valide
 
 enum ShiftExchangeStatus {
-  PENDING_PEER     // En attente d'acceptation du collègue
-  PENDING_MANAGER  // Collègue accepté, en attente du manager
-  APPROVED         // Validé par le manager → shifts échangés
-  REJECTED_PEER    // Refusé par le collègue
+  PENDING_PEER // En attente d'acceptation du collègue
+  PENDING_MANAGER // Collègue accepté, en attente du manager
+  APPROVED // Validé par le manager → shifts échangés
+  REJECTED_PEER // Refusé par le collègue
   REJECTED_MANAGER // Refusé par le manager
-  CANCELLED        // Annulé par l'initiateur
-  EXPIRED          // Expiré (non répondu dans le délai)
+  CANCELLED // Annulé par l'initiateur
+  EXPIRED // Expiré (non répondu dans le délai)
 }
 
 model ShiftExchange {
-  id               String              @id @default(cuid())
+  id String @id @default(cuid())
 
   // Initiateur
-  requesterId      String              // FK vers Employee.id
-  requesterShiftId String              // FK vers Shift.id — shift proposé à l'échange
+  requesterId      String // FK vers Employee.id
+  requesterShiftId String // FK vers Shift.id — shift proposé à l'échange
 
   // Destinataire
-  targetId         String              // FK vers Employee.id
-  targetShiftId    String?             // FK vers Shift.id — shift du collègue (null = propose de prendre sans échange)
+  targetId      String // FK vers Employee.id
+  targetShiftId String? // FK vers Shift.id — shift du collègue (null = propose de prendre sans échange)
 
   // Statut
-  status           ShiftExchangeStatus @default(PENDING_PEER)
-  message          String?             // Message de l'initiateur
-  peerResponse     String?             // Message du collègue
-  managerResponse  String?             // Message du manager
+  status          ShiftExchangeStatus @default(PENDING_PEER)
+  message         String? // Message de l'initiateur
+  peerResponse    String? // Message du collègue
+  managerResponse String? // Message du manager
 
   // Traçabilité
   peerRespondedAt    DateTime?
   managerRespondedAt DateTime?
-  managerId          String?           // FK vers User.id du manager qui a validé/refusé
+  managerId          String? // FK vers User.id du manager qui a validé/refusé
 
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  expiresAt        DateTime?           // Date d'expiration automatique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime? // Date d'expiration automatique
 
   @@index([requesterId])
   @@index([targetId])
@@ -636,51 +641,51 @@ model ShiftExchange {
 // Communication Employé → RH (pas entre employés)
 
 enum HrMessageStatus {
-  NEW        // Nouveau message non lu
+  NEW // Nouveau message non lu
   IN_PROGRESS // En cours de traitement
-  RESOLVED   // Traité / Résolu
-  CLOSED     // Fermé
+  RESOLVED // Traité / Résolu
+  CLOSED // Fermé
 }
 
 enum HrMessageCategory {
-  GENERAL       // Question générale
-  PLANNING      // Demande liée au planning
-  CONGE         // Demande de congé
-  ABSENCE       // Signalement d'absence
+  GENERAL // Question générale
+  PLANNING // Demande liée au planning
+  CONGE // Demande de congé
+  ABSENCE // Signalement d'absence
   ADMINISTRATIF // Documents, contrats, fiches de paie
-  RECLAMATION   // Réclamation
-  AUTRE         // Autre
+  RECLAMATION // Réclamation
+  AUTRE // Autre
 }
 
 model HrMessage {
-  id          String            @id @default(cuid())
+  id String @id @default(cuid())
 
   // Expéditeur (employé)
-  sender      User              @relation("MessageSender", fields: [senderId], references: [id])
-  senderId    String
-  employeeId  String            // FK vers Employee.id (dénormalisé pour filtrage rapide par employé)
-  storeId     String?           // FK vers Store.id (dénormalisé pour filtrage par magasin)
+  sender     User    @relation("MessageSender", fields: [senderId], references: [id])
+  senderId   String
+  employeeId String // FK vers Employee.id (dénormalisé pour filtrage rapide par employé)
+  storeId    String? // FK vers Store.id (dénormalisé pour filtrage par magasin)
 
   // Contenu
-  subject     String
-  body        String
-  category    HrMessageCategory @default(GENERAL)
+  subject  String
+  body     String
+  category HrMessageCategory @default(GENERAL)
 
   // Statut & traitement
-  status      HrMessageStatus   @default(NEW)
-  handler     User?             @relation("MessageHandler", fields: [handlerId], references: [id])
-  handlerId   String?           // Admin/Manager qui traite le message
+  status    HrMessageStatus @default(NEW)
+  handler   User?           @relation("MessageHandler", fields: [handlerId], references: [id])
+  handlerId String? // Admin/Manager qui traite le message
 
   // Thread de réponses
-  parentId    String?           // ID du message parent (null = message initial)
-  parent      HrMessage?        @relation("MessageThread", fields: [parentId], references: [id])
-  replies     HrMessage[]       @relation("MessageThread")
+  parentId String? // ID du message parent (null = message initial)
+  parent   HrMessage?  @relation("MessageThread", fields: [parentId], references: [id])
+  replies  HrMessage[] @relation("MessageThread")
 
   // Métadonnées
-  readAt      DateTime?         // Date de lecture par RH
-  resolvedAt  DateTime?         // Date de résolution
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  readAt     DateTime? // Date de lecture par RH
+  resolvedAt DateTime? // Date de résolution
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([senderId])
   @@index([employeeId])
@@ -695,17 +700,17 @@ model HrMessage {
 // Liées à HrMessage ou FeedPost via entityType/entityId
 
 model MessageAttachment {
-  id         String   @id @default(cuid())
-  filename   String   // Nom original du fichier
-  path       String   // Chemin stockage (uploads/xxx)
-  mimeType   String   // image/jpeg, video/mp4, etc.
-  size       Int      // Taille en bytes
+  id       String @id @default(cuid())
+  filename String // Nom original du fichier
+  path     String // Chemin stockage (uploads/xxx)
+  mimeType String // image/jpeg, video/mp4, etc.
+  size     Int // Taille en bytes
 
   // Polymorphe
-  entityType String   // "hr_message" | "feed_post"
+  entityType String // "hr_message" | "feed_post"
   entityId   String
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([entityType, entityId])
 }
@@ -714,14 +719,14 @@ model MessageAttachment {
 // Communication ouverte entre tous les employés
 
 model FeedPost {
-  id        String        @id @default(cuid())
-  author    User          @relation(fields: [authorId], references: [id])
+  id        String   @id @default(cuid())
+  author    User     @relation(fields: [authorId], references: [id])
   authorId  String
-  content   String        // Texte du post
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  content   String // Texte du post
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  comments  FeedComment[]
+  comments FeedComment[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -744,8 +749,8 @@ model FeedComment {
 // Admin/Manager diffuse des infos ciblées par magasin
 
 enum BroadcastScope {
-  ALL       // Tous les magasins
-  SELECTED  // Magasins sélectionnés
+  ALL // Tous les magasins
+  SELECTED // Magasins sélectionnés
 }
 
 model Broadcast {
@@ -757,7 +762,7 @@ model Broadcast {
   scope     BroadcastScope @default(ALL)
   createdAt DateTime       @default(now())
 
-  stores    BroadcastStore[]
+  stores BroadcastStore[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -776,45 +781,45 @@ model BroadcastStore {
 // Quand une absence est approuvée, des offres de remplacement sont créées
 
 enum ReplacementOfferStatus {
-  OPEN          // En cours — en attente de candidats
-  FILLED        // Un employé a accepté, shift réassigné
-  EXPIRED       // Personne n'a accepté dans le délai
-  CANCELLED     // Annulé
+  OPEN // En cours — en attente de candidats
+  FILLED // Un employé a accepté, shift réassigné
+  EXPIRED // Personne n'a accepté dans le délai
+  CANCELLED // Annulé
 }
 
 enum ReplacementCandidateStatus {
-  PENDING       // Offre envoyée, pas encore de réponse
-  ACCEPTED      // L'employé a accepté
-  DECLINED      // L'employé a refusé
-  EXPIRED       // L'offre a expiré avant réponse
+  PENDING // Offre envoyée, pas encore de réponse
+  ACCEPTED // L'employé a accepté
+  DECLINED // L'employé a refusé
+  EXPIRED // L'offre a expiré avant réponse
 }
 
 model ReplacementOffer {
-  id                 String                   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Shift à remplacer
-  shift              Shift                    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
-  shiftId            String                   @unique // Un shift ne peut avoir qu'une offre active
-  store              Store                    @relation(fields: [storeId], references: [id])
-  storeId            String
+  shift   Shift  @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId String @unique // Un shift ne peut avoir qu'une offre active
+  store   Store  @relation(fields: [storeId], references: [id])
+  storeId String
 
   // Employé absent
-  absentEmployeeId   String
+  absentEmployeeId String
 
   // Lien vers la déclaration d'absence
-  absenceId          String?
+  absenceId String?
 
   // Statut
-  status             ReplacementOfferStatus   @default(OPEN)
-  filledByEmployeeId String?                  // Employé qui a accepté
+  status             ReplacementOfferStatus @default(OPEN)
+  filledByEmployeeId String? // Employé qui a accepté
 
   // Expiration
-  expiresAt          DateTime
+  expiresAt DateTime
 
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  candidates         ReplacementCandidate[]
+  candidates ReplacementCandidate[]
 
   @@index([status])
   @@index([storeId])
@@ -822,16 +827,16 @@ model ReplacementOffer {
 }
 
 model ReplacementCandidate {
-  id          String                       @id @default(cuid())
-  offer       ReplacementOffer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  offerId     String
-  employee    Employee                     @relation(fields: [employeeId], references: [id])
-  employeeId  String
+  id         String           @id @default(cuid())
+  offer      ReplacementOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offerId    String
+  employee   Employee         @relation(fields: [employeeId], references: [id])
+  employeeId String
 
-  status      ReplacementCandidateStatus   @default(PENDING)
+  status      ReplacementCandidateStatus @default(PENDING)
   respondedAt DateTime?
 
-  createdAt   DateTime                     @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([offerId, employeeId])
   @@index([employeeId, status])
@@ -842,47 +847,47 @@ model ReplacementCandidate {
 // Un employé signale une absence, le manager approuve/rejette
 
 enum AbsenceType {
-  MALADIE       // Arrêt maladie
-  CONGE         // Congé (payé, sans solde, etc.)
-  PERSONNEL     // Raison personnelle
-  ACCIDENT      // Accident du travail
-  AUTRE         // Autre motif
+  MALADIE // Arrêt maladie
+  CONGE // Congé (payé, sans solde, etc.)
+  PERSONNEL // Raison personnelle
+  ACCIDENT // Accident du travail
+  AUTRE // Autre motif
 }
 
 enum AbsenceStatus {
-  PENDING       // En attente de validation manager
-  APPROVED      // Approuvée par le manager
-  REJECTED      // Refusée par le manager
+  PENDING // En attente de validation manager
+  APPROVED // Approuvée par le manager
+  REJECTED // Refusée par le manager
 }
 
 model AbsenceDeclaration {
-  id            String        @id @default(cuid())
+  id String @id @default(cuid())
 
   // Employé déclarant
-  employee      Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId    String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
 
   // Type et motif
-  type          AbsenceType
-  reason        String?       // Message de l'employé (explication)
+  type   AbsenceType
+  reason String? // Message de l'employé (explication)
 
   // Période
-  startDate     DateTime      @db.Date  // Premier jour d'absence
-  endDate       DateTime      @db.Date  // Dernier jour d'absence (peut être = startDate)
+  startDate DateTime @db.Date // Premier jour d'absence
+  endDate   DateTime @db.Date // Dernier jour d'absence (peut être = startDate)
 
   // Document médical (via upload)
-  documentPath  String?       // Chemin fichier (uploads/xxx)
-  documentName  String?       // Nom original du fichier
-  documentMime  String?       // MIME type
+  documentPath String? // Chemin fichier (uploads/xxx)
+  documentName String? // Nom original du fichier
+  documentMime String? // MIME type
 
   // Statut et traitement
-  status        AbsenceStatus @default(PENDING)
-  managerId     String?       // ID du manager qui a traité
-  managerResponse String?     // Réponse du manager
-  processedAt   DateTime?     // Date de traitement
+  status          AbsenceStatus @default(PENDING)
+  managerId       String? // ID du manager qui a traité
+  managerResponse String? // Réponse du manager
+  processedAt     DateTime? // Date de traitement
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([employeeId])
   @@index([status])
@@ -894,38 +899,38 @@ model AbsenceDeclaration {
 // Clock-in/out avec vérification GPS et photo du magasin
 
 enum ClockInStatus {
-  ON_TIME   // À l'heure
-  LATE      // En retard
-  ABSENT    // Absence (généré par détection)
+  ON_TIME // À l'heure
+  LATE // En retard
+  ABSENT // Absence (généré par détection)
 }
 
 model ClockIn {
-  id              String        @id @default(cuid())
-  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId      String
-  store           Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  storeId         String
-  shift           Shift?        @relation(fields: [shiftId], references: [id], onDelete: SetNull)
-  shiftId         String?       @unique // Un shift ne peut avoir qu'un seul pointage
+  id         String   @id @default(cuid())
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId    String
+  shift      Shift?   @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  shiftId    String?  @unique // Un shift ne peut avoir qu'un seul pointage
 
-  clockInAt       DateTime      // Timestamp serveur de l'arrivée
-  clockOutAt      DateTime?     // Timestamp serveur du départ (null = encore présent)
+  clockInAt  DateTime // Timestamp serveur de l'arrivée
+  clockOutAt DateTime? // Timestamp serveur du départ (null = encore présent)
 
   // Preuve photo
-  photoPath       String        // Chemin stocké (UUID dans /uploads/)
-  photoMimeType   String        // "image/jpeg", "image/png"
+  photoPath     String // Chemin stocké (UUID dans /uploads/)
+  photoMimeType String // "image/jpeg", "image/png"
 
   // Géolocalisation employé au moment du pointage
-  latitude        Float
-  longitude       Float
-  accuracy        Float?        // Précision GPS en mètres
-  distanceMeters  Float         // Distance calculée entre employé et magasin
+  latitude       Float
+  longitude      Float
+  accuracy       Float? // Précision GPS en mètres
+  distanceMeters Float // Distance calculée entre employé et magasin
 
   // Statut
-  status          ClockInStatus @default(ON_TIME)
-  lateMinutes     Int           @default(0) // Minutes de retard (0 si à l'heure)
+  status      ClockInStatus @default(ON_TIME)
+  lateMinutes Int           @default(0) // Minutes de retard (0 si à l'heure)
 
-  createdAt       DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   @@index([employeeId, clockInAt])
   @@index([storeId, clockInAt])
@@ -935,46 +940,46 @@ model ClockIn {
 // Un employé publie un shift sur le marché ouvert. Tout collègue éligible peut le réclamer.
 
 enum MarketListingStatus {
-  OPEN              // Publié, en attente de réclamation
-  CLAIMED           // Réclamé, en attente validation manager
-  APPROVED          // Manager a validé — shift réassigné
-  REJECTED          // Manager a refusé
-  CANCELLED         // Annulé par le posteur
-  EXPIRED           // Expiré sans réclamation
+  OPEN // Publié, en attente de réclamation
+  CLAIMED // Réclamé, en attente validation manager
+  APPROVED // Manager a validé — shift réassigné
+  REJECTED // Manager a refusé
+  CANCELLED // Annulé par le posteur
+  EXPIRED // Expiré sans réclamation
 }
 
 model ShiftMarketListing {
-  id                 String               @id @default(cuid())
+  id String @id @default(cuid())
 
   // Posteur (employé qui cède son shift)
-  posterId           String
+  posterId String
 
   // Shift proposé
-  shiftId            String
-  storeId            String               // Dénormalisé depuis Shift pour filtrage rapide
+  shiftId String
+  storeId String // Dénormalisé depuis Shift pour filtrage rapide
 
   // Réclamant (employé qui veut prendre le shift)
-  claimantId         String?
+  claimantId String?
 
   // Statut
-  status             MarketListingStatus  @default(OPEN)
-  posterMessage      String?              // Message du posteur
-  claimantMessage    String?              // Message du réclamant
-  managerResponse    String?              // Réponse du manager
+  status          MarketListingStatus @default(OPEN)
+  posterMessage   String? // Message du posteur
+  claimantMessage String? // Message du réclamant
+  managerResponse String? // Réponse du manager
 
   // Résultats de validation automatique (JSON stocké lors de la réclamation)
-  constraintChecks   String?              // JSON: { overlapOk, weeklyHoursOk, dailyHoursOk, restOk, availabilityOk }
+  constraintChecks String? // JSON: { overlapOk, weeklyHoursOk, dailyHoursOk, restOk, availabilityOk }
 
   // Traçabilité
   claimedAt          DateTime?
   managerRespondedAt DateTime?
-  managerId          String?              // ID du manager qui a traité
+  managerId          String? // ID du manager qui a traité
 
   // Expiration automatique
-  expiresAt          DateTime
+  expiresAt DateTime
 
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([storeId, status])
@@ -987,25 +992,25 @@ model ShiftMarketListing {
 // Historique des scores calculés automatiquement
 
 model ReliabilityScoreHistory {
-  id                String   @id @default(cuid())
-  employeeId        String
-  score             Int      // 0-100
+  id         String @id @default(cuid())
+  employeeId String
+  score      Int // 0-100
 
-  punctualityScore  Int      // /30
-  attendanceScore   Int      // /30
-  replacementScore  Int      // /20
-  planningScore     Int      // /15
-  transparencyScore Int      // /5
+  punctualityScore  Int // /30
+  attendanceScore   Int // /30
+  replacementScore  Int // /20
+  planningScore     Int // /15
+  transparencyScore Int // /5
 
-  periodStart       DateTime
-  periodEnd         DateTime
-  metrics           String?  // JSON détaillé
+  periodStart DateTime
+  periodEnd   DateTime
+  metrics     String? // JSON détaillé
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
+  @@unique([employeeId, periodStart])
   @@index([employeeId])
   @@index([createdAt])
-  @@unique([employeeId, periodStart])
 }
 
 // ─── Journal Quotidien du Magasin ────────────────
@@ -1025,16 +1030,16 @@ enum JournalSeverity {
 }
 
 model JournalEntry {
-  id          String            @id @default(cuid())
+  id          String           @id @default(cuid())
   storeId     String
-  date        DateTime          @db.Date
+  date        DateTime         @db.Date
   type        JournalEntryType
-  severity    JournalSeverity   @default(LOW)
+  severity    JournalSeverity  @default(LOW)
   title       String
   description String?
-  authorId    String            // User.id du manager
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  authorId    String // User.id du manager
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([storeId, date])
   @@index([date])
@@ -1066,11 +1071,11 @@ enum ManagerAlertSeverity {
 model ManagerAlert {
   id             String               @id @default(cuid())
   type           ManagerAlertType
-  severity       ManagerAlertSeverity  @default(WARNING)
-  status         ManagerAlertStatus    @default(UNREAD)
-  store          Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  severity       ManagerAlertSeverity @default(WARNING)
+  status         ManagerAlertStatus   @default(UNREAD)
+  store          Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
   storeId        String
-  date           DateTime              @db.Date
+  date           DateTime             @db.Date
   time           String?
   title          String
   details        String?
@@ -1079,8 +1084,8 @@ model ManagerAlert {
   acknowledgedAt DateTime?
   resolvedBy     String?
   resolvedAt     DateTime?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@unique([type, storeId, date, contextKey])
   @@index([storeId, date])
@@ -1172,16 +1177,72 @@ model NotificationLog {
   @@index([createdAt])
 }
 
+// ─── Planning notification audit (RH/legal trace) ──────
+// One row per (employee × send) — proves what was sent, when, and to whom.
+// shiftSnapshotHash lets the UI detect "modified after sent" vs "still in sync".
+
+enum PlanningNotificationStatus {
+  SENT // email accepted by SMTP provider
+  FAILED // SMTP error (auth, rate limit, etc.)
+  NO_EMAIL // employee has no email address
+  PARTIAL // (reserved) part of a batch where some failed
+}
+
+model PlanningNotification {
+  id String @id @default(cuid())
+
+  // Recipient
+  // SetNull (not Cascade) → preserves the audit trail even if the employee is deleted.
+  // Critical for RH/legal disputes ("je n'ai jamais reçu mon planning").
+  // employeeSnapshot keeps the name even if the FK becomes null.
+  employee         Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeId       String?
+  employeeSnapshot String? // "Firstname Lastname" at send time
+  emailUsed        String? // address actually used (snapshot)
+
+  // Scope
+  store       Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeId     String? // null = multi-store (admin-wide send)
+  periodStart DateTime @db.Date
+  periodEnd   DateTime @db.Date
+
+  // Audit — sender info preserved even if the user account is deleted.
+  sentByUser         User?    @relation("PlanningNotificationSentBy", fields: [sentByUserId], references: [id], onDelete: SetNull)
+  sentByUserId       String?
+  sentByUserSnapshot String? // user name at send time
+  sentAt             DateTime @default(now())
+
+  // Status & details
+  status            PlanningNotificationStatus
+  shiftCount        Int                        @default(0)
+  totalHours        Float                      @default(0)
+  error             String? // sanitized error if status = FAILED
+  providerMessageId String? // future: Resend/SES message id
+
+  // Snapshot fingerprint of the shifts at send time
+  // Format: SHA-256 hex of "date|start|end|storeId" lines (deterministic order)
+  // Lets the UI detect if planning has been modified since this send.
+  shiftSnapshotHash String?
+
+  createdAt DateTime @default(now())
+
+  @@index([employeeId, sentAt])
+  @@index([storeId, periodStart])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+  @@index([sentByUserId, sentAt])
+}
+
 // ─── AI Engine ──────────────────────────────────────────
 
 // Stockage d'embeddings vectoriels (pgvector)
 // Note: la colonne "embedding vector(768)" est ajoutée via raw SQL migration
 model AiEmbedding {
   id         String   @id @default(cuid())
-  entityType String   // "employee", "store", "shift", "journal", "conversation"
+  entityType String // "employee", "store", "shift", "journal", "conversation"
   entityId   String
-  content    String   // Texte source de l'embedding
-  metadata   Json?    // Données structurées associées
+  content    String // Texte source de l'embedding
+  metadata   Json? // Données structurées associées
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -1191,19 +1252,19 @@ model AiEmbedding {
 
 // Scores IA calculés par employé
 model EmployeeAiMetrics {
-  id               String   @id @default(cuid())
-  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId       String   @unique
-  performanceScore Float    @default(0) // 0-100
-  upsellScore      Float    @default(0) // 0-100
-  riskScore        Float    @default(0) // 0-100
-  regularityScore  Float    @default(0) // 0-100
-  fraudRiskScore   Float    @default(0) // 0-100
-  breakdown        Json?    // Détail des calculs (PerformanceBreakdown)
+  id               String    @id @default(cuid())
+  employee         Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId       String    @unique
+  performanceScore Float     @default(0) // 0-100
+  upsellScore      Float     @default(0) // 0-100
+  riskScore        Float     @default(0) // 0-100
+  regularityScore  Float     @default(0) // 0-100
+  fraudRiskScore   Float     @default(0) // 0-100
+  breakdown        Json? // Détail des calculs (PerformanceBreakdown)
   periodStart      DateTime?
   periodEnd        DateTime?
-  calculatedAt     DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  calculatedAt     DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([employeeId])
   @@index([calculatedAt])
@@ -1234,21 +1295,21 @@ enum AiAnomalyStatus {
 }
 
 model AiAnomaly {
-  id            String            @id @default(cuid())
-  type          AiAnomalyType
-  severity      AiAnomalySeverity @default(MEDIUM)
-  status        AiAnomalyStatus   @default(DETECTED)
-  employeeId    String?
-  storeId       String
-  date          DateTime          @db.Date
-  description   String
-  evidence      Json              // AnomalyEvidence
+  id              String            @id @default(cuid())
+  type            AiAnomalyType
+  severity        AiAnomalySeverity @default(MEDIUM)
+  status          AiAnomalyStatus   @default(DETECTED)
+  employeeId      String?
+  storeId         String
+  date            DateTime          @db.Date
+  description     String
+  evidence        Json // AnomalyEvidence
   suggestedAction String?
-  reviewedBy    String?           // User.id
-  reviewedAt    DateTime?
-  reviewNote    String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  reviewedBy      String? // User.id
+  reviewedAt      DateTime?
+  reviewNote      String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([storeId, date])
   @@index([employeeId])
@@ -1260,9 +1321,9 @@ model AiAnomaly {
 // Conversations avec l'assistant IA
 model AiConversation {
   id        String      @id @default(cuid())
-  userId    String      // User.id
-  storeId   String?     // Contexte magasin (optionnel)
-  title     String?     // Titre auto-généré
+  userId    String // User.id
+  storeId   String? // Contexte magasin (optionnel)
+  title     String? // Titre auto-généré
   messages  AiMessage[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
@@ -1276,9 +1337,9 @@ model AiMessage {
   id             String         @id @default(cuid())
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
-  role           String         // "user" | "assistant"
+  role           String // "user" | "assistant"
   content        String
-  sources        Json?          // AssistantSource[]
+  sources        Json? // AssistantSource[]
   tokensUsed     Int            @default(0)
   createdAt      DateTime       @default(now())
 
@@ -1296,31 +1357,31 @@ enum ConnectedAppStatus {
 }
 
 model ConnectedApp {
-  id          String             @id @default(cuid())
-  name        String             // "POS Caisse Paris", "Comptabilité Sage"
-  type        String             // "pos", "accounting", "hr", "erp", "custom"
-  provider    String?            // "caisse-addx", "sage", "lightspeed"
-  status      ConnectedAppStatus @default(DISCONNECTED)
-  internal    Boolean            @default(false) // true = app interne AddX
+  id       String             @id @default(cuid())
+  name     String // "POS Caisse Paris", "Comptabilité Sage"
+  type     String // "pos", "accounting", "hr", "erp", "custom"
+  provider String? // "caisse-addx", "sage", "lightspeed"
+  status   ConnectedAppStatus @default(DISCONNECTED)
+  internal Boolean            @default(false) // true = app interne AddX
 
   // Connexion
-  apiUrl      String?
-  apiKey      String?
-  webhookUrl  String?
-  webhookSecret String?          @unique
+  apiUrl        String?
+  apiKey        String?
+  webhookUrl    String?
+  webhookSecret String? @unique
 
   // Scope
-  store       Store?             @relation(fields: [storeId], references: [id], onDelete: SetNull)
-  storeId     String?            // null = app globale (toutes les unités)
+  store   Store?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeId String? // null = app globale (toutes les unités)
 
   // Sync
   lastSyncAt   DateTime?
   lastErrorMsg String?
-  syncInterval Int               @default(60) // minutes, 0 = manuel
-  config       String?           // JSON libre
+  syncInterval Int       @default(60) // minutes, 0 = manuel
+  config       String? // JSON libre
 
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([type])
@@ -1330,15 +1391,15 @@ model ConnectedApp {
 // ─── Events POS reçus en temps réel ───────────────────
 
 model PosEvent {
-  id          String   @id @default(cuid())
-  eventType   String   // "sale.completed", "sale.voided", "session.opened", "session.closed", "stock.alert"
+  id          String    @id @default(cuid())
+  eventType   String // "sale.completed", "sale.voided", "session.opened", "session.closed", "stock.alert"
   storeId     String
-  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  employeeId  String?  // FK vers Employee.id (si applicable)
-  payload     Json     // Données brutes de l'event
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  employeeId  String? // FK vers Employee.id (si applicable)
+  payload     Json // Données brutes de l'event
   processedAt DateTime? // null = pas encore traité
-  error       String?  // Message d'erreur si traitement échoué
-  createdAt   DateTime @default(now())
+  error       String? // Message d'erreur si traitement échoué
+  createdAt   DateTime  @default(now())
 
   @@index([storeId, createdAt])
   @@index([eventType])
@@ -1349,15 +1410,15 @@ model PosEvent {
 // ─── Service API Keys (service-to-service auth) ──────
 
 model ServiceApiKey {
-  id          String   @id @default(cuid())
-  name        String   // "POS CAISSE Backoffice", "Accounting Sync"
-  key         String   @unique // Le token Bearer envoyé par le service
-  service     String   // "pos-caisse", "accounting", "erp"
-  role        Role     @default(ADMIN) // Rôle simulé pour les permissions RBAC
-  active      Boolean  @default(true)
-  lastUsedAt  DateTime?
-  createdBy   String   // userId qui a créé la clé
-  createdAt   DateTime @default(now())
+  id         String    @id @default(cuid())
+  name       String // "POS CAISSE Backoffice", "Accounting Sync"
+  key        String    @unique // Le token Bearer envoyé par le service
+  service    String // "pos-caisse", "accounting", "erp"
+  role       Role      @default(ADMIN) // Rôle simulé pour les permissions RBAC
+  active     Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdBy  String // userId qui a créé la clé
+  createdAt  DateTime  @default(now())
 
   @@index([key])
   @@index([active])
@@ -1366,8 +1427,8 @@ model ServiceApiKey {
 // Suivi de consommation API Gemini
 model AiApiUsage {
   id           String   @id @default(cuid())
-  model        String   // "gemini-2.0-flash", "text-embedding-004"
-  operation    String   // "generateText", "embedContent", etc.
+  model        String // "gemini-2.0-flash", "text-embedding-004"
+  operation    String // "generateText", "embedContent", etc.
   inputTokens  Int      @default(0)
   outputTokens Int      @default(0)
   totalTokens  Int      @default(0)
@@ -1402,7 +1463,7 @@ model InventorySession {
   startedAt   DateTime        @default(now())
   completedAt DateTime?
 
-  counts      InventoryCount[]
+  counts InventoryCount[]
 
   @@index([storeId])
   @@index([employeeId])
@@ -1418,7 +1479,7 @@ model InventoryCount {
   productName    String?
   quantity       Int              @default(1)
   scannedAt      DateTime         @default(now())
-  idempotencyKey String?          @unique  // Technical dedup key from mobile client
+  idempotencyKey String?          @unique // Technical dedup key from mobile client
 
   @@index([sessionId])
   @@index([barcode])
@@ -1442,29 +1503,29 @@ model IdempotencyKey {
 // ─── Product Catalogue ─────────────────────────────────
 
 model Product {
-  id              String    @id @default(cuid())
-  name            String
-  barcode         String?
-  sku             String?
-  price           Float?
-  oldPrice        Float?
-  currency        String    @default("EUR")
-  vatRate         Float?
-  category        String?
-  variantName     String?
-  imageUrl        String?
-  active          Boolean   @default(true)
-  source          String    @default("manual")
-  sourceRef       String?
+  id          String  @id @default(cuid())
+  name        String
+  barcode     String?
+  sku         String?
+  price       Float?
+  oldPrice    Float?
+  currency    String  @default("EUR")
+  vatRate     Float?
+  category    String?
+  variantName String?
+  imageUrl    String?
+  active      Boolean @default(true)
+  source      String  @default("manual")
+  sourceRef   String?
 
-  store           Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
-  storeId         String?
+  store   Store?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  storeId String?
 
   labelPrintItems LabelPrintItem[]
 
-  priceUpdatedAt  DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  priceUpdatedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@unique([barcode, storeId])
   @@index([name])
@@ -1477,36 +1538,36 @@ model Product {
 // ─── Label Templates ───────────────────────────────────
 
 model LabelTemplate {
-  id              String    @id @default(cuid())
-  name            String
-  type            String
+  id   String @id @default(cuid())
+  name String
+  type String
 
-  labelsPerPage   Int?
-  columns         Int?      @default(3)
-  rows            Int?      @default(8)
+  labelsPerPage Int?
+  columns       Int? @default(3)
+  rows          Int? @default(8)
 
-  widthMm         Float?
-  heightMm        Float?
+  widthMm  Float?
+  heightMm Float?
 
-  showBarcode     Boolean   @default(true)
-  showPrice       Boolean   @default(true)
-  showOldPrice    Boolean   @default(false)
-  showSku         Boolean   @default(false)
-  showStoreName   Boolean   @default(false)
-  showDate        Boolean   @default(false)
-  showPromoLabel  Boolean   @default(false)
-  showVariant     Boolean   @default(false)
-  barcodeFormat   String    @default("EAN13")
+  showBarcode    Boolean @default(true)
+  showPrice      Boolean @default(true)
+  showOldPrice   Boolean @default(false)
+  showSku        Boolean @default(false)
+  showStoreName  Boolean @default(false)
+  showDate       Boolean @default(false)
+  showPromoLabel Boolean @default(false)
+  showVariant    Boolean @default(false)
+  barcodeFormat  String  @default("EAN13")
 
-  fontSize        Int       @default(10)
-  priceFontSize   Int       @default(14)
-  isDefault       Boolean   @default(false)
-  isSystem        Boolean   @default(true)
+  fontSize      Int     @default(10)
+  priceFontSize Int     @default(14)
+  isDefault     Boolean @default(false)
+  isSystem      Boolean @default(true)
 
-  printJobs       LabelPrintJob[]
+  printJobs LabelPrintJob[]
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
   @@index([isDefault])
@@ -1515,20 +1576,20 @@ model LabelTemplate {
 // ─── Label Print Jobs ──────────────────────────────────
 
 model LabelPrintJob {
-  id              String          @id @default(cuid())
-  userId          String?
-  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  storeId         String?
-  templateId      String
-  template        LabelTemplate   @relation(fields: [templateId], references: [id])
-  format          String          @default("pdf")
-  totalLabels     Int
-  status          String          @default("completed")
-  notes           String?
+  id          String        @id @default(cuid())
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  storeId     String?
+  templateId  String
+  template    LabelTemplate @relation(fields: [templateId], references: [id])
+  format      String        @default("pdf")
+  totalLabels Int
+  status      String        @default("completed")
+  notes       String?
 
-  items           LabelPrintItem[]
+  items LabelPrintItem[]
 
-  createdAt       DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([storeId])
@@ -1536,14 +1597,14 @@ model LabelPrintJob {
 }
 
 model LabelPrintItem {
-  id              String         @id @default(cuid())
-  printJob        LabelPrintJob  @relation(fields: [printJobId], references: [id], onDelete: Cascade)
-  printJobId      String
-  product         Product        @relation(fields: [productId], references: [id])
-  productId       String
-  quantity        Int            @default(1)
-  priceAtPrint    Float?
-  promoLabel      String?
+  id           String        @id @default(cuid())
+  printJob     LabelPrintJob @relation(fields: [printJobId], references: [id], onDelete: Cascade)
+  printJobId   String
+  product      Product       @relation(fields: [productId], references: [id])
+  productId    String
+  quantity     Int           @default(1)
+  priceAtPrint Float?
+  promoLabel   String?
 
   @@index([printJobId])
   @@index([productId])
@@ -1559,23 +1620,23 @@ enum PerformanceBadge {
 }
 
 model EmployeePerformanceDaily {
-  id             String   @id @default(cuid())
-  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId     String
-  storeId        String
-  date           DateTime @db.Date
-  totalSales     Float    @default(0)
-  transactions   Int      @default(0)
-  itemsSold      Int      @default(0)
-  avgBasket      Float    @default(0)
-  cashAmount     Float    @default(0)
-  cardAmount     Float    @default(0)
-  workingHours   Float    @default(0)
-  salesPerHour   Float    @default(0)
-  upsellRate     Float    @default(0)
+  id           String   @id @default(cuid())
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId   String
+  storeId      String
+  date         DateTime @db.Date
+  totalSales   Float    @default(0)
+  transactions Int      @default(0)
+  itemsSold    Int      @default(0)
+  avgBasket    Float    @default(0)
+  cashAmount   Float    @default(0)
+  cardAmount   Float    @default(0)
+  workingHours Float    @default(0)
+  salesPerHour Float    @default(0)
+  upsellRate   Float    @default(0)
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([employeeId, storeId, date])
   @@index([employeeId])
@@ -1584,16 +1645,16 @@ model EmployeePerformanceDaily {
 }
 
 model EmployeePerformanceHourly {
-  id             String   @id @default(cuid())
-  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId     String
-  storeId        String
-  date           DateTime @db.Date
-  hour           Int
-  sales          Float    @default(0)
-  transactions   Int      @default(0)
+  id           String   @id @default(cuid())
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId   String
+  storeId      String
+  date         DateTime @db.Date
+  hour         Int
+  sales        Float    @default(0)
+  transactions Int      @default(0)
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([employeeId, storeId, date, hour])
   @@index([storeId, date])
@@ -1617,8 +1678,8 @@ model EmployeePerformanceScore {
   badge             PerformanceBadge @default(MOYEN)
   breakdown         Json?
 
-  calculatedAt      DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  calculatedAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([employeeId, storeId, periodStart])
   @@index([employeeId])

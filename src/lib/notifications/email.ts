@@ -28,6 +28,8 @@ interface EmailParams {
   title: string;
   body: string;
   url?: string;
+  /** Pass pre-built HTML to bypass the default template. */
+  rawHtml?: string;
 }
 
 /**
@@ -42,7 +44,7 @@ export async function sendEmail(
     return { success: false, error: "SMTP non configuré" };
   }
 
-  const html = buildEmailHtml(params.title, params.body, params.url);
+  const html = params.rawHtml ?? buildEmailHtml(params.title, params.body, params.url);
 
   try {
     await t.sendMail({
@@ -53,10 +55,42 @@ export async function sendEmail(
     });
     return { success: true };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
-    console.error("Email send error:", message);
-    return { success: false, error: message };
+    const fullMessage = err instanceof Error ? err.message : "Erreur inconnue";
+    // Log a sanitized server-side message — full SMTP errors can include
+    // credentials, internal hostnames, or recipient lists.
+    const sanitized = sanitizeSmtpError(fullMessage);
+    console.error(`Email send error [${sanitized}] code=${(err as { code?: string })?.code ?? "unknown"}`);
+    return { success: false, error: sanitized };
   }
+}
+
+/**
+ * Convert raw SMTP/Nodemailer/Resend errors into a generic, user-safe message.
+ * Detailed messages may leak credentials, internal hostnames, or recipient lists.
+ * Exported for testing.
+ */
+export function sanitizeSmtpError(fullMessage: string): string {
+  const lower = (fullMessage || "").toLowerCase();
+  if (lower.includes("auth") || lower.includes("535")) {
+    return "Erreur d'authentification SMTP";
+  }
+  if (lower.includes("invalid") && lower.includes("recipient")) {
+    return "Adresse destinataire invalide";
+  }
+  if (lower.includes("rate") || lower.includes("429")) {
+    return "Limite d'envoi atteinte";
+  }
+  if (
+    lower.includes("connect") ||
+    lower.includes("timeout") ||
+    lower.includes("etimedout")
+  ) {
+    return "Serveur SMTP injoignable";
+  }
+  if (lower.includes("550") || lower.includes("does not exist")) {
+    return "Adresse destinataire inexistante";
+  }
+  return "Erreur d'envoi";
 }
 
 /**

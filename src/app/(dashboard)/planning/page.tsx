@@ -9,6 +9,8 @@ import { DayTimeline } from "@/components/planning/day-timeline";
 import { ShiftModal } from "@/components/planning/shift-modal";
 import { useShiftDrag } from "@/hooks/useShiftDrag";
 import { AutoPlanModal } from "@/components/planning/auto-plan-modal";
+import { SendPlanningModal } from "@/components/planning/send-planning-modal";
+import type { NotificationStatus } from "@/app/api/planning/notifications/route";
 import { ManagerIABar } from "@/components/planning/manager-ia-bar";
 import { PlanningHealth } from "@/components/planning/planning-health";
 import { ShiftExchangePanel } from "@/components/planning/shift-exchange-panel";
@@ -19,6 +21,7 @@ import {
   ChevronRight,
   Copy,
   Download,
+  Loader2,
   Plus,
   Calendar,
   CalendarDays,
@@ -29,6 +32,7 @@ import {
   Store,
   Eye,
   Trash2,
+  Mail,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -76,7 +80,7 @@ const ZOOM_PRESETS = [
 export default function PlanningPage() {
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const isAdmin = role === "ADMIN" || role === "MANAGER";
+  const isAdmin = role === "ADMIN" || role === "MANAGER" || role === "SUPER_ADMIN";
   const employeeId = (session?.user as { employeeId?: string })?.employeeId;
 
   const [storeId, setStoreId] = useState("");
@@ -90,8 +94,13 @@ export default function PlanningPage() {
   const [duplicating, setDuplicating] = useState(false);
   const [duplicateMsg, setDuplicateMsg] = useState("");
   const [autoPlanOpen, setAutoPlanOpen] = useState(false);
+  const [sendPlanningOpen, setSendPlanningOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [shiftsVersion, setShiftsVersion] = useState(0);
+
+  // Per-employee send status (used to show colored dots on shifts)
+  const [sendStatusByEmployee, setSendStatusByEmployee] =
+    useState<Map<string, NotificationStatus>>(new Map());
 
   // Multi-store state
   const [allStores, setAllStores] = useState<StoreWithSchedules[]>([]);
@@ -171,9 +180,59 @@ export default function PlanningPage() {
     }
   }, [weekStart, storeId, isAdmin, employeeId]);
 
+  /**
+   * Load send-status per employee for the current period.
+   * Best-effort: failures fall back to "no badges shown".
+   * Manager scope: requires storeId; admins can call without.
+   * Uses AbortController to avoid race conditions (e.g. fast week-switching).
+   */
+  const loadSendStatus = useCallback(
+    async (signal: AbortSignal) => {
+      if (!isAdmin) {
+        setSendStatusByEmployee(new Map());
+        return;
+      }
+      // The API returns 403 for managers without storeId — skip the call to avoid noise.
+      if (role === "MANAGER" && !storeId) {
+        setSendStatusByEmployee(new Map());
+        return;
+      }
+      try {
+        const qs = new URLSearchParams({ weekStart });
+        if (storeId) qs.set("storeId", storeId);
+        const res = await fetch(`/api/planning/notifications?${qs.toString()}`, { signal });
+        if (signal.aborted) return;
+        if (!res.ok) {
+          setSendStatusByEmployee(new Map());
+          return;
+        }
+        const data: { notifications?: { employeeId: string; status: NotificationStatus }[] } =
+          await res.json();
+        if (signal.aborted) return;
+        const map = new Map<string, NotificationStatus>();
+        for (const n of data.notifications ?? []) {
+          map.set(n.employeeId, n.status);
+        }
+        setSendStatusByEmployee(map);
+      } catch (err) {
+        // AbortError is expected when params change quickly — silent
+        if ((err as Error)?.name === "AbortError") return;
+        setSendStatusByEmployee(new Map());
+      }
+    },
+    [isAdmin, role, storeId, weekStart]
+  );
+
   useEffect(() => {
     loadShifts();
   }, [loadShifts]);
+
+  // Refresh send-status whenever shifts change (modification triggers MODIFIED state)
+  useEffect(() => {
+    const controller = new AbortController();
+    loadSendStatus(controller.signal);
+    return () => controller.abort();
+  }, [loadSendStatus, shiftsVersion]);
 
   // Drag-and-drop hook (after loadShifts)
   const handleDragEnd = useCallback(
@@ -444,22 +503,45 @@ export default function PlanningPage() {
         </h1>
 
         {isAdmin && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* ── Groupe principal : actions planning ── */}
             <Button
               size="sm"
               className="bg-amber-500 hover:bg-amber-600 text-white"
               onClick={() => setAutoPlanOpen(true)}
             >
               <Zap className="h-4 w-4 mr-1.5" />
-              {storeId ? "Auto-planifier" : "Auto-planifier (tous)"}
+              <span className="hidden sm:inline">{storeId ? "Auto-planifier" : "Auto-planifier (tous)"}</span>
+              <span className="sm:hidden">Auto</span>
             </Button>
+
+            {/* Envoyer le planning — visible mais désactivé sans shifts */}
+            <Button
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => setSendPlanningOpen(true)}
+              disabled={shifts.length === 0}
+              title={shifts.length === 0 ? "Aucun shift à envoyer sur cette période" : undefined}
+            >
+              <Mail className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Envoyer le planning</span>
+              <span className="sm:hidden">Envoyer</span>
+            </Button>
+
+            {/* ── Séparateur visuel ── */}
+            <div className="w-px h-6 bg-gray-200 mx-1 hidden sm:block" />
+
+            {/* ── Actions secondaires ── */}
             <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating || !storeId}>
               <Copy className="h-4 w-4 mr-1.5" />
-              {duplicating ? "Duplication..." : "Dupliquer semaine"}
+              <span className="hidden md:inline">{duplicating ? "Duplication..." : "Dupliquer"}</span>
+              <span className="md:hidden">
+                {duplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+              </span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleExport} disabled={!storeId}>
               <Download className="h-4 w-4 mr-1.5" />
-              Export CSV
+              <span className="hidden md:inline">Export CSV</span>
             </Button>
             <Button
               variant="outline"
@@ -469,7 +551,7 @@ export default function PlanningPage() {
               disabled={cancelling || shifts.length === 0}
             >
               <Trash2 className="h-4 w-4 mr-1.5" />
-              {cancelling ? "Suppression..." : "Annuler semaine"}
+              <span className="hidden md:inline">{cancelling ? "Suppression..." : "Annuler semaine"}</span>
             </Button>
           </div>
         )}
@@ -713,6 +795,7 @@ export default function PlanningPage() {
                         onShiftPointerDown={handleShiftPointerDown}
                         didDrag={didDrag}
                         clearDidDrag={clearDidDrag}
+                        sendStatusByEmployee={sendStatusByEmployee}
                       />
                     ) : (
                       <DayTimeline
@@ -728,6 +811,7 @@ export default function PlanningPage() {
                         onShiftPointerDown={handleShiftPointerDown}
                         didDrag={didDrag}
                         clearDidDrag={clearDidDrag}
+                        sendStatusByEmployee={sendStatusByEmployee}
                       />
                     )}
                   </div>
@@ -775,6 +859,7 @@ export default function PlanningPage() {
                 didDrag={didDrag}
                 clearDidDrag={clearDidDrag}
                 gridRef={gridRef}
+                sendStatusByEmployee={sendStatusByEmployee}
               />
             ) : (
               <DayTimeline
@@ -790,13 +875,14 @@ export default function PlanningPage() {
                 onShiftPointerDown={isAdmin ? handleShiftPointerDown : undefined}
                 didDrag={didDrag}
                 clearDidDrag={clearDidDrag}
+                sendStatusByEmployee={sendStatusByEmployee}
                 gridRef={gridRef}
               />
             )}
           </div>
 
-          {/* Quick stats */}
-          <div className="mt-4 flex gap-4 text-sm text-gray-500">
+          {/* Quick stats + send-status legend */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-gray-500">
             {viewMode === "week" ? (
               <>
                 <span>{shifts.length} shift(s) cette semaine</span>
@@ -813,6 +899,22 @@ export default function PlanningPage() {
                   <span className="capitalize">{dayLabel}</span>
                 </span>
               </>
+            )}
+            {isAdmin && sendStatusByEmployee.size > 0 && (
+              <span className="flex items-center gap-3 text-xs text-gray-400 ml-auto">
+                <span className="flex items-center gap-1">
+                  <span className="block h-2 w-2 rounded-full bg-green-500 ring-2 ring-green-200" />
+                  Envoyé
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="block h-2 w-2 rounded-full bg-orange-500 ring-2 ring-orange-200 animate-pulse" />
+                  Modifié
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="block h-2 w-2 rounded-full bg-red-500 ring-2 ring-red-200" />
+                  Échec
+                </span>
+              </span>
             )}
           </div>
 
@@ -896,6 +998,19 @@ export default function PlanningPage() {
           }}
           storeId={storeId || undefined}
           weekStart={weekStart}
+        />
+      )}
+
+      {/* Send planning modal */}
+      {isAdmin && (
+        <SendPlanningModal
+          open={sendPlanningOpen}
+          onClose={() => setSendPlanningOpen(false)}
+          weekStart={weekStart}
+          storeId={storeId || undefined}
+          periodStart={viewMode === "day" ? selectedDateStr : undefined}
+          periodEnd={viewMode === "day" ? selectedDateStr : undefined}
+          periodLabel={viewMode === "day" ? dayLabel : weekLabel}
         />
       )}
 

@@ -14,6 +14,8 @@ import {
 } from "@/lib/timeline-utils";
 import { ShiftDragGhost } from "./shift-drag-ghost";
 import type { DragState } from "@/hooks/useShiftDrag";
+import { ShiftSendBadge } from "./shift-send-badge";
+import type { NotificationStatus } from "@/app/api/planning/notifications/route";
 
 interface DayTimelineProps {
   date: string; // "YYYY-MM-DD"
@@ -40,6 +42,8 @@ interface DayTimelineProps {
   didDrag?: boolean;
   clearDidDrag?: () => void;
   gridRef?: React.RefObject<HTMLDivElement | null>;
+  /** Per-employee send status — drives the colored dot on each shift. */
+  sendStatusByEmployee?: Map<string, NotificationStatus>;
 }
 
 export function DayTimeline({
@@ -57,6 +61,7 @@ export function DayTimeline({
   didDrag,
   clearDidDrag,
   gridRef,
+  sendStatusByEmployee,
 }: DayTimelineProps) {
   const totalHours = gridEndHour - gridStartHour;
   const HOUR_HEIGHT = 64; // slightly taller for day view
@@ -312,6 +317,13 @@ export function DayTimeline({
                     <div className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize z-20 flex items-start justify-center">
                       <div className="w-8 h-1 bg-current opacity-20 rounded-full mt-0.5" />
                     </div>
+                  )}
+                  {/* Send-status indicator (top-right corner) */}
+                  {shift.employeeId && (
+                    <ShiftSendBadge
+                      status={sendStatusByEmployee?.get(shift.employeeId)}
+                      compact={height < 30}
+                    />
                   )}
                   <div className="px-2 py-1 leading-tight">
                     <div className="text-sm font-bold truncate">

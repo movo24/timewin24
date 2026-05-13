@@ -23,6 +23,7 @@ import {
   Brain,
   Lightbulb,
   Sliders,
+  Mail,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────
@@ -166,6 +167,8 @@ export function AutoPlanModal({
 }: AutoPlanModalProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [notifying, setNotifying] = useState(false);
+  const [notifyResult, setNotifyResult] = useState<{ sent: number; skipped: number } | null>(null);
   const [error, setError] = useState("");
   const [result, setResult] = useState<SolverResult | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -233,6 +236,7 @@ export function AutoPlanModal({
       setScenarioData(null);
       setError("");
       setSelected(new Set());
+      setNotifyResult(null);
     }
   }, [open, weekStart, runPreview]);
 
@@ -284,10 +288,31 @@ export function AutoPlanModal({
     setSaving(false);
     if (saved > 0) {
       const firstStoreId = selectedShifts[0]?.storeId;
-      onClose();
       onSaved(firstStoreId);
     } else {
       setError(`Aucun shift enregistré — ${errors} erreur(s)`);
+    }
+  }
+
+  async function handleNotify() {
+    setNotifying(true);
+    setNotifyResult(null);
+    try {
+      const res = await fetch("/api/planning/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekStart, storeId: storeId || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setNotifyResult({ sent: data.sent ?? 0, skipped: data.skipped ?? 0 });
+      } else {
+        setError(data.error || "Erreur lors de l'envoi des notifications");
+      }
+    } catch {
+      setError("Erreur réseau lors de la notification");
+    } finally {
+      setNotifying(false);
     }
   }
 
@@ -630,8 +655,27 @@ export function AutoPlanModal({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-              <Button variant="outline" onClick={onClose}>Annuler</Button>
+            <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-gray-100">
+              {notifyResult && (
+                <span className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-1.5 mr-auto">
+                  <Check className="h-3.5 w-3.5" />
+                  {notifyResult.sent} email{notifyResult.sent !== 1 ? "s" : ""} envoyé{notifyResult.sent !== 1 ? "s" : ""}
+                  {notifyResult.skipped > 0 && `, ${notifyResult.skipped} sans adresse`}
+                </span>
+              )}
+              <Button variant="outline" onClick={onClose}>Fermer</Button>
+              <Button
+                variant="outline"
+                onClick={handleNotify}
+                disabled={notifying || saving}
+                className="text-blue-700 border-blue-200 hover:bg-blue-50"
+              >
+                {notifying ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Envoi...</>
+                ) : (
+                  <><Mail className="h-4 w-4 mr-1.5" />Notifier les employés</>
+                )}
+              </Button>
               {result.shifts.length > 0 && (
                 <Button onClick={handleSave} disabled={saving || selected.size === 0}>
                   {saving ? (
