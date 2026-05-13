@@ -3,7 +3,8 @@
  * Extracted so they can be unit-tested without the Next.js / Prisma stack.
  */
 
-export type Role = "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE";
+// SaaS App Store : OWNER ajouté entre SUPER_ADMIN et ADMIN.
+export type Role = "SUPER_ADMIN" | "OWNER" | "ADMIN" | "MANAGER" | "EMPLOYEE";
 
 export interface RbacInput {
   role: Role;
@@ -11,6 +12,18 @@ export interface RbacInput {
   accessibleStoreIds: string[] | null;
   /** Store id requested in the API call. Empty/undefined = "all stores". */
   requestedStoreId?: string;
+  // ─── SaaS multi-tenant (Phase 2 — optionnels pour rétro-compatibilité) ──
+  /**
+   * Company id de l'utilisateur courant. `null` = SUPER_ADMIN (plateforme).
+   * Pour OWNER / ADMIN / MANAGER / EMPLOYEE, doit être non-null.
+   */
+  userCompanyId?: string | null;
+  /**
+   * Company id dérivée de la ressource ciblée (ex: store.companyId, ou
+   * employee.companyId si single-employee). Si fourni, doit matcher
+   * `userCompanyId` (sauf SUPER_ADMIN).
+   */
+  requestedCompanyId?: string | null;
 }
 
 export type RbacOutcome =
@@ -20,18 +33,26 @@ export type RbacOutcome =
 /**
  * Apply RBAC to a planning notify/notifications request.
  *
- * Rules:
- *   - ADMIN / SUPER_ADMIN → unrestricted
- *   - EMPLOYEE → blocked (handled before this — but defensive)
- *   - MANAGER → must specify a storeId AND it must be in their accessible list
+ * Rules (multi-tenant SaaS) :
+ *   - SUPER_ADMIN → unrestricted (scope plateforme)
+ *   - OWNER / ADMIN → unrestricted DANS LEUR Company UNIQUEMENT
+ *   - MANAGER → store autorisé DANS LEUR Company
+ *   - EMPLOYEE → blocked
+ *
+ * Phase 2 : si `userCompanyId` ET `requestedCompanyId` sont fournis, on
+ *           vérifie qu'ils matchent (sauf SUPER_ADMIN bypass).
+ *           Si les deux sont absents : compatible rétro avec les anciens tests.
  */
 export function applyNotifyRbac(input: RbacInput): RbacOutcome {
-  const { role, accessibleStoreIds, requestedStoreId } = input;
+  const {
+    role,
+    accessibleStoreIds,
+    requestedStoreId,
+    userCompanyId,
+    requestedCompanyId,
+  } = input;
 
-  if (role === "ADMIN" || role === "SUPER_ADMIN") {
-    return { ok: true };
-  }
-
+  // 1. EMPLOYEE bloqué tout de suite
   if (role === "EMPLOYEE") {
     return {
       ok: false,
@@ -40,7 +61,41 @@ export function applyNotifyRbac(input: RbacInput): RbacOutcome {
     };
   }
 
-  // MANAGER from here
+  // 2. SUPER_ADMIN bypass (scope plateforme)
+  if (role === "SUPER_ADMIN") {
+    return { ok: true };
+  }
+
+  // 3. Multi-tenant : check cross-company (uniquement si les deux IDs sont fournis)
+  if (
+    typeof userCompanyId === "string" &&
+    typeof requestedCompanyId === "string" &&
+    userCompanyId !== requestedCompanyId
+  ) {
+    return {
+      ok: false,
+      status: 403,
+      reason: "Accès refusé : ressource hors de votre Company",
+    };
+  }
+
+  // 4. Pour OWNER / ADMIN / MANAGER, on exige un companyId si la couche
+  //    SaaS est activée (userCompanyId fourni).
+  //    Si userCompanyId est absent (legacy), on laisse passer pour compat.
+  if (userCompanyId === null && (role === "OWNER" || role === "ADMIN" || role === "MANAGER")) {
+    return {
+      ok: false,
+      status: 403,
+      reason: "Compte sans Company assignée",
+    };
+  }
+
+  // 5. OWNER / ADMIN → unrestricted dans leur Company
+  if (role === "OWNER" || role === "ADMIN") {
+    return { ok: true };
+  }
+
+  // 6. MANAGER from here
   if (!requestedStoreId) {
     return {
       ok: false,

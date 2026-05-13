@@ -99,7 +99,11 @@ export async function POST(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      companyId: string | null;
+    };
 
     const body = await req.json();
     const parsed = notifySchema.safeParse(body);
@@ -110,20 +114,36 @@ export async function POST(req: NextRequest) {
     const { weekStart, storeId, employeeId, dryRun, periodStart, periodEnd, modifiedOnly } =
       parsed.data;
 
-    // RBAC: applied via shared, unit-tested helper (notify-rbac-batch.test.ts)
+    // ─── Multi-tenant SaaS : si un storeId est fourni, on charge sa Company
+    //     pour vérifier le cross-tenant. Sinon (envoi global), on s'appuie
+    //     sur le filtre Prisma plus loin (where: companyId).
+    let requestedCompanyId: string | null = null;
+    if (storeId) {
+      const store = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { companyId: true },
+      });
+      if (!store) {
+        return errorResponse("Magasin introuvable", 404);
+      }
+      requestedCompanyId = store.companyId;
+    }
+
+    // RBAC: applied via shared, unit-tested helper (notify-rbac-saas.test.ts)
     const { storeIds } = await getAccessibleStoreIds();
     const rbac = applyNotifyRbac({
       role: user.role as Parameters<typeof applyNotifyRbac>[0]["role"],
       accessibleStoreIds: storeIds,
       requestedStoreId: storeId,
+      userCompanyId: user.companyId,
+      requestedCompanyId,
     });
     if (!rbac.ok) {
       return errorResponse(rbac.reason, rbac.status);
     }
 
-    // Defense in depth: if a Manager passes employeeId, ensure the employee
-    // belongs to one of their accessible stores. Prevents enumerating planning
-    // of employees outside their scope (even though storeId filter blocks data).
+    // Defense in depth #1 : si Manager passe employeeId, vérifier
+    // qu'il est dans son périmètre stores.
     if (employeeId && user.role === "MANAGER" && storeIds) {
       const empAccess = await prisma.storeEmployee.findFirst({
         where: { employeeId, storeId: { in: storeIds } },
@@ -132,6 +152,24 @@ export async function POST(req: NextRequest) {
       if (!empAccess) {
         return errorResponse(
           "Accès refusé : cet employé n'est pas dans votre périmètre",
+          403
+        );
+      }
+    }
+
+    // Defense in depth #2 : si un employeeId est fourni ET un companyId
+    // utilisateur, vérifier que l'employee appartient bien à la Company.
+    // Bloque le cas : Manager Company A passe employeeId d'un employé Company B
+    // (même si le store autorisé est dans Company A et que l'employee a un
+    // shift exceptionnel chez nous — l'employee LUI-MÊME doit être dans la Company).
+    if (employeeId && user.role !== "SUPER_ADMIN" && user.companyId) {
+      const emp = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        select: { companyId: true },
+      });
+      if (emp && emp.companyId && emp.companyId !== user.companyId) {
+        return errorResponse(
+          "Accès refusé : cet employé n'appartient pas à votre Company",
           403
         );
       }
@@ -171,11 +209,17 @@ export async function POST(req: NextRequest) {
     );
 
     // ─── Load shifts ─────────────────────────────────────────────────────────
+    // SaaS multi-tenant : scope obligatoire par companyId (sauf SUPER_ADMIN
+    // qui peut requêter cross-company — on injecte le filtre seulement si on
+    // a un companyId utilisateur).
     const shiftsDb = await prisma.shift.findMany({
       where: {
         date: { gte: rangeStart, lte: rangeEnd },
         employeeId: employeeId ? employeeId : { not: null },
         ...(storeId ? { storeId } : {}),
+        ...(user.role !== "SUPER_ADMIN" && user.companyId
+          ? { companyId: user.companyId }
+          : {}),
       },
       include: {
         employee: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -242,6 +286,10 @@ export async function POST(req: NextRequest) {
           periodEnd: rangeEndRaw,
           status: "SENT",
           ...(storeId ? { storeId } : {}),
+          // SaaS multi-tenant : ne lire que les notifications de la Company
+          ...(user.role !== "SUPER_ADMIN" && user.companyId
+            ? { companyId: user.companyId }
+            : {}),
         },
         orderBy: { sentAt: "desc" },
         select: { employeeId: true, shiftSnapshotHash: true },
@@ -314,7 +362,15 @@ export async function POST(req: NextRequest) {
       totalHours: number;
       error: string | null;
       shiftSnapshotHash: string | null;
+      // SaaS multi-tenant — stamp companyId pour audit RH par client
+      companyId: string | null;
     }> = [];
+
+    // SaaS multi-tenant — companyId à stamper sur chaque PlanningNotification.
+    // Priorité : (1) companyId du user courant (cas commun OWNER/ADMIN/MANAGER),
+    //           (2) sinon companyId du store ciblé (cas SUPER_ADMIN qui agit
+    //               pour le compte d'une Company précise).
+    const notifCompanyId: string | null = user.companyId ?? requestedCompanyId ?? null;
 
     // Snapshot the sender's display name once for all rows in this request
     const senderSnapshot = await prisma.user
@@ -352,6 +408,7 @@ export async function POST(req: NextRequest) {
             totalHours: emp.totalHours,
             error: null,
             shiftSnapshotHash: snapshotHash,
+            companyId: notifCompanyId,
           });
           return;
         }
@@ -396,6 +453,7 @@ export async function POST(req: NextRequest) {
           totalHours: emp.totalHours,
           error: sendResult.success ? null : sendResult.error ?? null,
           shiftSnapshotHash: snapshotHash,
+          companyId: notifCompanyId,
         });
       } catch (sendErr) {
         // Catch-all so an unexpected throw (template build, etc.) is recorded as FAILED
@@ -427,6 +485,7 @@ export async function POST(req: NextRequest) {
           totalHours: emp.totalHours,
           error: message,
           shiftSnapshotHash: snapshotHash,
+          companyId: notifCompanyId,
         });
       }
     }
@@ -467,6 +526,7 @@ export async function POST(req: NextRequest) {
             totalHours: r.totalHours,
             error: r.error,
             shiftSnapshotHash: r.shiftSnapshotHash,
+            companyId: r.companyId,
           })),
         });
       } catch (dbErr) {

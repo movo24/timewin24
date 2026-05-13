@@ -20,7 +20,8 @@
 
 import { NextResponse } from "next/server";
 import { getSessionOrUnauthorized } from "./api-helpers";
-import { isSuperAdmin } from "./rbac";
+import { isSuperAdmin, isPlatformAdmin } from "./rbac";
+import { prisma } from "./prisma";
 import type { CompanyContext } from "./company-context-pure";
 
 // Re-exports : toute la logique pure (testable sans serveur) reste l'API publique
@@ -103,4 +104,150 @@ export async function requireCompanyContext(): Promise<{
 }> {
   const { context, error } = await getCompanyContext();
   return { ctx: context, error };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Helpers avancés multi-tenant
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Combine `requireCompanyContext` + check de rôle.
+ *
+ * Refuse l'accès si l'utilisateur n'a pas un des rôles requis OU s'il n'a
+ * pas de companyId (hors SUPER_ADMIN).
+ *
+ * Usage:
+ *   const { ctx, error } = await requireCompanyRole("OWNER", "ADMIN");
+ *   if (error) return error;
+ */
+export async function requireCompanyRole(
+  ...allowedRoles: string[]
+): Promise<{
+  ctx: CompanyContext | null;
+  error: NextResponse | null;
+}> {
+  const { ctx, error } = await requireCompanyContext();
+  if (error || !ctx) return { ctx: null, error };
+
+  if (!allowedRoles.includes(ctx.role)) {
+    return {
+      ctx: null,
+      error: NextResponse.json(
+        { error: "Accès refusé : rôle insuffisant pour cette action" },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { ctx, error: null };
+}
+
+/**
+ * Vérifie qu'un store appartient bien à la Company de l'utilisateur courant.
+ *
+ * - Pour SUPER_ADMIN : check bypassé (accès cross-company autorisé).
+ * - Pour OWNER/ADMIN : suffit que store.companyId === ctx.companyId.
+ * - Pour MANAGER    : doit aussi être lié au store via StoreEmployee.
+ * - Pour EMPLOYEE   : suffit d'avoir au moins un shift dans ce store
+ *                    (cas rare, généralement l'employé ne fait pas ça).
+ *
+ * Retourne `null` si OK, ou une `NextResponse` 403 / 404 sinon.
+ */
+export async function requireCompanyStoreAccess(
+  storeId: string,
+  ctx: CompanyContext
+): Promise<NextResponse | null> {
+  // Plateforme : accès cross-company autorisé
+  if (isPlatformAdmin(ctx.role)) return null;
+
+  // Récupérer le store + son companyId
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    select: { id: true, companyId: true },
+  });
+  if (!store) {
+    return NextResponse.json(
+      { error: "Magasin introuvable" },
+      { status: 404 }
+    );
+  }
+
+  // Cross-company strict
+  if (store.companyId && store.companyId !== ctx.companyId) {
+    return NextResponse.json(
+      { error: "Accès refusé : magasin hors de votre Company" },
+      { status: 403 }
+    );
+  }
+
+  // MANAGER : doit aussi avoir une affectation StoreEmployee sur ce store
+  if (ctx.role === "MANAGER") {
+    // (le manager peut avoir un employeeId lié à un employé)
+    const userWithEmployee = await prisma.user.findUnique({
+      where: { id: ctx.userId },
+      select: { employeeId: true },
+    });
+    if (userWithEmployee?.employeeId) {
+      const link = await prisma.storeEmployee.findFirst({
+        where: { storeId, employeeId: userWithEmployee.employeeId },
+        select: { storeId: true },
+      });
+      if (!link) {
+        return NextResponse.json(
+          { error: "Accès refusé : magasin hors de votre périmètre manager" },
+          { status: 403 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { error: "Manager sans employee lié — contactez le support" },
+        { status: 403 }
+      );
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Retourne la liste des stores accessibles par l'utilisateur, scopée à sa Company.
+ *
+ * - SUPER_ADMIN              → `null` (unrestricted)
+ * - OWNER / ADMIN            → tous les stores de la Company
+ * - MANAGER                  → stores liés via StoreEmployee (dans la Company)
+ * - EMPLOYEE                 → stores liés via StoreEmployee (dans la Company)
+ *
+ * ⚠ Ne JAMAIS retourner `null` pour autre chose que SUPER_ADMIN. Sinon
+ *   un OWNER se retrouverait avec un accès cross-company.
+ */
+export async function getCompanyScopedStoreIds(
+  ctx: CompanyContext
+): Promise<string[] | null> {
+  if (isPlatformAdmin(ctx.role)) return null;
+  if (!ctx.companyId) return []; // sécurité — devrait être bloqué en amont
+
+  // OWNER / ADMIN : tous les stores de la Company
+  if (ctx.role === "OWNER" || ctx.role === "ADMIN") {
+    const stores = await prisma.store.findMany({
+      where: { companyId: ctx.companyId },
+      select: { id: true },
+    });
+    return stores.map((s) => s.id);
+  }
+
+  // MANAGER / EMPLOYEE : stores liés via StoreEmployee dans la Company
+  const userWithEmployee = await prisma.user.findUnique({
+    where: { id: ctx.userId },
+    select: { employeeId: true },
+  });
+  if (!userWithEmployee?.employeeId) return [];
+
+  const links = await prisma.storeEmployee.findMany({
+    where: {
+      employeeId: userWithEmployee.employeeId,
+      store: { companyId: ctx.companyId },
+    },
+    select: { storeId: true },
+  });
+  return links.map((l) => l.storeId);
 }

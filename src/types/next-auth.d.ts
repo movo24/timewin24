@@ -8,16 +8,15 @@ declare module "next-auth" {
     passwordChangedAt: Date | null;
     /**
      * Multi-tenant SaaS — Company à laquelle ce User appartient.
-     * - null = SUPER_ADMIN (staff plateforme, accès cross-company).
-     * - Pour tout autre rôle, devra être peuplé après backfill (Phase 2+).
+     * - `null` = SUPER_ADMIN (staff plateforme, accès cross-company) ou
+     *           compte hérité avant backfill multi-tenant.
+     * - `string` = id de la Company pour OWNER / ADMIN / MANAGER / EMPLOYEE.
      *
-     * Phase 1 : OPTIONAL (`?`) car la fonction `authorize` existante dans
-     *           lib/auth.ts ne le retourne pas encore. Le câblage runtime
-     *           (callbacks NextAuth) sera fait en Phase 2 quand la DB SaaS
-     *           sera provisionnée. Sera durci en `string | null` (non-optionnel)
-     *           à ce moment-là.
+     * Phase 2 : câblé runtime par les callbacks NextAuth (auth.ts).
+     *           Sera rendu obligatoire (sans null possible pour les rôles
+     *           non-SUPER_ADMIN) après le backfill DB en Phase 3.
      */
-    companyId?: string | null;
+    companyId: string | null;
   }
 
   interface Session {
@@ -28,8 +27,8 @@ declare module "next-auth" {
       role: string;
       employeeId: string | null;
       mustChangePassword: boolean;
-      /** Multi-tenant SaaS — Phase 1 optionnel, voir doc sur `User.companyId`. */
-      companyId?: string | null;
+      /** Multi-tenant SaaS — voir doc sur `User.companyId` ci-dessus. */
+      companyId: string | null;
     };
   }
 }
@@ -40,7 +39,7 @@ declare module "next-auth/jwt" {
     employeeId: string | null;
     mustChangePassword: boolean;
     passwordChangedAt: Date | null;
-    /** Multi-tenant SaaS — Phase 1 optionnel, voir doc sur `User.companyId`. */
-    companyId?: string | null;
+    /** Multi-tenant SaaS — voir doc sur `User.companyId`. */
+    companyId: string | null;
   }
 }
