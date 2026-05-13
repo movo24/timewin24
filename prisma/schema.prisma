@@ -8,10 +8,18 @@ datasource db {
 }
 
 enum Role {
-  SUPER_ADMIN // Super admin groupe — accès total multi-org
-  ADMIN // Admin unité/réseau
+  SUPER_ADMIN // Staff plateforme TimeWin24 — multi-company (legacy: "groupe AddX")
+  OWNER // SaaS — Propriétaire d'une Company (1 par Company, droits absolus dans sa Company)
+  ADMIN // Admin de la Company
   MANAGER
   EMPLOYEE
+}
+
+/// Statut d'une Company sur la plateforme SaaS TimeWin24.
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED // bloquée mais récupérable (impayés, etc.)
+  DELETED // soft delete (RGPD / App Store account deletion)
 }
 
 enum StoreStatus {
@@ -68,6 +76,40 @@ model Unit {
   @@index([status])
 }
 
+/// SaaS multi-tenant — Société cliente sur la plateforme TimeWin24 App Store.
+/// Toute donnée métier (User, Store, Employee, Shift, etc.) doit être scopée par companyId.
+/// Note: distinct du modèle `Organization` (legacy multi-org Movo24/AddX).
+model Company {
+  id             String        @id @default(cuid())
+  name           String
+  country        String        @default("FR")
+  timezone       String        @default("Europe/Paris")
+  language       String        @default("fr") // ISO 639-1 ("fr", "en", "es", ...)
+  contactEmail   String?
+  status         CompanyStatus @default(ACTIVE)
+  onboardingStep Int           @default(0) // 0..99 — 99 = onboarding terminé
+  deletedAt      DateTime? // soft delete RGPD / App Store account deletion
+  appleSub       String?       @unique // futur Sign in with Apple (sub OAuth)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations inverses — toute table tenant scope a son inverse ici
+  users                 User[]
+  stores                Store[]
+  employees             Employee[]
+  storeEmployees        StoreEmployee[]
+  shifts                Shift[]
+  unavailabilities      Unavailability[]
+  planningNotifications PlanningNotification[]
+  auditLogs             AuditLog[]
+  hrMessages            HrMessage[]
+  clockIns              ClockIn[]
+  absenceDeclarations   AbsenceDeclaration[]
+
+  @@index([status])
+  @@index([deletedAt])
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -78,6 +120,11 @@ model User {
   employeeId   String?    @unique
   employee     Employee?  @relation(fields: [employeeId], references: [id])
   auditLogs    AuditLog[]
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  // Nullable au départ pour migration additive non destructive.
+  // Sera passé NOT NULL après backfill (Phase 2+). SUPER_ADMIN reste null.
+  company      Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId    String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -118,6 +165,7 @@ model User {
 
   @@index([email])
   @@index([passwordResetToken])
+  @@index([companyId, role])
 }
 
 model Store {
@@ -165,14 +213,20 @@ model Store {
   inventorySessions     InventorySession[]
   products              Product[]
   planningNotifications PlanningNotification[]
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name])
   @@index([city])
   @@index([status])
   @@index([unitId])
   @@index([storeCode])
+  @@index([companyId])
 }
 
 // Horaires d'ouverture par jour de la semaine
@@ -278,10 +332,15 @@ model Employee {
   // Planning email notifications received
   planningNotifications PlanningNotification[]
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@index([email])
   @@index([employeeCode])
   @@index([lastName, firstName])
   @@index([contractType])
+  @@index([companyId, active])
 }
 
 // ─── Employee Unavailabilities ─────────────────────
@@ -304,9 +363,14 @@ model Unavailability {
   reason     String? // Raison (optionnel)
   createdAt  DateTime           @default(now())
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@index([employeeId])
   @@index([employeeId, type])
   @@index([date])
+  @@index([companyId])
 }
 
 model StoreEmployee {
@@ -316,9 +380,14 @@ model StoreEmployee {
   employeeId String
   assignedAt DateTime @default(now())
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@id([storeId, employeeId])
   @@index([storeId])
   @@index([employeeId])
+  @@index([companyId])
 }
 
 model Shift {
@@ -337,9 +406,14 @@ model Shift {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@index([storeId, date])
   @@index([employeeId, date])
   @@index([date])
+  @@index([companyId, date])
 }
 
 // ─── Employer Cost Engine ─────────────────────────
@@ -402,8 +476,14 @@ model AuditLog {
   diff      String? // JSON string of changes
   createdAt DateTime @default(now())
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  // SetNull pour préserver l'audit même si la Company est supprimée.
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId String?
+
   @@index([entity, entityId])
   @@index([createdAt])
+  @@index([companyId, createdAt])
 }
 
 // ─── POS Bridge Layer ────────────────────────────────
@@ -687,6 +767,10 @@ model HrMessage {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@index([senderId])
   @@index([employeeId])
   @@index([storeId])
@@ -694,6 +778,7 @@ model HrMessage {
   @@index([parentId])
   @@index([createdAt])
   @@index([category, status])
+  @@index([companyId])
 }
 
 // ─── Pièces Jointes (Polymorphe) ──────────────────
@@ -889,10 +974,15 @@ model AbsenceDeclaration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@index([employeeId])
   @@index([status])
   @@index([startDate, endDate])
   @@index([createdAt])
+  @@index([companyId])
 }
 
 // ─── Pointage Employé avec Preuve Photo ──────────
@@ -932,8 +1022,13 @@ model ClockIn {
 
   createdAt DateTime @default(now())
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String?
+
   @@index([employeeId, clockInAt])
   @@index([storeId, clockInAt])
+  @@index([companyId])
 }
 
 // ─── Marché Interne d'Échange de Shifts ─────────
@@ -1226,11 +1321,17 @@ model PlanningNotification {
 
   createdAt DateTime @default(now())
 
+  // ─── SaaS multi-tenant ──────────────────────────────────────────────
+  // SetNull pour préserver l'audit RH/légal même si la Company est supprimée.
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyId String?
+
   @@index([employeeId, sentAt])
   @@index([storeId, periodStart])
   @@index([periodStart, periodEnd])
   @@index([status])
   @@index([sentByUserId, sentAt])
+  @@index([companyId, sentAt])
 }
 
 // ─── AI Engine ──────────────────────────────────────────
