@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as { id: string; role: string; employeeId: string | null; companyId: string | null };
     const body = await req.json();
     const parsed = autoGenerateSchema.safeParse(body);
     if (!parsed.success) {
@@ -47,6 +47,17 @@ export async function POST(req: NextRequest) {
       } else {
         // Manager without storeId = block (must specify a store)
         return errorResponse("Vous devez spécifier un magasin pour la génération", 403);
+      }
+    }
+
+    // SaaS multi-tenant: if storeId provided, verify it belongs to user's Company
+    if (storeId && user.role !== "SUPER_ADMIN" && user.companyId) {
+      const storeCheck = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { companyId: true },
+      });
+      if (storeCheck?.companyId && storeCheck.companyId !== user.companyId) {
+        return errorResponse("Accès refusé : magasin hors de votre Company", 403);
       }
     }
 
@@ -155,6 +166,8 @@ export async function POST(req: NextRequest) {
               ? `Auto-planifié — ${s.storeName}`
               : `Auto-planifié — ${s.storeName} — NON ASSIGNÉ`,
             assignmentReason: s.assignmentReason || null,
+            // SaaS multi-tenant — stamp companyId
+            companyId: user.companyId ?? null,
           },
         })
       )

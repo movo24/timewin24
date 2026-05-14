@@ -6,8 +6,9 @@ import { unavailabilityCreateSchema } from "@/lib/validations";
 // POST /api/unavailabilities
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const body = await req.json();
     const parsed = unavailabilityCreateSchema.safeParse(body);
@@ -43,6 +44,16 @@ export async function POST(req: NextRequest) {
     // Verify employee exists
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) return errorResponse("Employé non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      employee.companyId &&
+      employee.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : employé hors de votre Company", 403);
+    }
 
     // Check for duplicate (same employee, same type, same date or dayOfWeek)
     if (type === "VARIABLE" && date) {
@@ -80,6 +91,8 @@ export async function POST(req: NextRequest) {
         startTime: startTime || null,
         endTime: endTime || null,
         reason: reason || null,
+        // SaaS multi-tenant — inherit Company from employee
+        companyId: employee.companyId ?? user.companyId ?? null,
       },
     });
 
@@ -97,8 +110,9 @@ export async function POST(req: NextRequest) {
 // DELETE /api/unavailabilities?id=xxx
 export async function DELETE(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
@@ -106,6 +120,16 @@ export async function DELETE(req: NextRequest) {
 
     const existing = await prisma.unavailability.findUnique({ where: { id } });
     if (!existing) return errorResponse("Indisponibilité non trouvée", 404);
+
+    // SaaS multi-tenant: cross-company forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : indisponibilité hors de votre Company", 403);
+    }
 
     await prisma.unavailability.delete({ where: { id } });
 

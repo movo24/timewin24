@@ -15,8 +15,9 @@ const VALID_TYPES: AbsenceType[] = ["MALADIE", "CONGE", "PERSONNEL", "ACCIDENT",
 // POST /api/absences — Employee declares an absence
 export async function POST(req: NextRequest) {
   try {
-    const { employeeId, error } = await requireEmployee();
+    const { session, employeeId, error } = await requireEmployee();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const formData = await req.formData();
     const type = formData.get("type") as string;
@@ -77,6 +78,8 @@ export async function POST(req: NextRequest) {
         documentPath,
         documentName,
         documentMime,
+        // SaaS multi-tenant — stamp companyId
+        companyId: user.companyId ?? null,
       },
       include: {
         employee: { select: { id: true, firstName: true, lastName: true } },
@@ -120,13 +123,18 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireAuthenticated();
     if (error) return error;
 
-    const user = session!.user as { role: string; employeeId: string | null };
+    const user = session!.user as { role: string; employeeId: string | null; companyId: string | null };
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const employeeIdFilter = searchParams.get("employeeId");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
+
+    // SaaS multi-tenant scope
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      where.companyId = user.companyId;
+    }
 
     if (user.role === "EMPLOYEE") {
       // Employee sees only their own

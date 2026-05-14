@@ -11,8 +11,9 @@ import {
 // Retourne tous les KPIs opérationnels du jour pour le dashboard global
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { storeIds, error: storeError } = await getAccessibleStoreIds();
     if (storeError) return storeError;
@@ -22,9 +23,15 @@ export async function GET(req: NextRequest) {
     const today = new Date(todayStr);
     const todayEnd = new Date(todayStr + "T23:59:59.999Z");
 
+    // SaaS multi-tenant: forced companyId scope on all aggregations
+    const tenantScope =
+      user.role !== "SUPER_ADMIN" && user.companyId
+        ? { companyId: user.companyId }
+        : {};
+
     // Filtre magasin selon le rôle (null = admin = tous)
-    const storeWhere = storeIds ? { storeId: { in: storeIds } } : {};
-    const storeWhereStore = storeIds ? { id: { in: storeIds } } : {};
+    const storeWhere = storeIds ? { storeId: { in: storeIds }, ...tenantScope } : { ...tenantScope };
+    const storeWhereStore = storeIds ? { id: { in: storeIds }, ...tenantScope } : { ...tenantScope };
 
     // ── 1. Magasins actifs / total ──────────────────────────────────
     const [totalStores, activeStores] = await Promise.all([
@@ -34,8 +41,8 @@ export async function GET(req: NextRequest) {
 
     // ── 2. Employés actifs / total ──────────────────────────────────
     const [totalEmployees, activeEmployees] = await Promise.all([
-      prisma.employee.count(),
-      prisma.employee.count({ where: { active: true } }),
+      prisma.employee.count({ where: { ...tenantScope } }),
+      prisma.employee.count({ where: { active: true, ...tenantScope } }),
     ]);
 
     // ── 3. Shifts aujourd'hui ──────────────────────────────────────
@@ -73,6 +80,7 @@ export async function GET(req: NextRequest) {
       where: {
         startDate: { lte: today },
         endDate: { gte: today },
+        ...tenantScope,
       },
     });
 

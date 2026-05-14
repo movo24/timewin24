@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireAuthenticated();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as { id: string; role: string; employeeId: string | null; companyId: string | null };
 
     if (!user.employeeId) {
       return errorResponse("Aucun profil employé lié à ce compte", 400);
@@ -40,6 +40,8 @@ export async function GET(req: NextRequest) {
       where: {
         employeeId: user.employeeId,
         date: dateFilter,
+        // SaaS multi-tenant defense in depth
+        ...(user.role !== "SUPER_ADMIN" && user.companyId ? { companyId: user.companyId } : {}),
       },
       include: {
         store: { select: { id: true, name: true, city: true } },

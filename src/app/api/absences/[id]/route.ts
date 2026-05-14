@@ -41,7 +41,17 @@ export async function PATCH(
       return errorResponse("Cette déclaration a déjà été traitée");
     }
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as { id: string; role: string; employeeId: string | null; companyId: string | null };
+
+    // SaaS multi-tenant: cross-company action forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      declaration.companyId &&
+      declaration.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : absence hors de votre Company", 403);
+    }
 
     // RBAC: Manager can only approve/reject absences for employees in their stores
     if (user.role === "MANAGER") {
@@ -99,6 +109,8 @@ export async function PATCH(
                 type: "VARIABLE",
                 date: new Date(dateStr),
                 reason: `Absence: ${declaration.type}${declaration.reason ? ` — ${declaration.reason}` : ""}`,
+                // SaaS multi-tenant — inherit Company from declaration
+                companyId: declaration.companyId ?? user.companyId ?? null,
               },
             });
           }

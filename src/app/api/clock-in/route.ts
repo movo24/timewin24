@@ -132,6 +132,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Resolve companyId from store (SaaS multi-tenant)
+    const fullStore = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { companyId: true },
+    });
+
     // Create clock-in record
     const clockIn = await prisma.clockIn.create({
       data: {
@@ -147,6 +153,7 @@ export async function POST(req: NextRequest) {
         distanceMeters: geoCheck.distanceMeters,
         status,
         lateMinutes,
+        companyId: fullStore?.companyId ?? null,
       },
       include: {
         store: { select: { id: true, name: true } },
@@ -171,10 +178,16 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireAuthenticated();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as { id: string; role: string; employeeId: string | null; companyId: string | null };
     const { searchParams } = new URL(req.url);
     const dateStr = searchParams.get("date"); // YYYY-MM-DD
     const storeId = searchParams.get("storeId");
+
+    // SaaS multi-tenant scope
+    const tenantScope =
+      user.role !== "SUPER_ADMIN" && user.companyId
+        ? { companyId: user.companyId }
+        : {};
 
     // Build date filter
     let dateFilter: { gte: Date; lte: Date } | undefined;
@@ -191,6 +204,7 @@ export async function GET(req: NextRequest) {
         where: {
           employeeId: user.employeeId,
           ...(dateFilter ? { clockInAt: dateFilter } : {}),
+          ...tenantScope,
         },
         include: {
           store: { select: { id: true, name: true } },
@@ -203,11 +217,12 @@ export async function GET(req: NextRequest) {
       return successResponse({ clockIns });
     }
 
-    // Admin/Manager
+    // Admin/Manager/Owner
     const clockIns = await prisma.clockIn.findMany({
       where: {
         ...(storeId ? { storeId } : {}),
         ...(dateFilter ? { clockInAt: dateFilter } : {}),
+        ...tenantScope,
       },
       include: {
         employee: { select: { id: true, firstName: true, lastName: true } },
