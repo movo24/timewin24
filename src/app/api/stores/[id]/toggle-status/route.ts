@@ -18,6 +18,7 @@ export async function POST(
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
@@ -36,6 +37,16 @@ export async function POST(
     });
 
     if (!store) return errorResponse("Magasin non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company toggle forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      store.companyId &&
+      store.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+    }
 
     const newStatus = store.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
 

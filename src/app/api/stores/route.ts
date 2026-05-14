@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -22,6 +23,11 @@ export async function GET(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conditions: any[] = [];
+
+    // SaaS multi-tenant: scope by companyId (SUPER_ADMIN bypass)
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      conditions.push({ companyId: user.companyId });
+    }
 
     // By default, only show active stores (admin can request all)
     if (!includeInactive) {
