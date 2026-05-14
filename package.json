@@ -16,6 +16,13 @@
     "setup": "npx prisma generate && npx prisma db push && npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
+    "@capacitor/keyboard": "^8.0.3",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
@@ -51,6 +58,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.3.4",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^30.0.0",
