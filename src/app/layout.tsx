@@ -10,13 +10,13 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "TimeWin - Gestion de Planning",
-  description: "Outil interne de gestion de planning du personnel",
+  title: "TimeWin24 — Gestion du temps de travail",
+  description: "Planning, employés, pointages, absences. Multi-magasins, multi-équipes.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TimeWin",
+    title: "TimeWin24",
   },
 };
 

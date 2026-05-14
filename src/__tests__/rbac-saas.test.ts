@@ -118,8 +118,11 @@ describe("isOwner / isAdmin / isAdminOrManager / isEmployee", () => {
     expect(isAdmin("SUPER_ADMIN")).toBe(true);
   });
 
-  it("isAdminOrManager ne reconnaît PAS OWNER (legacy)", () => {
-    expect(isAdminOrManager("OWNER")).toBe(false);
+  it("isAdminOrManager reconnaît OWNER (SaaS update Phase 8)", () => {
+    // Mise à jour Phase 8 : OWNER est inclus dans isAdminOrManager pour
+    // permettre l'accès au dashboard. L'isolation cross-company est
+    // garantie par enforceCompanyScope au niveau query, pas par ce guard.
+    expect(isAdminOrManager("OWNER")).toBe(true);
   });
 
   it("isSuperAdmin", () => {

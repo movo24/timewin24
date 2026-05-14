@@ -53,9 +53,14 @@ export function hasMinimumRole(userRole: string, minimumRole: AppRole): boolean 
   return userLevel >= requiredLevel;
 }
 
-/** Vérifie si un rôle est admin ou manager (legacy — n'inclut PAS OWNER) */
+/** Vérifie si un rôle est admin ou manager. Inclut OWNER (top de la Company SaaS). */
 export function isAdminOrManager(role: string): boolean {
-  return role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER";
+  return (
+    role === "SUPER_ADMIN" ||
+    role === "OWNER" ||
+    role === "ADMIN" ||
+    role === "MANAGER"
+  );
 }
 
 /**

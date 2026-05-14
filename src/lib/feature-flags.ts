@@ -3,7 +3,7 @@
  *
  * Lues une seule fois au démarrage de l'app, depuis les variables d'env.
  * Permet de masquer / désactiver des modules pour la variante SaaS sans
- * supprimer le code (le code reste sur la branche pour la version Movo24).
+ * supprimer le code (le code reste sur la branche pour la version interne).
  *
  * Convention :
  *   - ENABLE_<MODULE>=true  → module visible/accessible
@@ -12,7 +12,7 @@
  *
  * Variant :
  *   TIMEWIN_VARIANT=appstore → preset App Store SaaS (POS/AI/etc OFF)
- *   TIMEWIN_VARIANT=fullstack → preset historique Movo24 (tout activé)
+ *   TIMEWIN_VARIANT=fullstack → preset historique (tout activé)
  *   (sinon "fullstack" par défaut pour ne pas casser la prod)
  */
 
@@ -57,7 +57,7 @@ const DEFAULTS: Record<Variant, Record<string, boolean>> = {
     accountDeletion: true,
   },
   fullstack: {
-    // Tout activé — comportement historique Movo24/timewin24.fr
+    // Tout activé — comportement historique (variante interne timewin24.fr)
     pos: true,
     inventory: true,
     products: true,
