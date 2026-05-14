@@ -17,6 +17,7 @@ export async function POST(
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const requester = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const body = await req.json();
@@ -25,6 +26,23 @@ export async function POST(
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "), 400);
     }
     const { newPassword } = parsed.data;
+
+    // SaaS multi-tenant: cross-company verification on the target employee
+    const targetEmp = await prisma.employee.findUnique({
+      where: { id },
+      select: { id: true, companyId: true },
+    });
+    if (!targetEmp) {
+      return errorResponse("Employé introuvable", 404);
+    }
+    if (
+      requester.role !== "SUPER_ADMIN" &&
+      requester.companyId &&
+      targetEmp.companyId &&
+      targetEmp.companyId !== requester.companyId
+    ) {
+      return errorResponse("Accès refusé : employé hors de votre Company", 403);
+    }
 
     // Find the User linked to this employee
     const user = await prisma.user.findUnique({

@@ -14,14 +14,20 @@ import { recalculateAndSave } from "@/lib/reliability-score";
  */
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { searchParams } = new URL(req.url);
     const storeId = searchParams.get("storeId");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { active: true };
+
+    // SaaS multi-tenant scope
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      where.companyId = user.companyId;
+    }
 
     if (storeId) {
       where.stores = { some: { storeId } };
@@ -57,22 +63,37 @@ export async function GET(req: NextRequest) {
  * If omitted, recalculate all active employees.
  */
 export async function POST(req: NextRequest) {
-  const { error } = await requireManagerOrAdmin();
+  const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
+  const user = session!.user as { id: string; role: string; companyId: string | null };
 
   try {
     const body = await req.json().catch(() => ({}));
     const { employeeId } = body as { employeeId?: string };
 
     if (employeeId) {
-      // Single employee
+      // SaaS multi-tenant: cross-company verification
+      if (user.role !== "SUPER_ADMIN" && user.companyId) {
+        const emp = await prisma.employee.findUnique({
+          where: { id: employeeId },
+          select: { companyId: true },
+        });
+        if (emp?.companyId && emp.companyId !== user.companyId) {
+          return errorResponse("Accès refusé : employé hors de votre Company", 403);
+        }
+      }
       const breakdown = await recalculateAndSave(employeeId);
       return successResponse({ breakdown });
     }
 
-    // All active employees
+    // All active employees — SaaS multi-tenant scoped
     const employees = await prisma.employee.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        ...(user.role !== "SUPER_ADMIN" && user.companyId
+          ? { companyId: user.companyId }
+          : {}),
+      },
       select: { id: true },
     });
 

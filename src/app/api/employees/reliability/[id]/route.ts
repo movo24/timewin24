@@ -16,8 +16,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
 
@@ -30,10 +31,21 @@ export async function GET(
         lastName: true,
         reliabilityScore: true,
         scoreUpdatedAt: true,
+        companyId: true,
       },
     });
 
     if (!employee) {
+      return errorResponse("Employé non trouvé", 404);
+    }
+
+    // SaaS multi-tenant: cross-company access → masque comme "non trouvé"
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      employee.companyId &&
+      employee.companyId !== user.companyId
+    ) {
       return errorResponse("Employé non trouvé", 404);
     }
 

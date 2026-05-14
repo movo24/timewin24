@@ -229,7 +229,10 @@ export async function getAccessibleStoreIds(): Promise<{ storeIds: string[] | nu
 
   const user = session!.user as SessionUser;
 
-  if (isAdmin(user.role)) {
+  // SaaS multi-tenant : SUPER_ADMIN, OWNER, ADMIN ont accès à tous les stores
+  // de leur Company. Le filtre companyId dans les requêtes garantit l'isolation
+  // — retourner `null` signifie "pas de restriction store-level supplémentaire".
+  if (isAdmin(user.role) || user.role === "OWNER") {
     return { storeIds: null, error: null };
   }
 
