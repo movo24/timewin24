@@ -96,19 +96,31 @@ export async function requireRole(...allowedRoles: string[]) {
   return { session: session!, error: null };
 }
 
-/** Shortcut: require ADMIN role (includes SUPER_ADMIN) */
+/**
+ * Shortcut: require ADMIN role (includes SUPER_ADMIN and SaaS OWNER).
+ *
+ * SaaS multi-tenant : OWNER est inclus car il est admin AU SEIN de sa Company.
+ * L'isolation cross-company reste enforced par enforceCompanyScope / filtres
+ * Prisma au niveau des routes, pas par ce guard.
+ */
 export async function requireAdmin() {
-  return requireRole("ADMIN", "SUPER_ADMIN");
+  return requireRole("ADMIN", "SUPER_ADMIN", "OWNER");
 }
 
-/** Shortcut: require SUPER_ADMIN role only */
+/** Shortcut: require SUPER_ADMIN role only (staff plateforme, scope cross-company). */
 export async function requireSuperAdmin() {
   return requireRole("SUPER_ADMIN");
 }
 
-/** Shortcut: require ADMIN or MANAGER role (includes SUPER_ADMIN) */
+/**
+ * Shortcut: require ADMIN/MANAGER role (includes SUPER_ADMIN and SaaS OWNER).
+ *
+ * Comme requireAdmin, OWNER est autorisé car c'est le top de la Company.
+ * L'isolation cross-company reste enforced par enforceCompanyScope / filtres
+ * Prisma dans chaque route.
+ */
 export async function requireManagerOrAdmin() {
-  return requireRole("SUPER_ADMIN", "ADMIN", "MANAGER");
+  return requireRole("SUPER_ADMIN", "ADMIN", "MANAGER", "OWNER");
 }
 
 /**
