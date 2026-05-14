@@ -18,13 +18,24 @@ export async function GET(req: NextRequest) {
     const { session, error } = await getSessionOrUnauthorized();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      employeeId: string | null;
+      companyId: string | null;
+    };
     const { searchParams } = new URL(req.url);
     const storeId = searchParams.get("storeId");
     const employeeId = searchParams.get("employeeId");
     const weekStart = searchParams.get("weekStart");
 
     if (!weekStart) return errorResponse("weekStart est requis");
+
+    // SaaS multi-tenant: companyId filter — SUPER_ADMIN bypass (platform scope)
+    const tenantScope =
+      user.role !== "SUPER_ADMIN" && user.companyId
+        ? { companyId: user.companyId }
+        : {};
 
     // Employee can only see their own shifts
     if (user.role === "EMPLOYEE") {
@@ -35,6 +46,7 @@ export async function GET(req: NextRequest) {
         where: {
           employeeId: user.employeeId,
           date: { gte: start, lte: end },
+          ...tenantScope,
         },
         include: {
           store: {
@@ -55,12 +67,13 @@ export async function GET(req: NextRequest) {
       return successResponse({ shifts });
     }
 
-    // Admin/Manager: filter by store or employee
+    // Admin/Manager/Owner: filter by store or employee
     const { weekStart: start, weekEnd: end } = getWeekBounds(weekStart);
     const where: Record<string, unknown> = {
       date: { gte: start, lte: end },
       // Never return shifts for inactive stores — they are locked
       store: { status: "ACTIVE" },
+      ...tenantScope,
     };
     if (storeId) {
       // RBAC: Manager can only see shifts from their assigned stores
@@ -116,7 +129,12 @@ export async function POST(req: NextRequest) {
   const { session, error } = await requireManagerOrAdmin();
   if (error) return error;
 
-  const user = session!.user as { id: string; role: string; employeeId: string | null };
+  const user = session!.user as {
+    id: string;
+    role: string;
+    employeeId: string | null;
+    companyId: string | null;
+  };
   const body = await req.json();
   const parsed = shiftCreateSchema.safeParse(body);
   if (!parsed.success) {
@@ -134,10 +152,24 @@ export async function POST(req: NextRequest) {
   }
 
   // Reject shift creation for inactive stores
-  const store = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    select: { id: true, status: true, companyId: true },
+  });
   if (!store) return errorResponse("Magasin non trouvé", 404);
   if (store.status !== "ACTIVE") {
     return errorResponse("Impossible de créer un shift : ce magasin est inactif", 422);
+  }
+
+  // SaaS multi-tenant: cross-company check — non-SUPER_ADMIN cannot create
+  // shifts in a store outside their Company.
+  if (
+    user.role !== "SUPER_ADMIN" &&
+    user.companyId &&
+    store.companyId &&
+    store.companyId !== user.companyId
+  ) {
+    return errorResponse("Accès refusé : magasin hors de votre Company", 403);
   }
 
   // Verify employee is authorized for this store
@@ -197,6 +229,9 @@ export async function POST(req: NextRequest) {
       startTime,
       endTime,
       note: note || null,
+      // SaaS multi-tenant: stamp companyId for tenant isolation.
+      // Prefer the store's companyId (source of truth for the shift's scope).
+      companyId: store.companyId ?? user.companyId ?? null,
     },
     include: {
       store: {

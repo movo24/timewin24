@@ -13,6 +13,12 @@ export async function POST(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const user = session!.user as {
+      id: string;
+      role: string;
+      companyId: string | null;
+    };
+
     const body = await req.json();
     const parsed = duplicateWeekSchema.safeParse(body);
     if (!parsed.success) {
@@ -22,10 +28,25 @@ export async function POST(req: NextRequest) {
     const { storeId, sourceWeekStart, targetWeekStart } = parsed.data;
 
     // Reject duplication if target store is inactive
+    let storeCompanyId: string | null = null;
     if (storeId) {
-      const store = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
+      const store = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { id: true, status: true, companyId: true },
+      });
       if (!store) return errorResponse("Magasin non trouvé", 404);
       if (store.status !== "ACTIVE") return errorResponse("Impossible de dupliquer : ce magasin est inactif", 422);
+      storeCompanyId = store.companyId;
+
+      // SaaS multi-tenant: cross-company check
+      if (
+        user.role !== "SUPER_ADMIN" &&
+        user.companyId &&
+        store.companyId &&
+        store.companyId !== user.companyId
+      ) {
+        return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+      }
     }
 
     const { weekStart: srcStart, weekEnd: srcEnd } = getWeekBounds(sourceWeekStart);
@@ -36,11 +57,14 @@ export async function POST(req: NextRequest) {
       (targetStart.getTime() - srcStart.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Get source shifts
+    // Get source shifts — SaaS multi-tenant scoped
     const where: Record<string, unknown> = {
       date: { gte: srcStart, lte: srcEnd },
     };
     if (storeId) where.storeId = storeId;
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      where.companyId = user.companyId;
+    }
 
     const sourceShifts = await prisma.shift.findMany({
       where,
@@ -104,6 +128,9 @@ export async function POST(req: NextRequest) {
           startTime: shift.startTime,
           endTime: shift.endTime,
           note: shift.note,
+          // SaaS multi-tenant: inherit companyId from the source shift
+          // (or from the resolved store companyId, or user.companyId).
+          companyId: shift.companyId ?? storeCompanyId ?? user.companyId ?? null,
         },
       });
       created++;
