@@ -3,11 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
+import { requireFlag } from "@/lib/feature-flags";
 
 // POST /api/pos-events/webhook
 // Reçoit les events POS en temps réel (sale.completed, session.opened, etc.)
 // Auth : HMAC SHA-256 ou X-POS-Secret (legacy)
 export async function POST(req: NextRequest) {
+  // SaaS App Store: désactivé via TIMEWIN_VARIANT=appstore + ENABLE_POS=false
+  const off = requireFlag("pos");
+  if (off) return off;
   try {
     // Rate limit: 200 events per minute per IP
     const ip = getClientIp(req);

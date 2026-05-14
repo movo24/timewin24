@@ -6,9 +6,13 @@ import {
 } from "@/lib/api-helpers";
 import { askAssistant } from "@/lib/ai-engine/assistant/rag";
 import { isAiAvailable } from "@/lib/ai-engine/config";
+import { requireFlag } from "@/lib/feature-flags";
 
 // POST /api/ai/assistant — Chat IA (RAG)
 export async function POST(req: NextRequest) {
+  // SaaS App Store: désactivé si ENABLE_AI=false
+  const off = requireFlag("ai");
+  if (off) return off;
   try {
     const { session, error } = await requirePermission("use_ai_assistant");
     if (error) return error;

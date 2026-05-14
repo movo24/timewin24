@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
 import { isAdminOrManager, isEmployee as isEmployeeRole, getLoginPageForRole, ROLE_LABELS } from "@/lib/rbac";
+import { FLAGS, type FeatureFlag } from "@/lib/feature-flags";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -41,12 +42,27 @@ type NavItem = {
   href: string;
   label: string;
   icon: React.ElementType;
+  /** If set, this nav item is hidden when the flag is disabled. */
+  flag?: FeatureFlag;
 };
 
 type NavGroup = {
   label: string;
   items: NavItem[];
 };
+
+/**
+ * Filter nav items by feature flag.
+ * Removes empty groups after filtering.
+ */
+function applyFlags(groups: NavGroup[]): NavGroup[] {
+  return groups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((i) => !i.flag || FLAGS[i.flag]),
+    }))
+    .filter((g) => g.items.length > 0);
+}
 
 // ── Navigation admin (groupée par étage) ────────────────────────────
 
@@ -69,35 +85,35 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { href: "/planning", label: "Planning", icon: Calendar },
       { href: "/pointages", label: "Pointages", icon: ScanLine },
-      { href: "/journal", label: "Journal", icon: BookOpen },
-      { href: "/absences", label: "Absences", icon: AlertTriangle },
+      { href: "/journal", label: "Journal", icon: BookOpen, flag: "journal" },
+      { href: "/absences", label: "Absences", icon: AlertTriangle, flag: "absences" },
       { href: "/remplacements", label: "Remplacements", icon: UserCheck },
-      { href: "/echanges", label: "Échanges", icon: ArrowLeftRight },
+      { href: "/echanges", label: "Échanges", icon: ArrowLeftRight, flag: "marketplace" },
     ],
   },
   {
     label: "Analyse",
     items: [
-      { href: "/performance", label: "Performance", icon: BarChart3 },
-      { href: "/costs", label: "Coûts", icon: Euro },
+      { href: "/performance", label: "Performance", icon: BarChart3, flag: "performance" },
+      { href: "/costs", label: "Coûts", icon: Euro, flag: "costs" },
       { href: "/alertes", label: "Alertes", icon: Bell },
     ],
   },
   {
     label: "Communication",
     items: [
-      { href: "/messages", label: "Messages RH", icon: MessageSquare },
-      { href: "/annonces", label: "Annonces", icon: Megaphone },
-      { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper },
+      { href: "/messages", label: "Messages RH", icon: MessageSquare, flag: "messages" },
+      { href: "/annonces", label: "Annonces", icon: Megaphone, flag: "broadcast" },
+      { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper, flag: "broadcast" },
       { href: "/notifications", label: "Notifications", icon: BellRing },
     ],
   },
   {
     label: "Système",
     items: [
-      { href: "/etiquettes", label: "Étiquettes", icon: Tag },
+      { href: "/etiquettes", label: "Étiquettes", icon: Tag, flag: "labels" },
       { href: "/accounts", label: "Comptes", icon: Shield },
-      { href: "/integrations", label: "Intégrations", icon: Plug },
+      { href: "/integrations", label: "Intégrations", icon: Plug, flag: "integrations" },
       { href: "/audit", label: "Audit", icon: FileText },
     ],
   },
@@ -122,32 +138,32 @@ const managerNavGroups: NavGroup[] = [
     items: [
       { href: "/planning", label: "Planning", icon: Calendar },
       { href: "/pointages", label: "Pointages", icon: ScanLine },
-      { href: "/journal", label: "Journal", icon: BookOpen },
-      { href: "/absences", label: "Absences", icon: AlertTriangle },
+      { href: "/journal", label: "Journal", icon: BookOpen, flag: "journal" },
+      { href: "/absences", label: "Absences", icon: AlertTriangle, flag: "absences" },
       { href: "/remplacements", label: "Remplacements", icon: UserCheck },
-      { href: "/echanges", label: "Échanges", icon: ArrowLeftRight },
+      { href: "/echanges", label: "Échanges", icon: ArrowLeftRight, flag: "marketplace" },
     ],
   },
   {
     label: "Analyse",
     items: [
-      { href: "/performance", label: "Performance", icon: BarChart3 },
+      { href: "/performance", label: "Performance", icon: BarChart3, flag: "performance" },
       { href: "/alertes", label: "Alertes", icon: Bell },
     ],
   },
   {
     label: "Communication",
     items: [
-      { href: "/messages", label: "Messages RH", icon: MessageSquare },
-      { href: "/annonces", label: "Annonces", icon: Megaphone },
-      { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper },
+      { href: "/messages", label: "Messages RH", icon: MessageSquare, flag: "messages" },
+      { href: "/annonces", label: "Annonces", icon: Megaphone, flag: "broadcast" },
+      { href: "/fil-actualite", label: "Fil d'actualité", icon: Newspaper, flag: "broadcast" },
       { href: "/notifications", label: "Notifications", icon: BellRing },
     ],
   },
   {
     label: "Outils",
     items: [
-      { href: "/etiquettes", label: "Étiquettes", icon: Tag },
+      { href: "/etiquettes", label: "Étiquettes", icon: Tag, flag: "labels" },
     ],
   },
 ];
@@ -261,9 +277,9 @@ export function Sidebar() {
             })}
           </div>
         ) : (
-          // Admin / Manager : navigation par groupes
+          // Admin / Manager : navigation par groupes (filtrée par feature flags SaaS)
           <div className="space-y-1">
-            {(isAdmin ? adminNavGroups : managerNavGroups).map((group, i) => (
+            {applyFlags(isAdmin ? adminNavGroups : managerNavGroups).map((group, i) => (
               <NavGroupBlock
                 key={i}
                 group={group}

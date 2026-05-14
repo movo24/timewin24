@@ -21,7 +21,16 @@ const SHARED_ROUTES = ["/fil-actualite", "/annonces"];
 
 const PROTECTED_ROUTES = [...ADMIN_ROUTES, ...EMPLOYEE_ROUTES, ...SHARED_ROUTES];
 const LOGIN_PAGES = ["/login", "/admin-login"];
-const PUBLIC_ROUTES = ["/login", "/admin-login", "/api/auth", "/changer-mot-de-passe"];
+const PUBLIC_ROUTES = [
+  "/login",
+  "/admin-login",
+  "/api/auth",
+  "/changer-mot-de-passe",
+  // SaaS App Store pages publiques (Apple Store guidelines)
+  "/privacy",
+  "/terms",
+  "/support",
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
