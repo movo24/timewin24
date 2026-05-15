@@ -38,9 +38,9 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'DEFAULT', // Texte sombre sur fond clair (ajustable plus tard)
     },
-    Keyboard: {
-      resize: 'native', // Layout natif géré par iOS quand le clavier apparaît
-    },
+    // Keyboard.resize : configuré au runtime dans NativeChrome via dynamic
+    // import (KeyboardResize.Native). Évite d'importer un enum Capacitor
+    // dans ce fichier de config statique.
   },
 };
 

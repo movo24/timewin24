@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { RegisterSW } from "@/components/register-sw";
+import { NativeChrome } from "@/components/native/NativeChrome";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className={`${geistSans.variable} font-sans antialiased bg-gray-50`}>
+        <NativeChrome />
         <Providers>{children}</Providers>
         <RegisterSW />
       </body>
