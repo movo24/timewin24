@@ -350,6 +350,7 @@ export const ADMIN_ROUTES = [
   "/pos-events",
   "/etiquettes",
   "/performance",
+  "/aujourd-hui",
 ];
 
 /** Routes accessibles uniquement par EMPLOYEE */
