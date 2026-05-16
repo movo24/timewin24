@@ -28,6 +28,7 @@ import {
   BellRing,
   Tag,
   BarChart3,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Quotidien",
     items: [
+      { href: "/aujourd-hui", label: "Aujourd'hui", icon: Activity },
       { href: "/planning", label: "Planning", icon: Calendar },
       { href: "/pointages", label: "Pointages", icon: ScanLine },
       { href: "/journal", label: "Journal", icon: BookOpen, flag: "journal" },
@@ -136,6 +138,7 @@ const managerNavGroups: NavGroup[] = [
   {
     label: "Quotidien",
     items: [
+      { href: "/aujourd-hui", label: "Aujourd'hui", icon: Activity },
       { href: "/planning", label: "Planning", icon: Calendar },
       { href: "/pointages", label: "Pointages", icon: ScanLine },
       { href: "/journal", label: "Journal", icon: BookOpen, flag: "journal" },

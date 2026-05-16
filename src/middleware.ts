@@ -10,6 +10,7 @@ const ADMIN_ROUTES = [
   "/integrations", "/journal", "/absences", "/notifications", "/messages",
   "/organizations", "/units", "/connected-apps", "/pos-events",
   "/etiquettes", "/performance",
+  "/aujourd-hui",
   // SaaS App Store
   "/onboarding",
 ];
