@@ -3,7 +3,7 @@
 /**
  * Aujourd'hui — vue manager snapshot temps réel (mobile-first).
  *
- * Consomme GET /api/timesheet/today.
+ * Consomme GET /api/timesheet/today (+ /api/stores pour le sélecteur).
  *
  * Choix V1 (volontairement simples) :
  *   - "use client" : pas de Server Component ici car refresh manuel +
@@ -14,11 +14,15 @@
  *   - Mobile-first : grilles 2 colonnes par défaut, élargies en >= sm / lg.
  *   - Pas de tableau large ni de scroll horizontal.
  *   - États loading / error / empty explicites.
+ *   - Filtre établissement : "Tous les établissements" par défaut (pas de
+ *     storeId dans la query). RBAC géré côté API : /api/stores filtre déjà
+ *     selon le scope du manager, on consomme la liste telle quelle.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   RefreshCw,
   AlertTriangle,
@@ -88,6 +92,9 @@ type TodayResponse = {
   stores: StoreToday[];
   alerts: TodayAlert[];
 };
+
+/** Option du sélecteur d'établissement — sous-ensemble strict de /api/stores. */
+type StoreOption = { id: string; name: string };
 
 // ─── Helpers d'affichage ───────────────────────────────────────────────────
 
@@ -293,36 +300,74 @@ export default function AujourdHuiPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (mode: "initial" | "refresh") => {
-    if (mode === "refresh") {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const res = await fetch("/api/timesheet/today", {
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(
-          body?.error || `Erreur ${res.status} lors du chargement`,
-        );
+  // Filtre établissement. "all" = pas de storeId envoyé à /api/timesheet/today,
+  // donc l'API renvoie tous les stores accessibles au manager.
+  const [storeId, setStoreId] = useState<string>("all");
+  const [storeOptions, setStoreOptions] = useState<StoreOption[]>([]);
+
+  const load = useCallback(
+    async (mode: "initial" | "refresh", storeFilter: string) => {
+      if (mode === "refresh") {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-      const json = (await res.json()) as TodayResponse;
-      setData(json);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inconnue");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      setError(null);
+      try {
+        const url =
+          storeFilter && storeFilter !== "all"
+            ? `/api/timesheet/today?storeId=${encodeURIComponent(storeFilter)}`
+            : "/api/timesheet/today";
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            body?.error || `Erreur ${res.status} lors du chargement`,
+          );
+        }
+        const json = (await res.json()) as TodayResponse;
+        setData(json);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erreur inconnue");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [],
+  );
+
+  // Charge la liste des établissements une fois au montage.
+  // Échec silencieux : la page reste utilisable avec "Tous les établissements".
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/stores?limit=100", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as {
+          stores?: Array<{ id: string; name: string }>;
+        };
+        if (cancelled) return;
+        setStoreOptions(
+          (body.stores ?? []).map((s) => ({ id: s.id, name: s.name })),
+        );
+      } catch {
+        // Silencieux : pas de toast, pas d'erreur bloquante. La page fonctionne
+        // sans la liste, le manager voit "Tous les établissements" agrégé.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  // Recharge le snapshot dès que le filtre change (y compris au premier rendu).
   useEffect(() => {
-    load("initial");
-  }, [load]);
+    load("initial", storeId);
+  }, [load, storeId]);
 
   const summary = data?.summary;
   const stores = data?.stores ?? [];
@@ -355,7 +400,7 @@ export default function AujourdHuiPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => load("refresh")}
+            onClick={() => load("refresh", storeId)}
             disabled={loading || refreshing}
             aria-label="Rafraîchir"
           >
@@ -363,6 +408,18 @@ export default function AujourdHuiPage() {
               className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
             />
           </Button>
+        </div>
+        <div className="px-4 pb-3">
+          <Select
+            value={storeId}
+            onChange={(e) => setStoreId(e.target.value)}
+            options={[
+              { value: "all", label: "Tous les établissements" },
+              ...storeOptions.map((s) => ({ value: s.id, label: s.name })),
+            ]}
+            className="w-full sm:max-w-xs"
+            aria-label="Filtrer par établissement"
+          />
         </div>
       </header>
 
@@ -378,7 +435,7 @@ export default function AujourdHuiPage() {
               variant="outline"
               size="sm"
               className="mt-2"
-              onClick={() => load("refresh")}
+              onClick={() => load("refresh", storeId)}
             >
               Réessayer
             </Button>
