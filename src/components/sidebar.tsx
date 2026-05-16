@@ -28,6 +28,7 @@ import {
   BellRing,
   Tag,
   BarChart3,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Quotidien",
     items: [
+      { href: "/aujourd-hui", label: "Aujourd'hui", icon: Activity },
       { href: "/planning", label: "Planning", icon: Calendar },
       { href: "/pointages", label: "Pointages", icon: ScanLine },
       { href: "/journal", label: "Journal", icon: BookOpen, flag: "journal" },
@@ -136,6 +138,7 @@ const managerNavGroups: NavGroup[] = [
   {
     label: "Quotidien",
     items: [
+      { href: "/aujourd-hui", label: "Aujourd'hui", icon: Activity },
       { href: "/planning", label: "Planning", icon: Calendar },
       { href: "/pointages", label: "Pointages", icon: ScanLine },
       { href: "/journal", label: "Journal", icon: BookOpen, flag: "journal" },
@@ -318,7 +321,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 lg:hidden"
+        className="fixed safe-mobile-hamburger left-3 z-50 lg:hidden"
         onClick={() => setMobileOpen(!mobileOpen)}
       >
         {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -335,7 +338,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-40 h-full w-60 bg-white border-r border-gray-200 transition-transform lg:translate-x-0",
+          "fixed top-0 left-0 z-40 h-full w-60 bg-white border-r border-gray-200 transition-transform lg:translate-x-0 safe-top safe-bottom",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
