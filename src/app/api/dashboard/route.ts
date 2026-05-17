@@ -33,6 +33,15 @@ export async function GET(req: NextRequest) {
     const storeWhere = storeIds ? { storeId: { in: storeIds }, ...tenantScope } : { ...tenantScope };
     const storeWhereStore = storeIds ? { id: { in: storeIds }, ...tenantScope } : { ...tenantScope };
 
+    // ManagerAlert n'a pas de champ companyId direct : le scoping tenant
+    // passe par la relation store.companyId. On construit donc un where
+    // dédié pour ne pas casser Prisma avec un argument inconnu.
+    const managerAlertWhere = storeIds
+      ? { storeId: { in: storeIds } }
+      : user.role !== "SUPER_ADMIN" && user.companyId
+        ? { store: { companyId: user.companyId } }
+        : {};
+
     // ── 1. Magasins actifs / total ──────────────────────────────────
     const [totalStores, activeStores] = await Promise.all([
       prisma.store.count({ where: storeWhereStore }),
@@ -85,10 +94,13 @@ export async function GET(req: NextRequest) {
     });
 
     // ── 6. Alertes non traitées (top 5) ────────────────────────────
+    // NOTE : on utilise `managerAlertWhere` (et non `storeWhere`) car
+    // `ManagerAlert` n'a pas de `companyId` direct — le scoping tenant
+    // passe par la relation `store.companyId`. Voir construction plus haut.
     const openAlerts = await prisma.managerAlert.findMany({
       where: {
         resolvedAt: null,
-        ...storeWhere,
+        ...managerAlertWhere,
       },
       orderBy: { createdAt: "desc" },
       take: 5,
@@ -104,7 +116,7 @@ export async function GET(req: NextRequest) {
     });
 
     const totalOpenAlerts = await prisma.managerAlert.count({
-      where: { resolvedAt: null, ...storeWhere },
+      where: { resolvedAt: null, ...managerAlertWhere },
     });
 
     // ── 7. Santé du planning cette semaine ─────────────────────────
