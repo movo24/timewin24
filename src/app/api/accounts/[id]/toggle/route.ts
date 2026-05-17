@@ -14,11 +14,22 @@ export async function POST(
 
     const { id } = await params;
 
+    const requester = session!.user as { id: string; role: string; companyId: string | null };
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, active: true, role: true },
+      select: { id: true, active: true, role: true, companyId: true },
     });
     if (!user) return errorResponse("Compte introuvable", 404);
+
+    // SaaS multi-tenant: cross-company forbidden
+    if (
+      requester.role !== "SUPER_ADMIN" &&
+      requester.companyId &&
+      user.companyId &&
+      user.companyId !== requester.companyId
+    ) {
+      return errorResponse("Accès refusé : compte hors de votre Company", 403);
+    }
 
     // Prevent deactivating own admin account
     if (user.id === session!.user.id) {

@@ -10,8 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const store = await prisma.store.findUnique({
@@ -24,6 +25,17 @@ export async function GET(
     });
 
     if (!store) return errorResponse("Magasin non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company → 404 masqué
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      store.companyId &&
+      store.companyId !== user.companyId
+    ) {
+      return errorResponse("Magasin non trouvé", 404);
+    }
+
     return successResponse(store);
   } catch (err) {
     console.error("GET /api/stores/[id] error:", err);
@@ -39,6 +51,7 @@ export async function PUT(
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const body = await req.json();
@@ -49,6 +62,16 @@ export async function PUT(
 
     const existing = await prisma.store.findUnique({ where: { id } });
     if (!existing) return errorResponse("Magasin non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company update forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+    }
 
     const store = await prisma.store.update({ where: { id }, data: parsed.data });
     await logAudit(session!.user.id, "UPDATE", "Store", id, {
@@ -71,10 +94,21 @@ export async function DELETE(
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const existing = await prisma.store.findUnique({ where: { id } });
     if (!existing) return errorResponse("Magasin non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company delete forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+    }
 
     await prisma.store.delete({ where: { id } });
     await logAudit(session!.user.id, "DELETE", "Store", id, { deleted: existing });

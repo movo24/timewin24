@@ -99,6 +99,8 @@ export async function POST(req: NextRequest) {
         distanceMeters,
         status,
         lateMinutes,
+        // SaaS multi-tenant — inherit Company from store
+        companyId: store.companyId ?? null,
       },
     });
 

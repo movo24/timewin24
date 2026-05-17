@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireAuthenticated();
     if (error) return error;
 
-    const user = session.user as { id: string; employeeId: string | null };
+    const user = session.user as { id: string; employeeId: string | null; companyId: string | null; role: string };
 
     if (!user.employeeId) {
       return errorResponse("Aucun profil employé lié à ce compte", 400);
@@ -38,6 +38,8 @@ export async function GET(req: NextRequest) {
       id: { not: user.employeeId },
       // Only show colleagues from stores the employee belongs to
       stores: { some: { storeId: storeId && myStoreIds.includes(storeId) ? storeId : { in: myStoreIds } } },
+      // SaaS multi-tenant defense in depth
+      ...(user.role !== "SUPER_ADMIN" && user.companyId ? { companyId: user.companyId } : {}),
     };
 
     const colleagues = await prisma.employee.findMany({

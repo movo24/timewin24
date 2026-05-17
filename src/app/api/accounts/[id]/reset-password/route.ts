@@ -25,11 +25,22 @@ export async function POST(
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
     }
 
+    const requester = session!.user as { id: string; role: string; companyId: string | null };
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true },
+      select: { id: true, name: true, companyId: true },
     });
     if (!user) return errorResponse("Compte introuvable", 404);
+
+    // SaaS multi-tenant: cross-company forbidden
+    if (
+      requester.role !== "SUPER_ADMIN" &&
+      requester.companyId &&
+      user.companyId &&
+      user.companyId !== requester.companyId
+    ) {
+      return errorResponse("Accès refusé : compte hors de votre Company", 403);
+    }
 
     const passwordHash = await bcrypt.hash(parsed.data.newPassword, 10);
 

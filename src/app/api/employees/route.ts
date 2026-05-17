@@ -12,7 +12,12 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      employeeId: string | null;
+      companyId: string | null;
+    };
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
@@ -24,6 +29,12 @@ export async function GET(req: NextRequest) {
     const { storeIds: accessibleStoreIds } = await getAccessibleStoreIds();
 
     const where: Record<string, unknown> = {};
+
+    // SaaS multi-tenant: scope by companyId (SUPER_ADMIN bypass)
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      where.companyId = user.companyId;
+    }
+
     if (search) {
       where.OR = [
         { firstName: { contains: search, mode: "insensitive" } },
@@ -79,6 +90,11 @@ export async function POST(req: NextRequest) {
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as {
+      id: string;
+      role: string;
+      companyId: string | null;
+    };
 
     const body = await req.json();
     const parsed = employeeCreateSchema.safeParse(body);
@@ -96,13 +112,25 @@ export async function POST(req: NextRequest) {
       return errorResponse("Le mot de passe est obligatoire pour créer un employé", 400);
     }
 
-    // Check unique email on both Employee AND User tables
+    // Check unique email on both Employee AND User tables (globally unique)
     const [existingEmployee, existingUser] = await Promise.all([
       prisma.employee.findUnique({ where: { email } }),
       prisma.user.findUnique({ where: { email } }),
     ]);
     if (existingEmployee) return errorResponse("Un employé avec cet email existe déjà");
     if (existingUser) return errorResponse("Un compte avec cet email existe déjà");
+
+    // SaaS multi-tenant: verify all requested stores belong to user's Company
+    if (user.role !== "SUPER_ADMIN" && user.companyId && storeIds.length > 0) {
+      const stores = await prisma.store.findMany({
+        where: { id: { in: storeIds } },
+        select: { id: true, companyId: true },
+      });
+      const alien = stores.find((s) => s.companyId && s.companyId !== user.companyId);
+      if (alien) {
+        return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+      }
+    }
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
@@ -116,6 +144,9 @@ export async function POST(req: NextRequest) {
       if (!exists) break;
       codeAttempts++;
     } while (codeAttempts < 20);
+
+    // SaaS multi-tenant: companyId to stamp on both Employee and User + StoreEmployee
+    const tenantCompanyId = user.companyId ?? null;
 
     // Create Employee + User in atomic transaction
     const employee = await prisma.$transaction(async (tx) => {
@@ -135,8 +166,13 @@ export async function POST(req: NextRequest) {
           skills: data.skills ?? [],
           preferredStoreId: data.preferredStoreId ?? null,
           shiftPreference: data.shiftPreference ?? "JOURNEE",
+          // SaaS multi-tenant
+          companyId: tenantCompanyId,
           stores: {
-            create: storeIds.map((storeId: string) => ({ storeId })),
+            create: storeIds.map((storeId: string) => ({
+              storeId,
+              companyId: tenantCompanyId,
+            })),
           },
         },
         include: {
@@ -153,6 +189,8 @@ export async function POST(req: NextRequest) {
           role: role ?? "EMPLOYEE",
           employeeId: emp.id,
           mustChangePassword: true,
+          // SaaS multi-tenant — inherit creator's Company
+          companyId: tenantCompanyId,
         },
       });
 

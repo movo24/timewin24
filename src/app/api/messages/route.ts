@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireAuthenticated();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as { id: string; role: string; employeeId: string | null; companyId: string | null };
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const storeId = searchParams.get("storeId");
@@ -47,6 +47,8 @@ export async function GET(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       parentId: null, // Seulement les messages racine (pas les réponses)
+      // SaaS multi-tenant scope
+      ...(user.role !== "SUPER_ADMIN" && user.companyId ? { companyId: user.companyId } : {}),
     };
 
     if (user.role === "EMPLOYEE") {
@@ -115,11 +117,15 @@ export async function GET(req: NextRequest) {
     // Stats pour admin/manager
     let stats = null;
     if (user.role !== "EMPLOYEE") {
+      const statsBaseWhere = {
+        parentId: null,
+        ...(user.role !== "SUPER_ADMIN" && user.companyId ? { companyId: user.companyId } : {}),
+      };
       const [newCount, inProgressCount, resolvedCount, closedCount] = await Promise.all([
-        prisma.hrMessage.count({ where: { parentId: null, status: "NEW" } }),
-        prisma.hrMessage.count({ where: { parentId: null, status: "IN_PROGRESS" } }),
-        prisma.hrMessage.count({ where: { parentId: null, status: "RESOLVED" } }),
-        prisma.hrMessage.count({ where: { parentId: null, status: "CLOSED" } }),
+        prisma.hrMessage.count({ where: { ...statsBaseWhere, status: "NEW" } }),
+        prisma.hrMessage.count({ where: { ...statsBaseWhere, status: "IN_PROGRESS" } }),
+        prisma.hrMessage.count({ where: { ...statsBaseWhere, status: "RESOLVED" } }),
+        prisma.hrMessage.count({ where: { ...statsBaseWhere, status: "CLOSED" } }),
       ]);
       stats = { new: newCount, inProgress: inProgressCount, resolved: resolvedCount, closed: closedCount };
     }
@@ -141,7 +147,7 @@ export async function POST(req: NextRequest) {
     const { session, error } = await requireAuthenticated();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as { id: string; role: string; employeeId: string | null; companyId: string | null };
     const body = await req.json();
     const parsed = createMessageSchema.safeParse(body);
     if (!parsed.success) {
@@ -174,6 +180,8 @@ export async function POST(req: NextRequest) {
           category,
           parentId,
           status: "IN_PROGRESS",
+          // SaaS multi-tenant
+          companyId: user.companyId ?? null,
         },
       });
 
@@ -238,6 +246,8 @@ export async function POST(req: NextRequest) {
           subject,
           body: messageBody,
           category,
+          // SaaS multi-tenant
+          companyId: user.companyId ?? null,
         },
       });
 

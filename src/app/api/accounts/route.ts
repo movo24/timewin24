@@ -14,16 +14,24 @@ const createAccountSchema = z.object({
 // GET /api/accounts — List all user accounts with employee info
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20") || 20));
 
+    // SaaS multi-tenant scope on User
+    const tenantScope: Record<string, unknown> =
+      user.role !== "SUPER_ADMIN" && user.companyId
+        ? { companyId: user.companyId }
+        : {};
+
     const where = search
       ? {
+          ...tenantScope,
           OR: [
             { name: { contains: search, mode: "insensitive" as const } },
             { email: { contains: search, mode: "insensitive" as const } },
@@ -38,7 +46,7 @@ export async function GET(req: NextRequest) {
             },
           ],
         }
-      : {};
+      : tenantScope;
 
     const [accounts, total] = await Promise.all([
       prisma.user.findMany({
@@ -97,6 +105,7 @@ export async function POST(req: NextRequest) {
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const requester = session!.user as { id: string; role: string; companyId: string | null };
 
     const body = await req.json();
     const parsed = createAccountSchema.safeParse(body);
@@ -109,11 +118,21 @@ export async function POST(req: NextRequest) {
     // Check employee exists
     const employee = await prisma.employee.findUnique({
       where: { id: employeeId },
-      select: { id: true, email: true, firstName: true, lastName: true, user: true },
+      select: { id: true, email: true, firstName: true, lastName: true, companyId: true, user: true },
     });
 
     if (!employee) return errorResponse("Employé introuvable", 404);
     if (employee.user) return errorResponse("Cet employé a déjà un compte utilisateur", 409);
+
+    // SaaS multi-tenant: cross-company forbidden
+    if (
+      requester.role !== "SUPER_ADMIN" &&
+      requester.companyId &&
+      employee.companyId &&
+      employee.companyId !== requester.companyId
+    ) {
+      return errorResponse("Accès refusé : employé hors de votre Company", 403);
+    }
 
     // Create user account
     const passwordHash = await bcrypt.hash(password, 10);
@@ -124,7 +143,9 @@ export async function POST(req: NextRequest) {
         name: `${employee.firstName} ${employee.lastName}`,
         role: role as "EMPLOYEE" | "MANAGER",
         employeeId: employee.id,
-        mustChangePassword: true, // Forcer le changement à la première connexion
+        mustChangePassword: true,
+        // SaaS multi-tenant — inherit Company from employee
+        companyId: employee.companyId ?? requester.companyId ?? null,
       },
       select: {
         id: true,

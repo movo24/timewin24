@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
+import { requireFlag } from "@/lib/feature-flags";
 import { z } from "zod";
 
 const createProviderSchema = z.object({
@@ -19,6 +20,8 @@ const createProviderSchema = z.object({
 
 // GET /api/integrations/pos — Liste des providers POS
 export async function GET() {
+  const off = requireFlag("integrations");
+  if (off) return off;
   try {
   const { error } = await requireAdmin();
   if (error) return error;

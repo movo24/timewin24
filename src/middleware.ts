@@ -10,6 +10,9 @@ const ADMIN_ROUTES = [
   "/integrations", "/journal", "/absences", "/notifications", "/messages",
   "/organizations", "/units", "/connected-apps", "/pos-events",
   "/etiquettes", "/performance",
+  "/aujourd-hui",
+  // SaaS App Store
+  "/onboarding",
 ];
 
 const EMPLOYEE_ROUTES = [
@@ -17,11 +20,25 @@ const EMPLOYEE_ROUTES = [
   "/mes-messages", "/mes-notifications", "/pointage", "/marche-shifts",
 ];
 
-const SHARED_ROUTES = ["/fil-actualite", "/annonces"];
+const SHARED_ROUTES = [
+  "/fil-actualite",
+  "/annonces",
+  // Account deletion (Apple App Store) — accessible à tous les rôles connectés
+  "/account",
+];
 
 const PROTECTED_ROUTES = [...ADMIN_ROUTES, ...EMPLOYEE_ROUTES, ...SHARED_ROUTES];
 const LOGIN_PAGES = ["/login", "/admin-login"];
-const PUBLIC_ROUTES = ["/login", "/admin-login", "/api/auth", "/changer-mot-de-passe"];
+const PUBLIC_ROUTES = [
+  "/login",
+  "/admin-login",
+  "/api/auth",
+  "/changer-mot-de-passe",
+  // SaaS App Store pages publiques (Apple Store guidelines)
+  "/privacy",
+  "/terms",
+  "/support",
+];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

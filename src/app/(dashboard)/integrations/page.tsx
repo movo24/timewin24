@@ -523,7 +523,7 @@ export default function IntegrationsPage() {
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ex: Lightspeed - The Wesley"
+                placeholder="Ex: Lightspeed — Paris Centre"
                 required
               />
             </div>

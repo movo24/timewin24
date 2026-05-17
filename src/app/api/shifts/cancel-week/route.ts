@@ -24,7 +24,12 @@ export async function POST(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      employeeId: string | null;
+      companyId: string | null;
+    };
     const body = await req.json();
     const { weekStart, storeId } = body;
 
@@ -47,21 +52,40 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // SaaS multi-tenant: cross-company check on the requested store
+    if (storeId && user.role !== "SUPER_ADMIN" && user.companyId) {
+      const store = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { companyId: true },
+      });
+      if (store?.companyId && store.companyId !== user.companyId) {
+        return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+      }
+    }
+
     // Calculate week bounds (Monday → Sunday)
     const monday = toUTCDate(weekStart);
     const sunday = new Date(monday);
     sunday.setUTCDate(sunday.getUTCDate() + 6);
 
-    // Build where clause
+    // Build where clause — SaaS multi-tenant scoping enforced at query level
     const where: {
       date: { gte: Date; lte: Date };
       storeId?: string | { in: string[] };
+      companyId?: string;
     } = {
       date: {
         gte: monday,
         lte: sunday,
       },
     };
+
+    // SaaS multi-tenant: scope deleteMany by companyId (CRITICAL — prevents
+    // accidentally wiping another Company's shifts even if storeId lookup
+    // somehow failed).
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      where.companyId = user.companyId;
+    }
 
     if (storeId) {
       where.storeId = storeId;

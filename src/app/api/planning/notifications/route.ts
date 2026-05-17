@@ -75,7 +75,11 @@ export async function GET(req: NextRequest) {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      companyId: string | null;
+    };
 
     const url = new URL(req.url);
     const parsed = querySchema.safeParse({
@@ -90,12 +94,27 @@ export async function GET(req: NextRequest) {
 
     const { weekStart, storeId, periodStart, periodEnd } = parsed.data;
 
+    // ─── Multi-tenant : Company du store ciblé (pour check cross-company) ─
+    let requestedCompanyId: string | null = null;
+    if (storeId) {
+      const store = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { companyId: true },
+      });
+      if (!store) {
+        return errorResponse("Magasin introuvable", 404);
+      }
+      requestedCompanyId = store.companyId;
+    }
+
     // ─── RBAC (via shared helper, unit-tested) ──────────────────────────
     const { storeIds } = await getAccessibleStoreIds();
     const rbac = applyNotifyRbac({
       role: user.role as Parameters<typeof applyNotifyRbac>[0]["role"],
       accessibleStoreIds: storeIds,
       requestedStoreId: storeId,
+      userCompanyId: user.companyId,
+      requestedCompanyId,
     });
     if (!rbac.ok) {
       return errorResponse(rbac.reason, rbac.status);
@@ -134,12 +153,15 @@ export async function GET(req: NextRequest) {
       ? formatDayLabel(rangeStart.toISOString().slice(0, 10))
       : formatWeekLabel(weekStart);
 
-    // ─── Load current shifts ─────────────────────────────────────────────
+    // ─── Load current shifts (multi-tenant: scope par companyId) ────────
     const shifts = await prisma.shift.findMany({
       where: {
         date: { gte: rangeStart, lte: rangeEnd },
         employeeId: { not: null },
         ...(storeId ? { storeId } : {}),
+        ...(user.role !== "SUPER_ADMIN" && user.companyId
+          ? { companyId: user.companyId }
+          : {}),
       },
       include: {
         employee: { select: { id: true, firstName: true, lastName: true, email: true } },
@@ -197,12 +219,16 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── Load latest PlanningNotification per employee for this exact period ─
+    // Multi-tenant : scope par companyId aussi (audit RH par client).
     const lastNotifications = await prisma.planningNotification.findMany({
       where: {
         employeeId: { in: employeeIds },
         periodStart: rangeStart,
         periodEnd: rangeEndRaw,
         ...(storeId ? { storeId } : {}),
+        ...(user.role !== "SUPER_ADMIN" && user.companyId
+          ? { companyId: user.companyId }
+          : {}),
       },
       include: {
         sentByUser: { select: { name: true } },

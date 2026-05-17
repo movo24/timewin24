@@ -93,6 +93,9 @@ export const authOptions: NextAuthOptions = {
           });
 
           // Auth success — no sensitive data logged
+          // SaaS App Store : on charge aussi le companyId du User (nullable
+          // pour SUPER_ADMIN plateforme et pour les comptes hérités avant
+          // backfill multi-tenant).
           return {
             id: user.id,
             email: user.email,
@@ -101,6 +104,7 @@ export const authOptions: NextAuthOptions = {
             employeeId: user.employeeId,
             mustChangePassword: user.mustChangePassword,
             passwordChangedAt: user.passwordChangedAt,
+            companyId: user.companyId ?? null,
           };
         } catch (err) {
           // Erreurs métier (mauvais mdp, compte verrouillé…) → on les affiche telles quelles
@@ -121,6 +125,8 @@ export const authOptions: NextAuthOptions = {
         token.employeeId = user.employeeId;
         token.mustChangePassword = user.mustChangePassword;
         token.passwordChangedAt = user.passwordChangedAt;
+        // SaaS multi-tenant — companyId vit dans le JWT pour éviter un round-trip DB
+        token.companyId = user.companyId ?? null;
         // JWT created for user
       }
 
@@ -129,7 +135,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            select: { passwordChangedAt: true, active: true, role: true },
+            select: { passwordChangedAt: true, active: true, role: true, companyId: true },
           });
           if (!dbUser || !dbUser.active) {
             // Token invalidated — user not found or inactive
@@ -150,6 +156,10 @@ export const authOptions: NextAuthOptions = {
             // Role synced from DB
             token.role = dbUser.role;
           }
+          // Sync companyId aussi — si l'utilisateur a été (ré)affecté à une Company
+          if (dbUser.companyId !== token.companyId) {
+            token.companyId = dbUser.companyId ?? null;
+          }
         } catch (err) {
           // DB unreachable — keep existing token valid to avoid logout storm
           console.error("[JWT] DB unreachable during refresh, keeping token:", err);
@@ -164,6 +174,8 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.employeeId = token.employeeId;
         session.user.mustChangePassword = token.mustChangePassword;
+        // SaaS multi-tenant — exposé côté Server Components / API helpers
+        session.user.companyId = token.companyId ?? null;
       }
       return session;
     },

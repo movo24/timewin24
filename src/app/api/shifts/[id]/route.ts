@@ -16,7 +16,12 @@ export async function PUT(
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      employeeId: string | null;
+      companyId: string | null;
+    };
     const { id } = await params;
     const body = await req.json();
     const parsed = shiftUpdateSchema.safeParse(body);
@@ -26,6 +31,16 @@ export async function PUT(
 
     const existing = await prisma.shift.findUnique({ where: { id } });
     if (!existing) return errorResponse("Shift non trouvé", 404);
+
+    // SaaS multi-tenant: non-SUPER_ADMIN cannot touch shifts of another Company
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : shift hors de votre Company", 403);
+    }
 
     // RBAC: Manager can only modify shifts in their assigned stores
     if (user.role === "MANAGER") {
@@ -38,10 +53,23 @@ export async function PUT(
     const { storeId, employeeId, date, startTime, endTime, note } = parsed.data;
 
     // Reject modifications targeting an inactive store
-    const targetStore = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
+    const targetStore = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { id: true, status: true, companyId: true },
+    });
     if (!targetStore) return errorResponse("Magasin non trouvé", 404);
     if (targetStore.status !== "ACTIVE") {
       return errorResponse("Impossible de modifier ce shift : le magasin est inactif", 422);
+    }
+
+    // SaaS multi-tenant: target store must belong to user's Company
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      targetStore.companyId &&
+      targetStore.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : magasin cible hors de votre Company", 403);
     }
 
     // Verify employee is authorized for this store
@@ -173,7 +201,12 @@ export async function DELETE(
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const user = session!.user as {
+      id: string;
+      role: string;
+      employeeId: string | null;
+      companyId: string | null;
+    };
     const { id } = await params;
     const existing = await prisma.shift.findUnique({
       where: { id },
@@ -183,6 +216,16 @@ export async function DELETE(
       },
     });
     if (!existing) return errorResponse("Shift non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company delete forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : shift hors de votre Company", 403);
+    }
 
     // RBAC: Manager can only delete shifts in their assigned stores
     if (user.role === "MANAGER") {

@@ -10,8 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const employee = await prisma.employee.findUnique({
@@ -23,6 +24,17 @@ export async function GET(
     });
 
     if (!employee) return errorResponse("Employé non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company → masque comme "non trouvé"
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      employee.companyId &&
+      employee.companyId !== user.companyId
+    ) {
+      return errorResponse("Employé non trouvé", 404);
+    }
+
     return successResponse(employee);
   } catch (err) {
     console.error("GET /api/employees/[id] error:", err);
@@ -38,6 +50,7 @@ export async function PUT(
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const body = await req.json();
@@ -51,6 +64,16 @@ export async function PUT(
       include: { user: true },
     });
     if (!existing) return errorResponse("Employé non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company update forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : employé hors de votre Company", 403);
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { storeIds, password: _password, role: _role, ...data } = parsed.data;
@@ -74,13 +97,35 @@ export async function PUT(
       if (emailTakenUser) return errorResponse("Un compte avec cet email existe déjà");
     }
 
+    // SaaS multi-tenant: verify all requested stores belong to user's Company
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      storeIds !== undefined &&
+      storeIds.length > 0
+    ) {
+      const stores = await prisma.store.findMany({
+        where: { id: { in: storeIds } },
+        select: { id: true, companyId: true },
+      });
+      const alien = stores.find((s) => s.companyId && s.companyId !== user.companyId);
+      if (alien) {
+        return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+      }
+    }
+
     const employee = await prisma.$transaction(async (tx) => {
       // Update store assignments if provided
       if (storeIds !== undefined) {
         await tx.storeEmployee.deleteMany({ where: { employeeId: id } });
         if (storeIds.length > 0) {
           await tx.storeEmployee.createMany({
-            data: storeIds.map((storeId) => ({ storeId, employeeId: id })),
+            data: storeIds.map((storeId) => ({
+              storeId,
+              employeeId: id,
+              // SaaS multi-tenant — inherit Company from employee/store
+              companyId: existing.companyId ?? user.companyId ?? null,
+            })),
           });
         }
       }
@@ -127,10 +172,21 @@ export async function DELETE(
   try {
     const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
     const existing = await prisma.employee.findUnique({ where: { id } });
     if (!existing) return errorResponse("Employé non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company delete forbidden
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      existing.companyId &&
+      existing.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : employé hors de votre Company", 403);
+    }
 
     // Delete User account first (FK constraint), then Employee
     await prisma.$transaction(async (tx) => {

@@ -16,6 +16,18 @@ body {
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }
 
+/* Mobile hamburger positioned safely under the iOS notch / status bar.
+ * Falls back to top:0.75rem on browsers without safe-area-inset support. */
+.safe-mobile-hamburger {
+  top: 0.75rem;
+}
+
+@supports (top: env(safe-area-inset-top)) {
+  .safe-mobile-hamburger {
+    top: calc(0.75rem + env(safe-area-inset-top));
+  }
+}
+
 /* Better touch targets on mobile */
 @media (max-width: 768px) {
   input, select, textarea {

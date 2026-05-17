@@ -5,8 +5,9 @@ import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers"
 // GET /api/audit
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -15,6 +16,11 @@ export async function GET(req: NextRequest) {
 
     const where: Record<string, unknown> = {};
     if (entity) where.entity = entity;
+
+    // SaaS multi-tenant scope (AuditLog has nullable companyId for legacy + SUPER_ADMIN)
+    if (user.role !== "SUPER_ADMIN" && user.companyId) {
+      where.companyId = user.companyId;
+    }
 
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({

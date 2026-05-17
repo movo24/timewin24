@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
+import { requireFlag } from "@/lib/feature-flags";
 import { z } from "zod";
 
 const managerIaSchema = z.object({
@@ -26,9 +27,13 @@ import type { PlannerContext } from "@/lib/manager-ia/planner";
  * Body: { command, weekStart, storeId?, execute? }
  */
 export async function POST(req: NextRequest) {
+  // SaaS App Store: désactivé si ENABLE_AI=false
+  const off = requireFlag("ai");
+  if (off) return off;
   try {
     const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const body = await req.json();
     const validatedBody = managerIaSchema.safeParse(body);
@@ -36,6 +41,17 @@ export async function POST(req: NextRequest) {
       return errorResponse(validatedBody.error.issues.map((e) => e.message).join(", "));
     }
     const { command, weekStart, storeId, execute } = validatedBody.data;
+
+    // SaaS multi-tenant : verify storeId belongs to user's Company
+    if (storeId && user.role !== "SUPER_ADMIN" && user.companyId) {
+      const storeCheck = await prisma.store.findUnique({
+        where: { id: storeId },
+        select: { companyId: true },
+      });
+      if (storeCheck?.companyId && storeCheck.companyId !== user.companyId) {
+        return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+      }
+    }
 
     // ─── Load data from DB ───────────────────────
     const { weekStart: wsDate, weekEnd: weDate } = getWeekBounds(weekStart);

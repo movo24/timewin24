@@ -13,8 +13,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await getSessionOrUnauthorized();
+    const { session, error } = await getSessionOrUnauthorized();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
 
@@ -32,6 +33,16 @@ export async function GET(
     });
 
     if (!employee) {
+      return errorResponse("Employé introuvable", 404);
+    }
+
+    // SaaS multi-tenant: cross-company access masquée comme "introuvable"
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      employee.companyId &&
+      employee.companyId !== user.companyId
+    ) {
       return errorResponse("Employé introuvable", 404);
     }
 

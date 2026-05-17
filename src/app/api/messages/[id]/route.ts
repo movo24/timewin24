@@ -23,7 +23,7 @@ export async function GET(
     if (error) return error;
 
     const { id } = await params;
-    const user = session!.user as { id: string; role: string };
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const message = await prisma.hrMessage.findUnique({
       where: { id },
@@ -44,6 +44,16 @@ export async function GET(
     });
 
     if (!message) return errorResponse("Message introuvable", 404);
+
+    // SaaS multi-tenant: cross-company → 404 masqué
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      message.companyId &&
+      message.companyId !== user.companyId
+    ) {
+      return errorResponse("Message introuvable", 404);
+    }
 
     // Employé ne peut voir que ses propres messages
     if (user.role === "EMPLOYEE" && message.senderId !== user.id) {
@@ -102,11 +112,22 @@ export async function PUT(
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
     }
 
+    const requester = session!.user as { id: string; role: string; companyId: string | null };
     const message = await prisma.hrMessage.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { id: true, status: true, companyId: true },
     });
     if (!message) return errorResponse("Message introuvable", 404);
+
+    // SaaS multi-tenant: cross-company forbidden
+    if (
+      requester.role !== "SUPER_ADMIN" &&
+      requester.companyId &&
+      message.companyId &&
+      message.companyId !== requester.companyId
+    ) {
+      return errorResponse("Accès refusé : message hors de votre Company", 403);
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {

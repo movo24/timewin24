@@ -9,13 +9,24 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
 
     const store = await prisma.store.findUnique({ where: { id } });
     if (!store) return errorResponse("Magasin non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company access masquée comme "non trouvé"
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      store.companyId &&
+      store.companyId !== user.companyId
+    ) {
+      return errorResponse("Magasin non trouvé", 404);
+    }
 
     const schedules = await prisma.storeSchedule.findMany({
       where: { storeId: id },
@@ -35,13 +46,24 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAdmin();
+    const { session, error } = await requireAdmin();
     if (error) return error;
+    const user = session!.user as { id: string; role: string; companyId: string | null };
 
     const { id } = await params;
 
     const store = await prisma.store.findUnique({ where: { id } });
     if (!store) return errorResponse("Magasin non trouvé", 404);
+
+    // SaaS multi-tenant: cross-company access masquée comme "non trouvé"
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      store.companyId &&
+      store.companyId !== user.companyId
+    ) {
+      return errorResponse("Magasin non trouvé", 404);
+    }
 
     const body = await req.json();
     const parsed = storeSchedulesBulkSchema.safeParse(body);

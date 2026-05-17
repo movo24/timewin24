@@ -6,8 +6,13 @@ import { getWeekBounds } from "@/lib/utils";
 // GET /api/shifts/export?storeId=xxx&weekStart=yyyy-mm-dd
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
+    const user = session!.user as {
+      id: string;
+      role: string;
+      companyId: string | null;
+    };
 
     const { searchParams } = new URL(req.url);
     const storeId = searchParams.get("storeId");
@@ -22,10 +27,24 @@ export async function GET(req: NextRequest) {
     const store = await prisma.store.findUnique({ where: { id: storeId } });
     if (!store) return errorResponse("Magasin non trouvé", 404);
 
+    // SaaS multi-tenant: cross-company check
+    if (
+      user.role !== "SUPER_ADMIN" &&
+      user.companyId &&
+      store.companyId &&
+      store.companyId !== user.companyId
+    ) {
+      return errorResponse("Accès refusé : magasin hors de votre Company", 403);
+    }
+
     const shifts = await prisma.shift.findMany({
       where: {
         storeId,
         date: { gte: start, lte: end },
+        // SaaS multi-tenant: defense in depth
+        ...(user.role !== "SUPER_ADMIN" && user.companyId
+          ? { companyId: user.companyId }
+          : {}),
       },
       include: {
         employee: { select: { firstName: true, lastName: true, email: true } },
