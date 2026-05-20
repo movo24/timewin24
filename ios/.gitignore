@@ -11,3 +11,8 @@ capacitor-cordova-ios-plugins
 # Generated Config files
 App/App/capacitor.config.json
 App/App/config.xml
+
+# Xcode-generated workspace artifacts (regenerated on first open)
+# Note: Package.resolved IS tracked on purpose (locks SwiftPM plugin versions).
+App/App.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
