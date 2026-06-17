@@ -1,5 +1,11 @@
 # TimeWin - Gestion de Planning du Personnel
 
+> ⚠️ **Etat actuel (2026-06)** — ce README decrit le **MVP V1** (single-tenant, roles Admin/Employe).
+> Le projet a depuis evolue en **SaaS multi-tenant** : Company → Stores → Employees, RBAC a 5 roles,
+> feature flags, wrapper iOS Capacitor, base Neon, notifications push/email, modules AI/POS.
+> Pour l'etat reel et les regles de travail (securite, migrations, multi-tenant), voir **[`CLAUDE.md`](CLAUDE.md)**.
+> Le contenu ci-dessous reste valable comme historique de la V1.
+
 Outil interne de gestion de planning multi-boutiques. Concu pour scaler jusqu'a 100 magasins.
 
 ## Stack
