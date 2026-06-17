@@ -6,9 +6,15 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Client } = require("pg");
 
-const POS_SECRET   = "pos_secret_candy_2026";
-const TW24_DB_URL  = process.env.DATABASE_URL  || "postgresql://timewin:timewin_secret@localhost:5433/timewin";
-const CAISSE_DB_URL = process.env.CAISSE_DB_URL || "postgresql://caisse:Cws2026ProdSecure9x@localhost:5432/caisse";
+const POS_SECRET = process.env.POS_SECRET;
+const TW24_DB_URL = process.env.DATABASE_URL;
+const CAISSE_DB_URL = process.env.CAISSE_DB_URL;
+if (!POS_SECRET || !TW24_DB_URL || !CAISSE_DB_URL) {
+  console.error(
+    "❌ Env requis : POS_SECRET, DATABASE_URL, CAISSE_DB_URL — aucune valeur par défaut (secrets retirés du code).",
+  );
+  process.exit(1);
+}
 
 async function main() {
   console.log("\n══════════════════════════════════════════════════════════");
