@@ -59,6 +59,17 @@ Tenancy layers: **Platform** (SUPER_ADMIN, TimeWin24 staff) → **Company** (1) 
    HTML. CSP is strict (`frame-ancestors 'none'`, HSTS) in `next.config.ts`.
 8. **No useless refactors.** Don't restructure working code (e.g. don't add `vercel.json`/`vercel.ts`
    to duplicate config already in `next.config.ts`) unless it fixes a real problem.
+9. **Secret audits scan the FULL history, never just the working tree.** "Build green + no secrets"
+   asserted without `git grep $(git rev-list --all)` across all branches is worthless — a clean
+   working tree or clean recent commits does NOT mean clean history; secrets in older commits on
+   shared branches stay published. Always run, across every branch: `git grep -nE '<patterns>'
+   $(git rev-list --all)` plus pickaxe `git log --all -S '<value>'`. Count URL-encoded forms
+   (`%21`=`!`, `%40`=`@`). A push gate scoped to "only my new commits" is blind to pre-existing leaks.
+10. **Never put credentials in URLs/query params; never track agent/test artifacts.** Creds in
+    `?password=...` bleed into Playwright/MCP logs, browser history, server access logs, and traces.
+    `.playwright-mcp/`, screenshots, and console dumps must stay gitignored (`.gitignore:54`) — that is
+    exactly how a real admin login and the POS/`caisse` DB credentials got leaked into this public repo.
+    Structural control (gitignore + no creds in URLs) beats "remember not to commit".
 
 ## Tests & verification
 - Run `npm test` before committing anything under `src/lib/`.
