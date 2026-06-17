@@ -7,12 +7,14 @@ const NONCE_EXPIRY_MS = 10 * 60_000;       // Keep nonces for 10min (> drift win
 const usedNonces = new Map<string, number>();
 
 // Cleanup expired nonces every 2 minutes
-setInterval(() => {
+const nonceCleanup = setInterval(() => {
   const now = Date.now();
   for (const [nonce, ts] of usedNonces) {
     if (now - ts > NONCE_EXPIRY_MS) usedNonces.delete(nonce);
   }
 }, 2 * 60 * 1000);
+// Ne pas maintenir l'event loop en vie (exit propre en test/CLI ; no-op dans le serveur long-vécu).
+nonceCleanup.unref?.();
 
 /**
  * Compute HMAC-SHA256 signature.
@@ -31,6 +33,7 @@ export function computeHmac(
 export interface HmacValidationResult {
   valid: boolean;
   error?: string;
+  matchedIndex?: number; // index du secret qui a matché (0 = primaire, >0 = rollover)
 }
 
 /**
@@ -44,7 +47,7 @@ export function validateHmac(
     signature: string | null;
   },
   body: string,
-  secret: string,
+  secret: string | string[], // string[] = plusieurs secrets valides pendant une rotation
 ): HmacValidationResult {
   const { timestamp, nonce, signature } = headers;
 
@@ -67,23 +70,25 @@ export function validateHmac(
     return { valid: false, error: "Nonce already used (replay detected)" };
   }
 
-  // Signature verification (timing-safe comparison)
-  const expected = computeHmac(secret, timestamp, nonce, body);
-  if (expected.length !== signature.length) {
-    return { valid: false, error: "Invalid signature" };
-  }
-
-  // Constant-time comparison
-  let mismatch = 0;
-  for (let i = 0; i < expected.length; i++) {
-    mismatch |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
-  }
-  if (mismatch !== 0) {
+  // Signature verification (timing-safe comparison). Accepte N'IMPORTE QUEL secret candidat
+  // → un secret peut être tourné sans coupure du webhook (ancien + nouveau valides au cutover).
+  const candidates = Array.isArray(secret) ? secret : [secret];
+  const matchedIndex = candidates.findIndex((s) => {
+    const expected = computeHmac(s, timestamp, nonce, body);
+    if (expected.length !== signature.length) return false;
+    // Comparaison constant-time sur toute la longueur
+    let mismatch = 0;
+    for (let i = 0; i < expected.length; i++) {
+      mismatch |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+    }
+    return mismatch === 0;
+  });
+  if (matchedIndex === -1) {
     return { valid: false, error: "Invalid signature" };
   }
 
   // Mark nonce as used
   usedNonces.set(nonce, Date.now());
 
-  return { valid: true };
+  return { valid: true, matchedIndex };
 }

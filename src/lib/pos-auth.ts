@@ -51,9 +51,30 @@ async function validatePosHmac(req: NextRequest, body: string) {
     return errorResponse("Key ID invalide", 401);
   }
 
-  const result = validateHmac({ timestamp, nonce, signature }, body, secret);
+  // Rotation zéro-coupure : accepte aussi le(s) secret(s) transitoires de
+  // POS_WEBHOOK_SECRET_ROLLOVER (séparés par virgule). Posé pendant la fenêtre de bascule
+  // pour que l'ancien ET le nouveau secret valident ; retiré une fois CAISSE/AddX basculé.
+  // Env vide → comportement identique à avant ([secret] seul).
+  const rollover = (process.env.POS_WEBHOOK_SECRET_ROLLOVER || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const result = validateHmac(
+    { timestamp, nonce, signature },
+    body,
+    [secret, ...rollover],
+  );
   if (!result.valid) {
     return errorResponse(result.error || "HMAC invalide", 401);
+  }
+
+  // Monitoring de rotation : un match sur index > 0 = secret de rollover utilisé,
+  // donc cutover en cours. Surveiller ces logs pour confirmer le passage au NOUVEAU secret.
+  if ((result.matchedIndex ?? 0) > 0) {
+    console.warn(
+      `[pos-auth] webhook key=${keyId} validé via secret ROLLOVER #${result.matchedIndex} — rotation en cours`,
+    );
   }
 
   return null; // success
