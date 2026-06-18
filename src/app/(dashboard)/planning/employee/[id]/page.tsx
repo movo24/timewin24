@@ -9,6 +9,10 @@ import { getMondayOfWeek, formatDate } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+// This detail page reads request-time data (route params + search params)
+// and must never be statically prerendered at build time.
+export const dynamic = "force-dynamic";
+
 interface Shift {
   id: string;
   storeId: string;
