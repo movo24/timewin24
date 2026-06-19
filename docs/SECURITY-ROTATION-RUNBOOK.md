@@ -93,13 +93,43 @@ Le secret POS étant en DB, sa rotation **ne nécessite aucun déploiement**.
 
 Une fois les secrets inertes :
 
-1. Sortir les valeurs de `scripts/setup-pos-integration.ts` vers `process.env`
-   **sans fallback** (throw si absent).
-2. `git rm --cached .playwright-mcp/console-2026-03-20T11-22-44-309Z.log` (et le reste de
-   `.playwright-mcp/`), ajouter au `.gitignore` (la règle existe mais ne s'applique pas aux
-   fichiers déjà suivis).
-3. **Purge d'historique** : `git filter-repo --invert-paths` sur les blobs concernés (ou
-   réécriture depuis `6332a54`), puis push forcé coordonné + invalidation des clones.
+### Étapes non destructives — FAITES (commit `5f4f756`)
 
-Tant que la purge n'est pas faite **mais que la rotation l'est**, l'exposition résiduelle
-est **inerte**.
+1. ✅ Valeurs sorties de `scripts/setup-pos-integration.ts` vers `process.env`
+   **sans fallback** (`reqEnv`), secrets masqués dans les logs.
+2. ✅ `.playwright-mcp/` (67 fichiers, dont le log fuitant les creds admin) retiré du
+   suivi git (`git rm --cached`). Déjà couvert par `.gitignore`.
+
+> Ces étapes **ne ferment pas** l'exposition d'historique : les valeurs restent dans
+> l'historique git jusqu'à la purge. Tant que la **rotation** est faite, l'exposition
+> résiduelle est **inerte**.
+
+### Étape destructive — GATED (à exécuter seulement après rotation + GO)
+
+**Ordre impératif** — la purge réécrit l'historique et **invalide le SHA vert** de la PR #6,
+en déplaçant ses commits :
+
+> **rotation → purge historique → rebase PR #6 → re-run CI → merge**
+
+Ne **jamais** merger #6 sur un vert antérieur à la purge : il ne survit pas au force-push.
+
+**Sécurité force-push (PR ouverte) :**
+- Un force-push mal cadré sur la branche de #6 **ou sur `main`** peut fermer/casser la PR.
+- Coordonner : purge sur **toutes** les branches concernées (`main` + branche #6) en une
+  passe, prévenir les collaborateurs (re-clone obligatoire), puis rebaser #6 sur le `main`
+  réécrit et laisser la CI re-tourner avant tout merge.
+- Protéger temporairement : désactiver les déploiements auto le temps de la fenêtre si besoin.
+
+**Commande (à valider, non exécutée ici) :**
+```bash
+# Depuis un clone frais, après backup du repo (miroir)
+git clone --mirror <repo> repo-purge && cd repo-purge
+git filter-repo \
+  --path scripts/setup-pos-integration.ts --path-glob '.playwright-mcp/*' \
+  --invert-paths   # OU --replace-text avec les valeurs des 3 secrets pour ne purger que les blobs
+# Vérifier l'absence des secrets, puis :
+git push --force --all && git push --force --tags
+```
+> `--invert-paths` supprime les fichiers entiers de l'historique ; si l'historique du script
+> doit être conservé, préférer `--replace-text` (remplace uniquement les valeurs des secrets).
+> Sauvegarde miroir **obligatoire** avant toute réécriture.
