@@ -63,29 +63,50 @@ Valeur brûlée : mot de passe du rôle `caisse` sur la base **`caisse`** (≠ b
 Valeur brûlée : `pos_secret_candy_****` (signe `POST /api/pos-events/webhook`).
 
 **Mécanique :** la vérification (`src/lib/pos-auth.ts:38-52`) récupère **un seul**
-`webhookSecret` en **DB**, par `X-POS-Key-Id` (= `id` du `PosProvider`). Le code ne
-supporte pas deux secrets pour une même clé. Le legacy `X-POS-Secret` est déjà refusé
-(`src/lib/pos-auth.ts:10`). On bascule donc par **double keyId** :
+`webhookSecret` en **DB** (colonne `PosProvider.webhookSecret`, `@unique`), par
+`X-POS-Key-Id` (= `id` du `PosProvider`). Le legacy `X-POS-Secret` est déjà refusé
+(`src/lib/pos-auth.ts:10`).
 
-1. Créer un **nouveau `PosProvider`** (nouveau `id` = nouveau keyId) avec un
-   `webhookSecret` fort aléatoire (`openssl rand -hex 32`). Noter son `id`.
-2. Recréer le `PosStoreLink` (même `posStoreId` CAISSE) vers ce nouveau `providerId`
-   (résolution du magasin dans `src/app/api/pos-events/webhook/route.ts:53`).
-3. Côté **CAISSE** : `X-POS-Key-Id` = nouveau provider id, `TIMEWIN24_POS_SECRET` =
-   nouveau secret (depuis le secret manager).
-4. **Overlap :** les deux providers coexistent → CAISSE bascule sans rejet. Surveiller
-   que les events arrivent signés avec le nouveau keyId.
-5. **Couper l'ancien :** `active=false` puis suppression de l'ancien `PosProvider`
-   → l'ancien secret devient inerte.
-6. **Vérif :** webhook signé avec l'ancien keyId/secret → `401` ; avec le nouveau → `201`.
+### Méthode recommandée — SWAP IN-PLACE (containment + intégrité)
 
-> Alternative « cut » (micro-coupure acceptable) : `UPDATE` du `webhookSecret` existant +
-> mise à jour CAISSE dans la même fenêtre → quelques secondes de webhooks rejetés. Le
-> double-keyId l'évite.
+Le secret étant **compromis**, l'objectif est de le rendre inerte **au plus vite**, pas de
+préserver le zéro-downtime. Le swap in-place ne crée aucun provider en double :
 
-Le secret POS étant en DB, sa rotation **ne nécessite aucun déploiement**.
+```sql
+-- 0. Générer UNE fois (hors SQL) :  openssl rand -hex 32  →  $NEW_SECRET
+--    Identifier le provider :  SELECT id,name FROM "PosProvider" WHERE active=true;  → $PROVIDER_ID
+-- 1. Swap in-place (keyId INCHANGÉ)
+UPDATE "PosProvider" SET "webhookSecret"='$NEW_SECRET', "updatedAt"=now() WHERE id='$PROVIDER_ID';
+-- 2. CAISSE/.env  (MÊME valeur, keyId inchangé) : TIMEWIN24_POS_SECRET=$NEW_SECRET
+-- 3. Vérif : webhook signé nouveau secret → 201 ; ancien secret → 401
+```
 
-⏱️ ~30 min · 👤 ops TW24 + CAISSE · ↩️ rollback : réactiver l'ancien provider tant que le nouveau n'est pas confirmé.
+- **Cohérence des 2 écritures** : `$NEW_SECRET` de l'étape 1 (DB) et de l'étape 2
+  (`CAISSE/.env`) doivent être **identiques**, sinon l'auth CAISSE↔TW24 casse.
+- **Gap de sync sub-minute** assumé : entre l'`UPDATE` DB et le redéploiement de
+  `CAISSE/.env`, CAISSE signe encore avec l'ancien secret → `401`. ⚠️ Vérifier que **CAISSE
+  rejoue les webhooks rejetés** (ou planifier en heure creuse) — les events refusés à l'auth
+  n'atteignent pas `/api/pos-events/failed` (rejet avant traitement), donc le rattrapage
+  dépend du retry **côté CAISSE**.
+- ↩️ rollback : re-`UPDATE` avec l'ancienne valeur (mais elle est brûlée → ne rollback que
+  vers un autre secret neuf).
+
+### Alternative DÉCONSEILLÉE — dual-keyId (zéro-downtime)
+
+⚠️ **Incorrect dans ce schéma.** `providerId` entre dans des clés uniques composites de
+`processEvent` (`providerId_posRecordId` dedup — `route.ts:215,292,305` ; et
+`providerId_storeId_date_hourSlot` agrégation — `route.ts:125`). Or `findFirst({where:{posStoreId}})`
+(`route.ts:53`, **sans `orderBy`** → ordre indéfini) peut résoudre un même record tantôt sous
+l'ancien, tantôt sous le nouveau `providerId` pendant l'overlap → **dedup cassé (ventes
+dupliquées) + agrégats splittés (heures double-comptées)**. À n'utiliser que si un gap de
+sync est **inacceptable**, et alors :
+- fenêtre verify→cut **serrée** (ancien coupé dans la minute, pas de coexistence prolongée
+  qui laisse le secret brûlé valide) ;
+- au cut : `UPDATE "PosProvider" SET active=false` sur l'ancien (**jamais `DELETE`** — préserve
+  la lignée d'audit et évite un saut de FK), et `DELETE` du seul `PosStoreLink` orphelin pour
+  lever l'ambiguïté `findFirst`.
+
+⏱️ ~15 min (swap) · 👤 ops TW24 + CAISSE · le secret POS étant en DB, sa rotation **ne nécessite aucun déploiement** TW24.
 
 ---
 
