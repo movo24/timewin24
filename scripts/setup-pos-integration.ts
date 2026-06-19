@@ -6,9 +6,19 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Client } = require("pg");
 
-const POS_SECRET   = "pos_secret_candy_2026";
-const TW24_DB_URL  = process.env.DATABASE_URL  || "postgresql://timewin:timewin_secret@localhost:5433/timewin";
-const CAISSE_DB_URL = process.env.CAISSE_DB_URL || "postgresql://caisse:Cws2026ProdSecure9x@localhost:5432/caisse";
+/** Variable d'env requise — pas de valeur en dur (aucun secret committé). */
+function reqEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) {
+    console.error(`✗ Variable d'environnement manquante : ${name}`);
+    process.exit(1);
+  }
+  return v;
+}
+
+const POS_SECRET    = reqEnv("POS_SECRET");
+const TW24_DB_URL   = reqEnv("DATABASE_URL");
+const CAISSE_DB_URL = reqEnv("CAISSE_DB_URL");
 
 async function main() {
   console.log("\n══════════════════════════════════════════════════════════");
@@ -51,7 +61,7 @@ async function main() {
   }
 
   console.log(`  Provider ID   : ${providerId}`);
-  console.log(`  webhookSecret : ${POS_SECRET}\n`);
+  console.log(`  webhookSecret : ✓ défini (masqué)\n`);
 
   // ── STEP 2 : Magasins TW24 ────────────────────────────────────
   console.log("STEP 2 — Magasins TimeWin24\n");
@@ -166,8 +176,8 @@ async function main() {
   console.log("══════════════════════════════════════════════════════════");
   console.log("  RÉSUMÉ FINAL\n");
   console.log(`  PosProvider                 : ✓  ID=${providerId}`);
-  console.log(`  webhookSecret TW24          : ✓  "${POS_SECRET}" en DB`);
-  console.log(`  CAISSE TIMEWIN24_POS_SECRET : ✓  "${POS_SECRET}" dans .env`);
+  console.log(`  webhookSecret TW24          : ✓  défini en DB (masqué)`);
+  console.log(`  CAISSE TIMEWIN24_POS_SECRET : ✓  à aligner dans CAISSE/.env (masqué)`);
   console.log(`  Secret HMAC aligné          : ✓  OUI`);
   console.log(`  401 HMAC résolu             : ✓  OUI`);
   console.log(`  PosStoreLink                : ${allOk ? "✓  OUI — " + links.rows.length + " lien(s)" : "✗  KO — vérifier ci-dessus"}`);
