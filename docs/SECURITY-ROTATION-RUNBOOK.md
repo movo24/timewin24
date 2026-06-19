@@ -81,15 +81,23 @@ UPDATE "PosProvider" SET "webhookSecret"='$NEW_SECRET', "updatedAt"=now() WHERE 
 -- 3. Vérif : webhook signé nouveau secret → 201 ; ancien secret → 401
 ```
 
+- **Ordre = DB d'abord** (étape 1 avant étape 2). L'`UPDATE` DB **tue le secret brûlé à
+  l'instant T**. Faire `CAISSE/.env` d'abord laisserait l'ancien secret valide côté TW24 plus
+  longtemps pour rien. Seul coût du DB-first : une fenêtre où CAISSE signe encore l'ancien
+  → `401`.
 - **Cohérence des 2 écritures** : `$NEW_SECRET` de l'étape 1 (DB) et de l'étape 2
   (`CAISSE/.env`) doivent être **identiques**, sinon l'auth CAISSE↔TW24 casse.
-- **Gap de sync sub-minute** assumé : entre l'`UPDATE` DB et le redéploiement de
-  `CAISSE/.env`, CAISSE signe encore avec l'ancien secret → `401`. ⚠️ Vérifier que **CAISSE
-  rejoue les webhooks rejetés** (ou planifier en heure creuse) — les events refusés à l'auth
-  n'atteignent pas `/api/pos-events/failed` (rejet avant traitement), donc le rattrapage
-  dépend du retry **côté CAISSE**.
-- ↩️ rollback : re-`UPDATE` avec l'ancienne valeur (mais elle est brûlée → ne rollback que
-  vers un autre secret neuf).
+- **`.env` écrit ≠ effectif.** Le nouveau secret ne s'applique qu'après **reload/restart du
+  process CAISSE** — la fenêtre de rejet réelle court jusqu'au **restart**, pas jusqu'à
+  l'écriture du fichier. Ne pas sous-estimer le gap : éditer `.env` *puis* redémarrer/reloader.
+- **Gap de sync** assumé : pendant cette fenêtre, les events sont rejetés `401`. ⚠️ Ils
+  n'atteignent **pas** `/api/pos-events/failed` (rejet à l'auth, avant traitement) → le
+  rattrapage dépend du **retry côté CAISSE**. Vérifier ce retry, ou planifier en heure creuse.
+- **Verify-gate avant de déclarer « fait »** : envoyer un event test signé avec le **nouveau**
+  secret → `201` attendu, **et** l'ancien secret → `401`, *avant* de tourner la page. Sans ce
+  test, on peut croire la rotation faite sur une auth cassée silencieuse.
+- ↩️ rollback : re-`UPDATE` avec une **autre** valeur neuve (l'ancienne est brûlée → ne jamais
+  y revenir).
 
 ### Alternative DÉCONSEILLÉE — dual-keyId (zéro-downtime)
 
