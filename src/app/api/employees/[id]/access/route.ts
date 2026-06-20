@@ -1,14 +1,17 @@
 import { NextRequest } from "next/server";
+import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 import bcrypt from "bcryptjs";
 
 function generateEmployeeCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000)); // 6-digit numeric
+  return String(randomInt(100000, 1000000)); // 6-digit numeric (CSPRNG)
 }
 
 function generatePin(length = 4): string {
-  return String(Math.floor(Math.pow(10, length - 1) + Math.random() * (Math.pow(10, length) - Math.pow(10, length - 1))));
+  const min = 10 ** (length - 1);
+  const max = 10 ** length;
+  return String(randomInt(min, max)); // CSPRNG, gates POS/inventory access
 }
 
 /**

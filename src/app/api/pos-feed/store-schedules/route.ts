@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
     });
 
     return successResponse(schedules);
-  } catch (err: any) {
-    console.error("GET /api/pos-feed/store-schedules error:", err?.message);
-    return errorResponse("Erreur chargement horaires: " + (err?.message || "inconnu"), 500);
+  } catch (err) {
+    console.error("GET /api/pos-feed/store-schedules error:", err);
+    return errorResponse("Erreur chargement horaires", 500);
   }
 }
 
@@ -99,8 +99,8 @@ export async function PUT(req: NextRequest) {
     );
 
     return successResponse(result);
-  } catch (err: any) {
-    console.error("PUT /api/pos-feed/store-schedules error:", err?.message);
-    return errorResponse("Erreur sauvegarde horaires: " + (err?.message || "inconnu"), 500);
+  } catch (err) {
+    console.error("PUT /api/pos-feed/store-schedules error:", err);
+    return errorResponse("Erreur sauvegarde horaires", 500);
   }
 }

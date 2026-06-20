@@ -66,9 +66,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("POST /api/ai/pos-analysis error:", err);
-    return errorResponse(
-      err instanceof Error ? err.message : "Erreur serveur",
-      500
-    );
+    return errorResponse("Erreur serveur", 500);
   }
 }

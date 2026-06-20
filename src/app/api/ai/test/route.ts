@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error("[AI Test] Fatal error:", err);
-    return errorResponse(`Erreur fatale: ${(err as Error).message}`, 500);
+    return errorResponse("Erreur serveur", 500);
   }
 }
 
