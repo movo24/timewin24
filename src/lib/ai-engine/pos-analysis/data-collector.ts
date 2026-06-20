@@ -3,6 +3,7 @@
 // Données brutes → contexte structuré pour le prompt Gemini
 
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 
 export interface PosAnalysisData {
   store: {
@@ -150,7 +151,7 @@ export async function collectPosData(
   let totalEmployeeCost = 0;
   let scheduledHours = 0;
   for (const se of employees) {
-    const rate = se.employee.costConfig?.hourlyRateGross || 0;
+    const rate = toNum(se.employee.costConfig?.hourlyRateGross ?? 0);
     const weeklyH = se.employee.weeklyHours || 35;
     const monthlyH = (weeklyH * days) / 7;
     scheduledHours += monthlyH;

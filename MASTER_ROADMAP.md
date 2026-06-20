@@ -55,7 +55,7 @@ Validation : ⚠️ N+1 dans `replacement.ts` (M113) ; `String` FK sans relation
 ### M007 — Coûts & Masse salariale
 Statut : ⚠️ À vérifier · Priorité : P1
 Fichiers : `src/lib/employer-cost.ts` · Pages : `costs` · API : `costs/*` · Base : `EmployeeCost`, `CountryConfig`
-Validation : ⛔/⚠️ **argent stocké en `Float`** (M101, P1) — bloqué sur décision "données prod ?".
+Validation : ✅ noyau paie en `Decimal` (M101) ; ⬜ reste analytics/POS/produits en `Float` (M101b).
 
 ### M008 — POS & Intégrations
 Statut : ⚠️ À vérifier · Priorité : P1
@@ -125,12 +125,13 @@ Validation : ✅ fallback supprimé, `INVENTORY_JWT_SECRET`/`NEXTAUTH_SECRET` re
 
 ### 🟠 P1 — Intégrité / auth / argent
 
-#### M101 — Argent `Float` → `Decimal`
-Statut : ⛔ Bloqué (décision métier) · Priorité : P1 · Module : M007
-Dépendances : réponse à « la prod a-t-elle déjà des données monétaires ? ».
-Scope : `EmployeeCost`, `CountryConfig`, `PosSalesData`, `Product.price/oldPrice/vatRate`, `EmployeePerformanceDaily`, `Store.vatRate` → `Decimal @db.Decimal(12,2)` / `(6,4)`.
-Si pas de données prod = migration additive (fenêtre idéale). Sinon = migration + backfill non-additive à scoper.
-Critères : aucune dérive d'arrondi ; tests calcul coût employeur.
+#### M101 — Argent `Float` → `Decimal` (noyau paie)
+Statut : ✅ Fait (noyau paie/coût) · Priorité : P1 · Module : M007
+Débloqué : réponse user « pas encore de données monétaires en prod » → migration **additive** (fenêtre idéale).
+Fait : `CountryConfig` (minimumWageHour, employerRate, reductionMaxCoeff, reductionThreshold, extraHourlyCost) + `EmployeeCost` (hourlyRateGross, fixedMissionCost, employerRateOverride, extraHourlyCostOverride) → `Decimal` (€ = `@db.Decimal(12,2)`, coefficients = `(6,4)`). Migration `20260620190000_money_float_to_decimal`.
+Frontière : `src/lib/decimal.ts` (`toNum`/`toNumN`) + `src/lib/cost-mappers.ts` (`countryRulesFromConfig`, serializers). Moteur `employer-cost.ts` reste pur-`number`. **Forme des réponses API préservée** (Decimal recoercé en `number` → zéro changement front).
+Validation : ✅ tsc 0 ; ✅ jest 118 (+7 : math moteur + frontière Decimal) ; runtime ⚠️ non vérifié.
+Reste (⬜ M101b, P2) : champs € hors paie — `PosSalesData`, `Product.price/oldPrice/vatRate`, `Store.vatRate`, `EmployeePerformanceDaily/Hourly` (totalSales/avgBasket/amounts). ~35 fichiers, dont des chemins de sérialisation API non vérifiables en l'état (pas de données) → lot dédié.
 
 #### M110 — `employees/[id]/access` : store-scoping manager
 Statut : ✅ Fait (store-scoping) · Priorité : P1 · Module : M003
@@ -168,6 +169,11 @@ Validation : ✅ ai/test, ai/pos-analysis, pos-feed/store-schedules → message 
 Statut : ✅ Fait · Priorité : P2 · Fichier : `src/lib/replacement.ts`
 Remplacé `findOverlappingShift` + `calculateWeeklyHours` (2 requêtes DB/candidat) par des calculs en mémoire sur `emp.shifts` (déjà eager-loaded). Overlap via `doTimesOverlap` (même helper). tsc/lint/jest OK.
 
+#### M101b — `Float` → `Decimal` (champs € hors paie)
+Statut : ⬜ À faire · Priorité : P2 · Module : M008/M009/M013
+Scope : `PosSalesData` (revenue, cardAmount, cashAmount, otherAmount), `Product.price/oldPrice/vatRate`, `Store.vatRate`, `EmployeePerformanceDaily/Hourly` (totalSales, avgBasket, montants).
+Note : ~35 fichiers consommateurs (POS sync, analytics, labels, AI engine, dashboards) dont plusieurs sérialisent ces champs en réponse API. Même méthode que M101 (frontière `decimal.ts`/serializers, forme JSON préservée), mais non vérifiable en runtime sans données → à exécuter avec données de test ou en fenêtre contrôlée.
+
 #### M114 — « FK » String sans relation
 Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`.
 
@@ -178,8 +184,9 @@ Statut : 🔄 En cours · Priorité : P2
 
 #### M116 — Tests chemins critiques
 Statut : 🔄 En cours · Priorité : P2
-- ✅ RBAC : `src/__tests__/rbac.test.ts` (16 tests — matrice par rôle, hiérarchie, helpers, routes par défaut). Suite : 95 → 111.
-- ⬜ Reste : coût employeur (`employer-cost`), couverture solver étendue.
+- ✅ RBAC : `src/__tests__/rbac.test.ts` (16 tests — matrice par rôle, hiérarchie, helpers, routes par défaut).
+- ✅ Coût employeur : `src/__tests__/employer-cost.test.ts` (7 tests — Fillon à/au-dessus du SMIC, overrides, clamp, frontière Decimal). Suite : 95 → **118**.
+- ⬜ Reste : couverture solver étendue.
 
 #### M121 — `notifications/clicked` non authentifié
 Statut : ⚠️ À vérifier · Priorité : P2 — write timestamp sur row arbitraire (intentionnel SW ; rate-limiter).

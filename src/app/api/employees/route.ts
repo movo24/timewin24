@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { employeeCreateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
+import { serializeEmployeeCost } from "@/lib/cost-mappers";
 import bcrypt from "bcryptjs";
 
 // GET /api/employees
@@ -65,7 +66,11 @@ export async function GET(req: NextRequest) {
     ]);
 
     return successResponse({
-      employees,
+      employees: employees.map((e) =>
+        e.costConfig
+          ? { ...e, costConfig: serializeEmployeeCost(e.costConfig) }
+          : e
+      ),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {

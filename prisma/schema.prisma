@@ -350,16 +350,16 @@ model CountryConfig {
   code            String @unique // "FR", "BE", "ES", etc.
   name            String // "France", "Belgique", etc.
   currency        String @default("EUR")
-  minimumWageHour Float // SMIC horaire brut (ex: 12.02 for FR 2026)
-  employerRate    Float // Taux charges patronales global "plein pot" (ex: 0.45)
+  minimumWageHour Decimal @db.Decimal(12, 2) // SMIC horaire brut (ex: 12.02 for FR 2026) — montant € (M101)
+  employerRate    Decimal @db.Decimal(6, 4) // Taux charges patronales global "plein pot" (ex: 0.45) — coefficient (M101)
 
   // Fillon-style reduction parameters
   reductionEnabled   Boolean @default(true)
-  reductionMaxCoeff  Float   @default(0.3206) // Coefficient max de réduction (au SMIC)
-  reductionThreshold Float   @default(1.6) // Seuil en multiple du SMIC (1.6x = fin de réduction)
+  reductionMaxCoeff  Decimal @default(0.3206) @db.Decimal(6, 4) // Coefficient max de réduction (au SMIC)
+  reductionThreshold Decimal @default(1.6) @db.Decimal(6, 4) // Seuil en multiple du SMIC (1.6x = fin de réduction)
 
-  // Extra fixed costs per hour (mutuelle, transport, etc.)
-  extraHourlyCost Float @default(0)
+  // Extra fixed costs per hour (mutuelle, transport, etc.) — montant € (M101)
+  extraHourlyCost Decimal @default(0) @db.Decimal(12, 2)
 
   notes         String? // Notes libres (ex: "MAJ 01/01/2026")
   effectiveFrom DateTime @default(now())
@@ -378,12 +378,12 @@ model EmployeeCost {
   employeeId       String        @unique
   country          CountryConfig @relation(fields: [countryCode], references: [code])
   countryCode      String
-  hourlyRateGross  Float // Taux horaire brut de l'employé
-  fixedMissionCost Float? // Coût fixe par mission (€) — optionnel
+  hourlyRateGross  Decimal  @db.Decimal(12, 2) // Taux horaire brut de l'employé — montant € (M101)
+  fixedMissionCost Decimal? @db.Decimal(12, 2) // Coût fixe par mission (€) — optionnel
 
   // Optional overrides (null = use country defaults)
-  employerRateOverride    Float?
-  extraHourlyCostOverride Float?
+  employerRateOverride    Decimal? @db.Decimal(6, 4) // coefficient
+  extraHourlyCostOverride Decimal? @db.Decimal(12, 2) // montant €
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

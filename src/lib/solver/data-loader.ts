@@ -7,6 +7,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { calculateEmployerCost, FRANCE_2026_DEFAULTS } from "@/lib/employer-cost";
+import { countryRulesFromConfig } from "@/lib/cost-mappers";
+import { toNum, toNumN } from "@/lib/decimal";
 import type {
   SolverInput,
   SolverEmployee,
@@ -60,25 +62,15 @@ async function computeCostPerHour(employeeId: string): Promise<number | null> {
   if (!costConfig) return null;
 
   const rules = costConfig.country
-    ? {
-        code: costConfig.country.code,
-        name: costConfig.country.name,
-        currency: costConfig.country.currency,
-        minimumWageHour: costConfig.country.minimumWageHour,
-        employerRate: costConfig.country.employerRate,
-        reductionEnabled: costConfig.country.reductionEnabled,
-        reductionMaxCoeff: costConfig.country.reductionMaxCoeff,
-        reductionThreshold: costConfig.country.reductionThreshold,
-        extraHourlyCost: costConfig.country.extraHourlyCost,
-      }
+    ? countryRulesFromConfig(costConfig.country)
     : FRANCE_2026_DEFAULTS;
 
   const breakdown = calculateEmployerCost({
-    hourlyRateGross: costConfig.hourlyRateGross,
+    hourlyRateGross: toNum(costConfig.hourlyRateGross),
     hours: 1, // per-hour cost
     rules,
-    employerRateOverride: costConfig.employerRateOverride,
-    extraHourlyCostOverride: costConfig.extraHourlyCostOverride,
+    employerRateOverride: toNumN(costConfig.employerRateOverride),
+    extraHourlyCostOverride: toNumN(costConfig.extraHourlyCostOverride),
   });
 
   return breakdown.costPerHour;
@@ -158,25 +150,15 @@ export async function loadSolverInput(
     let costPerHour: number | null = null;
     if (emp.costConfig) {
       const rules = emp.costConfig.country
-        ? {
-            code: emp.costConfig.country.code,
-            name: emp.costConfig.country.name,
-            currency: emp.costConfig.country.currency,
-            minimumWageHour: emp.costConfig.country.minimumWageHour,
-            employerRate: emp.costConfig.country.employerRate,
-            reductionEnabled: emp.costConfig.country.reductionEnabled,
-            reductionMaxCoeff: emp.costConfig.country.reductionMaxCoeff,
-            reductionThreshold: emp.costConfig.country.reductionThreshold,
-            extraHourlyCost: emp.costConfig.country.extraHourlyCost,
-          }
+        ? countryRulesFromConfig(emp.costConfig.country)
         : FRANCE_2026_DEFAULTS;
 
       const breakdown = calculateEmployerCost({
-        hourlyRateGross: emp.costConfig.hourlyRateGross,
+        hourlyRateGross: toNum(emp.costConfig.hourlyRateGross),
         hours: 1,
         rules,
-        employerRateOverride: emp.costConfig.employerRateOverride,
-        extraHourlyCostOverride: emp.costConfig.extraHourlyCostOverride,
+        employerRateOverride: toNumN(emp.costConfig.employerRateOverride),
+        extraHourlyCostOverride: toNumN(emp.costConfig.extraHourlyCostOverride),
       });
       costPerHour = breakdown.costPerHour;
     }

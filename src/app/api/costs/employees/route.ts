@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 import { FRANCE_2026_DEFAULTS } from "@/lib/employer-cost";
+import { serializeEmployeeCost } from "@/lib/cost-mappers";
 import { z } from "zod";
 
 const employeeCostSchema = z.object({
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
       orderBy: { employee: { lastName: "asc" } },
     });
 
-    return successResponse({ configs });
+    return successResponse({ configs: configs.map(serializeEmployeeCost) });
   } catch (err) {
     console.error("GET /api/costs/employees error:", err);
     return errorResponse("Erreur serveur", 500);
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return successResponse({ config }, 201);
+    return successResponse({ config: serializeEmployeeCost(config) }, 201);
   } catch (err) {
     console.error("POST /api/costs/employees error:", err);
     return errorResponse("Erreur serveur", 500);

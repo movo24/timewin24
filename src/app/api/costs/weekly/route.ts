@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
-import { calculateShiftCost, FRANCE_2026_DEFAULTS, type CountryRules } from "@/lib/employer-cost";
+import { calculateShiftCost } from "@/lib/employer-cost";
+import { countryRulesFromConfig } from "@/lib/cost-mappers";
+import { toNum, toNumN } from "@/lib/decimal";
 import { getWeekBounds, toUTCDate } from "@/lib/utils";
 
 // GET /api/costs/weekly?storeId=xxx&weekStart=YYYY-MM-DD
@@ -92,26 +94,15 @@ export async function GET(req: NextRequest) {
         };
       }
 
-      const country = costConfig.country;
-      const rules: CountryRules = {
-        code: country.code,
-        name: country.name,
-        currency: country.currency,
-        minimumWageHour: country.minimumWageHour,
-        employerRate: country.employerRate,
-        reductionEnabled: country.reductionEnabled,
-        reductionMaxCoeff: country.reductionMaxCoeff,
-        reductionThreshold: country.reductionThreshold,
-        extraHourlyCost: country.extraHourlyCost,
-      };
+      const rules = countryRulesFromConfig(costConfig.country);
 
       const breakdown = calculateShiftCost(
         shift.startTime,
         shift.endTime,
-        costConfig.hourlyRateGross,
+        toNum(costConfig.hourlyRateGross),
         rules,
-        costConfig.employerRateOverride,
-        costConfig.extraHourlyCostOverride
+        toNumN(costConfig.employerRateOverride),
+        toNumN(costConfig.extraHourlyCostOverride)
       );
 
       totalCost += breakdown.employerCostTotal;
