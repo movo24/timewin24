@@ -40,3 +40,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif exécuté (suite 2)
 - **M116 / DEBT-023** — `src/__tests__/rbac.test.ts` : 16 tests sur la matrice RBAC (permissions par rôle, hiérarchie, helpers admin, routes par défaut). Suite jest : **95 → 111 tests, 8 suites, vert**. Reste : tests coût employeur + solver.
+
+### Correctif exécuté (suite 3)
+- **M112 (partiel) / DEBT-016** — `shifts/duplicate` : créations enveloppées dans `prisma.$transaction` (atomique, plus de semaine à moitié dupliquée). Dédup intra-lot ajoutée (`plannedUnassigned`/`plannedAssigned`) pour préserver la sémantique séquentielle. Vérifié : tsc 0, lint 0, jest 111/111. Reste : manager-ia apply, toggle-status, absences/[id].

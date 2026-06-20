@@ -148,8 +148,9 @@ Scope : soft-delete `Store`/`Employee`/`User` ; `ClockIn`/`Shift`/`AbsenceDeclar
 Note : migration de schéma — préparer, valider hors prod.
 
 #### M112 — Transactions sur écritures multiples
-Statut : ⬜ À faire · Priorité : P1
-Scope : `planning/manager-ia` (apply plan), `shifts/duplicate`, `stores/[id]/toggle-status`, `absences/[id]` (offres hors tx).
+Statut : 🔄 En cours · Priorité : P1
+- ✅ `shifts/duplicate` — créations en `$transaction` (atomique) + dédup intra-lot préservée. tsc/lint/jest OK.
+- ⬜ Reste : `planning/manager-ia` (apply plan), `stores/[id]/toggle-status`, `absences/[id]` (offres hors tx).
 
 #### M120 — Rate-limiter partagé (Redis)
 Statut : ⛔ Bloqué (infra) · Priorité : P1
