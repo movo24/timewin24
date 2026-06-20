@@ -33,7 +33,7 @@
 
 ## 4. P2 — Robustesse / features
 
-- **DEBT-020 (⬜)** — N+1 `replacement.ts:67,160` (2 req DB/candidat alors que shifts eager-loaded `:52-60`). → M113.
+- **DEBT-020 (✅ corrigé)** — N+1 `replacement.ts` : overlap + heures hebdo calculés en mémoire sur `emp.shifts` (eager-loaded), 2N requêtes supprimées. → M113.
 - **DEBT-021 (⬜)** — « FK » `String` sans relation : `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`. → M114.
 - **DEBT-022 (⬜)** — aucun `error.tsx`/`loading.tsx` ; 77/87 composants `"use client"` ; pages read-only fetch côté client. → M115.
 - **DEBT-023 (⬜)** — zéro test RBAC / coût employeur / solver complet. → M116.

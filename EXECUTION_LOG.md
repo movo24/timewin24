@@ -58,3 +58,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 8)
 - **M132 / DEBT-018** — `prisma/seed.ts` durci : garde anti-prod (`ALLOW_PROD_SEED`), mots de passe via `SEED_ADMIN_PASSWORD`/`SEED_EMPLOYEE_PASSWORD` (defauts dev), `mustChangePassword=true` sur defauts, creds imprimes uniquement en mode defaut. tsc 0, jest 111/111.
+
+### Correctif execute (suite 9)
+- **M113 / DEBT-020** — `replacement.ts findEligibleCandidates` : suppression du N+1 (2 requetes DB/candidat). Overlap via `doTimesOverlap` (helper identique a findOverlappingShift) sur `emp.shifts` filtre au jour ; heures hebdo = somme en memoire de `emp.shifts` (meme fenetre que calculateWeeklyHours). Equivalence verifiee avant edit. tsc 0, lint 0, jest 111/111.

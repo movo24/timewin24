@@ -165,7 +165,8 @@ Validation : ✅ ai/test, ai/pos-analysis, pos-feed/store-schedules → message 
 ### 🟡 P2 — Features / robustesse
 
 #### M113 — N+1 `replacement.ts`
-Statut : ⬜ À faire · Priorité : P2 — calcul en mémoire (shifts déjà eager-loaded).
+Statut : ✅ Fait · Priorité : P2 · Fichier : `src/lib/replacement.ts`
+Remplacé `findOverlappingShift` + `calculateWeeklyHours` (2 requêtes DB/candidat) par des calculs en mémoire sur `emp.shifts` (déjà eager-loaded). Overlap via `doTimesOverlap` (même helper). tsc/lint/jest OK.
 
 #### M114 — « FK » String sans relation
 Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`.
