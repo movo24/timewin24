@@ -71,3 +71,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Correctif execute (suite 12)
 - **M122 / DEBT-024** — 3 `@@index` ajoutes au schema (`PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`) + migration `20260620180000_add_missing_indexes`. Faisable sans DB : ce repo deploie via `db push` (le schema s'applique) et le fichier de migration garde `migrations/` en phase. `prisma validate` OK, tsc 0, jest 111/111.
 - Note : correction d'une incoherence de suivi — DEBT-012 (M110 store-scoping) etait reste marque ⬜, repasse ✅.
+
+### Correctif execute (suite 13)
+- **M140 / DEBT-030** — `next` 16.1.6 -> 16.2.9 (+ `eslint-config-next` aligne, pins exacts conserves). Elimine les CVE directes du paquet `next` (request smuggling, DoS, CSRF bypass). Verifie tsc 0, jest 111/111 ; build Vercel = garde-fou runtime. `nodemailer` : seul fix = 9.0.1 (majeur 7->9, breaking) -> NON force (risque envoi emails), flagge pour upgrade deliberee.

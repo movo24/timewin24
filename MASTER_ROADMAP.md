@@ -210,7 +210,9 @@ Statut : ✅ Fait · Priorité : P1 · Fichier : `prisma/seed.ts`
 ### 🟢 P3 — Nettoyage / doc
 
 #### M140 — Dépendances vulnérables
-Statut : ⬜ À faire · P3/P1 mixte — bump `next`/`nodemailer`.
+Statut : 🔄 En cours · P1/P3
+- ✅ `next` 16.1.6 → **16.2.9** (CVE smuggling/DoS/CSRF du paquet `next` éliminées) + `eslint-config-next` aligné. tsc/jest OK, build Vercel = garde-fou.
+- ⚠️ `nodemailer` : fix = `9.0.1` (**bump majeur 7→9, breaking**) → **non forcé** (risque sur l'envoi d'emails). À planifier + tester.
 #### M141 — `console.*` (268) → logger conditionné · P3
 #### M142 — `any` (186) / lint debt (~87) · P3
 #### M143 — README périmé (décrit un MVP 5 modèles vs 56) · P3

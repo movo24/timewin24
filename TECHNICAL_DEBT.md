@@ -43,7 +43,7 @@
 
 ## 5. P3 — Nettoyage
 
-- **DEBT-030** — `npm audit` runtime : `next@16.1.6`, `nodemailer@7.0.13` (CVE). Bump. → M140.
+- **DEBT-030 (🔄)** — `next` bumpé 16.1.6→16.2.9 (CVE next éliminées). `nodemailer` : fix=9.0.1 **majeur breaking** → flag, non forcé. → M140.
 - **DEBT-031** — 268 `console.*` en prod (pas de logger). → M141.
 - **DEBT-032** — 186 `any` / ~87 erreurs lint (dont `(prisma as any)` dans `pos-feed/store-schedules`, suggère un drift de typage Prisma à investiguer). → M142.
 - **DEBT-033** — README périmé. → M143.
