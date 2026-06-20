@@ -191,7 +191,8 @@ Question produit : veux-tu une option "tout-ou-rien" (`$transaction`) pour l'app
 Si oui : ajouter un flag `atomic` ; sinon garder le best-effort actuel. Aucun bug en l'état.
 
 #### M130 — CI GitHub Actions
-Statut : ⬜ À faire · Priorité : P2 — aucun workflow ; ajouter lint+test+typecheck sur PR.
+Statut : ✅ Fait · Priorité : P2 · Fichier : `.github/workflows/ci.yml`
+Gates bloquants : `prisma generate` → `tsc --noEmit` → `jest` (verts). Lint informatif non-bloquant (dette M142).
 
 #### M131 — Deploy : `db push` → `migrate deploy`
 Statut : ⬜ À faire · Priorité : P1 — `deploy.sh` utilise `prisma db push` (perte de données possible).

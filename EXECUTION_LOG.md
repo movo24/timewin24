@@ -52,3 +52,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Reconciliation (suite 6) — M112 cloturee
 - `planning/manager-ia` (`executeProposal`) **non modifie** : applique chaque action en try/catch isole et renvoie `applied`/`errors` par action = best-effort INTENTIONNEL. Une `$transaction` changerait la semantique visible (partiel -> tout-ou-rien) et casserait le contrat de rapport. Reclasse en decision produit (M150, P2), pas un bug. M112 close : 3 routes atomiques + 1 reconciliee.
+
+### Correctif execute (suite 7)
+- **M130 / DEBT-026** — `.github/workflows/ci.yml` cree : install + prisma generate + `tsc --noEmit` + `jest` (gates bloquants, verts aujourd'hui) ; eslint en step informatif non-bloquant (dette M142). Pure addition.
