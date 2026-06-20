@@ -37,3 +37,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 1. M112 — transactions sur écritures multiples (par route, prudemment).
 2. M114 — relations Prisma manquantes (⚠️ migration → même contrainte que M122, à préparer sans appliquer).
 3. M116 — tests RBAC `hasPermission` (ajout de couverture, sans accès prod).
+
+### Correctif exécuté (suite 2)
+- **M116 / DEBT-023** — `src/__tests__/rbac.test.ts` : 16 tests sur la matrice RBAC (permissions par rôle, hiérarchie, helpers admin, routes par défaut). Suite jest : **95 → 111 tests, 8 suites, vert**. Reste : tests coût employeur + solver.

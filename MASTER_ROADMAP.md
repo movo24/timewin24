@@ -171,7 +171,9 @@ Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `Sh
 Statut : ⬜ À faire · Priorité : P2 — aucun `error.tsx`/`loading.tsx` ; pages read-only à passer en RSC.
 
 #### M116 — Tests chemins critiques
-Statut : ⬜ À faire · Priorité : P2 — RBAC (`hasPermission`), coût employeur, solver (couverture).
+Statut : 🔄 En cours · Priorité : P2
+- ✅ RBAC : `src/__tests__/rbac.test.ts` (16 tests — matrice par rôle, hiérarchie, helpers, routes par défaut). Suite : 95 → 111.
+- ⬜ Reste : coût employeur (`employer-cost`), couverture solver étendue.
 
 #### M121 — `notifications/clicked` non authentifié
 Statut : ⚠️ À vérifier · Priorité : P2 — write timestamp sur row arbitraire (intentionnel SW ; rate-limiter).
