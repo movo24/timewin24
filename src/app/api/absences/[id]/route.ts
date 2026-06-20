@@ -109,13 +109,23 @@ export async function PATCH(
         return result;
       });
 
-      // Create replacement offers for affected shifts (outside transaction — non-critical)
-      const offersCreated = await createReplacementOffers({
-        id: declaration.id,
-        employeeId: declaration.employeeId,
-        startDate: declaration.startDate,
-        endDate: declaration.endDate,
-      });
+      // Create replacement offers for affected shifts (outside transaction — best-effort).
+      // M112 — l'approbation est déjà committée ; un échec ici ne doit PAS transformer
+      // un succès en 500. On loggue pour rejouabilité au lieu de propager.
+      let offersCreated = 0;
+      try {
+        offersCreated = await createReplacementOffers({
+          id: declaration.id,
+          employeeId: declaration.employeeId,
+          startDate: declaration.startDate,
+          endDate: declaration.endDate,
+        });
+      } catch (offerErr) {
+        console.error(
+          `[PATCH /api/absences/${id}] approbation committée mais génération des offres de remplacement échouée:`,
+          offerErr
+        );
+      }
 
       console.log(
         `[PATCH /api/absences/${id}] APPROVED — Created unavailabilities + ${offersCreated} replacement offers`

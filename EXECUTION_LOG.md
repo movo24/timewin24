@@ -46,3 +46,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif exécuté (suite 4)
 - **M112 (suite) / DEBT-016** — `stores/[id]/toggle-status` : désactivation atomique (`deleteMany` shifts futurs + `update` statut dans une `$transaction`). tsc 0, lint 0, jest 111/111. Reste M112 : manager-ia apply, absences/[id].
+
+### Correctif execute (suite 5)
+- **M112 (suite) / reconciliation** — `absences/[id]` : contrairement au texte d'audit, le coeur (statut + indisponibilites) etait DEJA transactionnel et la route DEJA store-scopee. Vrai defaut corrige : `createReplacementOffers` (best-effort, hors tx) pouvait throw APRES commit -> 500 trompeur sur une absence pourtant approuvee. Desormais try/catch + log, non-bloquant. tsc 0, lint 0, jest 111/111. Reste M112 : manager-ia apply (passe dediee).

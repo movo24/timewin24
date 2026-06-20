@@ -11,6 +11,7 @@
 | README : « MVP, 11 tests, pas de RBAC/notifs/absences/coûts, 5 modèles » | **Faux** : 56 modèles, 95 tests, RBAC + POS + IA + inventaire + coûts présents. | M143 |
 | « rotation = hygiène préventive » | **Faux** : repo public → creds à traiter comme **compromis** (containment). | M100 |
 | Secret POS « même motif fallback que inventory » | **Faux** : pas de fallback runtime ; constante en dur dans `scripts/setup-pos-integration.ts` (corrigé). | M105/M100 |
+| Audit : « absences/[id] : offres hors tx » (sous-entend cœur non transactionnel + non scopé) | **Inexact** : statut+indispos DÉJÀ en `$transaction`, route DÉJÀ store-scopée. Vrai défaut = offres throw après commit → 500 trompeur (corrigé best-effort). | M112 |
 
 ## 2. P0 — Sécurité critique
 
