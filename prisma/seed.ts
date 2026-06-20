@@ -75,6 +75,14 @@ function getMondayOfCurrentWeek(): Date {
 }
 
 async function main() {
+  // M132 — garde anti-prod : ce seed efface la base et crée des comptes par défaut.
+  // Ne jamais l'exécuter en production sans opt-in explicite.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
+    throw new Error(
+      "Seed bloqué en production. Définir ALLOW_PROD_SEED=true pour forcer (déconseillé)."
+    );
+  }
+
   console.log("Cleaning database...");
   await prisma.auditLog.deleteMany();
   await prisma.shift.deleteMany();
@@ -115,20 +123,27 @@ async function main() {
     }
   }
 
-  // Create admin user
+  // Create users. Passwords are env-overridable; defaults are LOCAL DEV ONLY.
+  // When defaults are used, force a password change at first login.
   console.log("Creating users...");
-  const adminHash = await bcrypt.hash("admin123", 10);
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
+  const employeePassword = process.env.SEED_EMPLOYEE_PASSWORD || "pass123";
+  const usingDefaultPasswords =
+    !process.env.SEED_ADMIN_PASSWORD && !process.env.SEED_EMPLOYEE_PASSWORD;
+
+  const adminHash = await bcrypt.hash(adminPassword, 10);
   await prisma.user.create({
     data: {
       email: "admin@timewin.fr",
       passwordHash: adminHash,
       name: "Admin TimeWin",
       role: Role.ADMIN,
+      mustChangePassword: usingDefaultPasswords,
     },
   });
 
   // Create employee user (linked to first employee)
-  const empHash = await bcrypt.hash("pass123", 10);
+  const empHash = await bcrypt.hash(employeePassword, 10);
   await prisma.user.create({
     data: {
       email: "jean.dupont@timewin.fr",
@@ -136,6 +151,7 @@ async function main() {
       name: "Jean Dupont",
       role: Role.EMPLOYEE,
       employeeId: employees[0].id,
+      mustChangePassword: usingDefaultPasswords,
     },
   });
 
@@ -228,8 +244,13 @@ async function main() {
   console.log(`- 1 country config (FR)`);
   console.log(`- ${costConfigCount} employee cost configs`);
   console.log(`\nTest accounts:`);
-  console.log(`  Admin:    admin@timewin.fr / admin123`);
-  console.log(`  Employee: jean.dupont@timewin.fr / pass123`);
+  if (usingDefaultPasswords) {
+    console.log(`  Admin:    admin@timewin.fr / ${adminPassword}  (defaut dev — changement requis au 1er login)`);
+    console.log(`  Employee: jean.dupont@timewin.fr / ${employeePassword}  (defaut dev — changement requis au 1er login)`);
+  } else {
+    console.log(`  Admin:    admin@timewin.fr  (mot de passe defini via SEED_ADMIN_PASSWORD)`);
+    console.log(`  Employee: jean.dupont@timewin.fr  (mot de passe defini via SEED_EMPLOYEE_PASSWORD)`);
+  }
 }
 
 main()

@@ -55,3 +55,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 7)
 - **M130 / DEBT-026** — `.github/workflows/ci.yml` cree : install + prisma generate + `tsc --noEmit` + `jest` (gates bloquants, verts aujourd'hui) ; eslint en step informatif non-bloquant (dette M142). Pure addition.
+
+### Correctif execute (suite 8)
+- **M132 / DEBT-018** — `prisma/seed.ts` durci : garde anti-prod (`ALLOW_PROD_SEED`), mots de passe via `SEED_ADMIN_PASSWORD`/`SEED_EMPLOYEE_PASSWORD` (defauts dev), `mustChangePassword=true` sur defauts, creds imprimes uniquement en mode defaut. tsc 0, jest 111/111.

@@ -29,7 +29,7 @@
 - **DEBT-015 (⛔ infra)** — rate-limiter en mémoire (`lib/rate-limit.ts:11`), `x-forwarded-for` trusté (`:88-93`). → M120.
 - **DEBT-016 (✅ traité)** — écritures multiples sans `$transaction` : `shifts/duplicate` + `toggle-status` rendues atomiques ; `absences/[id]` reconciliée (cœur déjà transactionnel) ; `manager-ia` **reconcilié** = best-effort intentionnel (try/catch + rapport par action), une tx casserait le contrat → décision produit M150, pas un défaut. → M112.
 - **DEBT-017 (⬜)** — deploy via `prisma db push` (`deploy.sh:140,179`) au lieu de `migrate deploy`. → M131.
-- **DEBT-018 (⬜)** — seed prod non gardé, mots de passe par défaut imprimés (`prisma/seed.ts`, `deploy.sh:195`). → M132.
+- **DEBT-018 (✅ corrigé)** — seed : garde anti-prod + mots de passe via env + `mustChangePassword` sur défauts + impression conditionnelle. → M132. (Reste : `deploy.sh` lance encore le seed — voir M131.)
 
 ## 4. P2 — Robustesse / features
 

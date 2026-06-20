@@ -198,7 +198,10 @@ Gates bloquants : `prisma generate` → `tsc --noEmit` → `jest` (verts). Lint 
 Statut : ⬜ À faire · Priorité : P1 — `deploy.sh` utilise `prisma db push` (perte de données possible).
 
 #### M132 — Seed durci
-Statut : ⬜ À faire · Priorité : P1 — `prisma/seed.ts` mots de passe par défaut imprimés, lancé en prod par `deploy.sh`.
+Statut : ✅ Fait · Priorité : P1 · Fichier : `prisma/seed.ts`
+- Garde anti-prod (throw si `NODE_ENV=production` sans `ALLOW_PROD_SEED=true`).
+- Mots de passe via `SEED_ADMIN_PASSWORD`/`SEED_EMPLOYEE_PASSWORD` (défauts dev seulement).
+- `mustChangePassword=true` quand défauts utilisés ; creds imprimés uniquement en mode défaut dev.
 
 ### 🟢 P3 — Nettoyage / doc
 
