@@ -35,7 +35,7 @@
 
 - **DEBT-020 (✅ corrigé)** — N+1 `replacement.ts` : overlap + heures hebdo calculés en mémoire sur `emp.shifts` (eager-loaded), 2N requêtes supprimées. → M113.
 - **DEBT-021 (⬜)** — « FK » `String` sans relation : `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`. → M114.
-- **DEBT-022 (⬜)** — aucun `error.tsx`/`loading.tsx` ; 77/87 composants `"use client"` ; pages read-only fetch côté client. → M115.
+- **DEBT-022 (🔄)** — `error.tsx`/`loading.tsx` ajoutés sur (dashboard) et (employee). Reste : conversion pages read-only en RSC (refactor). → M115.
 - **DEBT-023 (⬜)** — zéro test RBAC / coût employeur / solver complet. → M116.
 - **DEBT-024 (⬜)** — index manquants : `PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`. → M122.
 - **DEBT-025 (⚠️)** — `notifications/clicked` non authentifié (write timestamp arbitraire). → M121.

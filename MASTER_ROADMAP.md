@@ -172,7 +172,9 @@ Remplacé `findOverlappingShift` + `calculateWeeklyHours` (2 requêtes DB/candid
 Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`.
 
 #### M115 — Frontières error/loading (front)
-Statut : ⬜ À faire · Priorité : P2 — aucun `error.tsx`/`loading.tsx` ; pages read-only à passer en RSC.
+Statut : 🔄 En cours · Priorité : P2
+- ✅ `error.tsx` + `loading.tsx` ajoutés sur `(dashboard)` et `(employee)` (plus d'écran blanc / état vide trompeur).
+- ⬜ Reste (optionnel) : `(shared)`, et conversion des pages read-only en RSC (refactor plus large).
 
 #### M116 — Tests chemins critiques
 Statut : 🔄 En cours · Priorité : P2
