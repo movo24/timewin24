@@ -149,8 +149,9 @@ Note : migration de schéma — préparer, valider hors prod.
 
 #### M112 — Transactions sur écritures multiples
 Statut : 🔄 En cours · Priorité : P1
-- ✅ `shifts/duplicate` — créations en `$transaction` (atomique) + dédup intra-lot préservée. tsc/lint/jest OK.
-- ⬜ Reste : `planning/manager-ia` (apply plan), `stores/[id]/toggle-status`, `absences/[id]` (offres hors tx).
+- ✅ `shifts/duplicate` — créations en `$transaction` + dédup intra-lot préservée.
+- ✅ `stores/[id]/toggle-status` — désactivation (deleteMany shifts + update statut) atomique.
+- ⬜ Reste : `planning/manager-ia` (apply plan), `absences/[id]` (offres hors tx) — touchent des helpers multi-écritures, à traiter individuellement.
 
 #### M120 — Rate-limiter partagé (Redis)
 Statut : ⛔ Bloqué (infra) · Priorité : P1

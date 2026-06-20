@@ -43,3 +43,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif exécuté (suite 3)
 - **M112 (partiel) / DEBT-016** — `shifts/duplicate` : créations enveloppées dans `prisma.$transaction` (atomique, plus de semaine à moitié dupliquée). Dédup intra-lot ajoutée (`plannedUnassigned`/`plannedAssigned`) pour préserver la sémantique séquentielle. Vérifié : tsc 0, lint 0, jest 111/111. Reste : manager-ia apply, toggle-status, absences/[id].
+
+### Correctif exécuté (suite 4)
+- **M112 (suite) / DEBT-016** — `stores/[id]/toggle-status` : désactivation atomique (`deleteMany` shifts futurs + `update` statut dans une `$transaction`). tsc 0, lint 0, jest 111/111. Reste M112 : manager-ia apply, absences/[id].
