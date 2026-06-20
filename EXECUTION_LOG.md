@@ -67,3 +67,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 11)
 - **M144 / DEBT-034** — `git rm --cached` de `firebase-debug.log`, `ai-engine-test-report.json` et 4 PNG racine + regles `.gitignore`. Restent sur disque, retires du suivi.
+
+### Correctif execute (suite 12)
+- **M122 / DEBT-024** — 3 `@@index` ajoutes au schema (`PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`) + migration `20260620180000_add_missing_indexes`. Faisable sans DB : ce repo deploie via `db push` (le schema s'applique) et le fichier de migration garde `migrations/` en phase. `prisma validate` OK, tsc 0, jest 111/111.
+- Note : correction d'une incoherence de suivi — DEBT-012 (M110 store-scoping) etait reste marque ⬜, repasse ✅.

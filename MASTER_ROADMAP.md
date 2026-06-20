@@ -185,7 +185,8 @@ Statut : 🔄 En cours · Priorité : P2
 Statut : ⚠️ À vérifier · Priorité : P2 — write timestamp sur row arbitraire (intentionnel SW ; rate-limiter).
 
 #### M122 — Index manquants
-Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`.
+Statut : ✅ Fait · Priorité : P2 · `schema.prisma` + migration `20260620180000_add_missing_indexes`
+`@@index` ajoutés : `PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`. Migration créée (s'applique via `migrate deploy` ou `db push`). validate ✅, tsc/jest OK.
 
 #### M150 — Manager-IA : mode apply atomique (optionnel)
 Statut : ⬜ À faire (décision produit) · Priorité : P2 · Module : M004

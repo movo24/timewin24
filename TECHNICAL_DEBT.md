@@ -23,7 +23,7 @@
 
 - **DEBT-010 (⛔ décision)** — argent en `Float` (IEEE-754) : `schema.prisma` L142, 353-362, 381-387, 552-558, 1510-1513, 1628-1634. Dérive d'arrondi paie/coût. → M101.
 - **DEBT-011 (⬜)** — hard-delete `Store`/`Employee` → Cascade détruit `ClockIn`/`Shift`/`AbsenceDeclaration`/`EmployeeCost` (preuve RH/légale). Call sites `stores/[id]/route.ts:79`, `employees/[id]/route.ts:138`. → M111.
-- **DEBT-012 (⬜)** — MANAGER gère l'accès de **n'importe quel** employé (`employees/[id]/access/route.ts:31`, pas de store-scoping). → M110.
+- **DEBT-012 (✅ corrigé)** — store-scoping ajouté sur `employees/[id]/access` (manager hors périmètre → 403). → M110.
 - **DEBT-013 (✅ corrigé)** — PIN/code via `Math.random`. → M104.
 - **DEBT-014 (✅ corrigé)** — fuites `err.message` (ai/test, ai/pos-analysis, pos-feed/store-schedules). → M105.
 - **DEBT-015 (⛔ infra)** — rate-limiter en mémoire (`lib/rate-limit.ts:11`), `x-forwarded-for` trusté (`:88-93`). → M120.
@@ -37,7 +37,7 @@
 - **DEBT-021 (⬜)** — « FK » `String` sans relation : `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`. → M114.
 - **DEBT-022 (🔄)** — `error.tsx`/`loading.tsx` ajoutés sur (dashboard) et (employee). Reste : conversion pages read-only en RSC (refactor). → M115.
 - **DEBT-023 (⬜)** — zéro test RBAC / coût employeur / solver complet. → M116.
-- **DEBT-024 (⬜)** — index manquants : `PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`. → M122.
+- **DEBT-024 (✅ corrigé)** — index ajoutés (`@@index` + migration `20260620180000`). → M122.
 - **DEBT-025 (⚠️)** — `notifications/clicked` non authentifié (write timestamp arbitraire). → M121.
 - **DEBT-026 (⬜)** — pas de CI (lint/test/typecheck) sur PR. → M130.
 

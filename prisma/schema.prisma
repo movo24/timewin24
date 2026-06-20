@@ -404,6 +404,7 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([createdAt])
+  @@index([userId])
 }
 
 // ─── POS Bridge Layer ────────────────────────────────
@@ -535,6 +536,7 @@ model PosTimeClock {
   @@index([employeeId, date])
   @@index([storeId, date])
   @@index([date])
+  @@index([shiftId])
 }
 
 // Données de vente importées du POS
@@ -824,6 +826,7 @@ model ReplacementOffer {
   @@index([status])
   @@index([storeId])
   @@index([expiresAt])
+  @@index([absentEmployeeId])
 }
 
 model ReplacementCandidate {
