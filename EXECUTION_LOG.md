@@ -74,3 +74,4 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 13)
 - **M140 / DEBT-030** — `next` 16.1.6 -> 16.2.9 (+ `eslint-config-next` aligne, pins exacts conserves). Elimine les CVE directes du paquet `next` (request smuggling, DoS, CSRF bypass). Verifie tsc 0, jest 111/111 ; build Vercel = garde-fou runtime. `nodemailer` : seul fix = 9.0.1 (majeur 7->9, breaking) -> NON force (risque envoi emails), flagge pour upgrade deliberee.
+- **M140 — verification build** : Vercel a renvoye `state: success` sur `f26deac` pour les 3 projets (timewin24, timewin24-el97, timewin24-saas-appstore). Le minor framework build proprement, aucune regression de build. (Comportement runtime applicatif ⚠️ toujours non verifie — pas d'acces prod.)
