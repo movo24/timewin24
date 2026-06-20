@@ -49,3 +49,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 5)
 - **M112 (suite) / reconciliation** — `absences/[id]` : contrairement au texte d'audit, le coeur (statut + indisponibilites) etait DEJA transactionnel et la route DEJA store-scopee. Vrai defaut corrige : `createReplacementOffers` (best-effort, hors tx) pouvait throw APRES commit -> 500 trompeur sur une absence pourtant approuvee. Desormais try/catch + log, non-bloquant. tsc 0, lint 0, jest 111/111. Reste M112 : manager-ia apply (passe dediee).
+
+### Reconciliation (suite 6) — M112 cloturee
+- `planning/manager-ia` (`executeProposal`) **non modifie** : applique chaque action en try/catch isole et renvoie `applied`/`errors` par action = best-effort INTENTIONNEL. Une `$transaction` changerait la semantique visible (partiel -> tout-ou-rien) et casserait le contrat de rapport. Reclasse en decision produit (M150, P2), pas un bug. M112 close : 3 routes atomiques + 1 reconciliee.

@@ -148,11 +148,11 @@ Scope : soft-delete `Store`/`Employee`/`User` ; `ClockIn`/`Shift`/`AbsenceDeclar
 Note : migration de schéma — préparer, valider hors prod.
 
 #### M112 — Transactions sur écritures multiples
-Statut : 🔄 En cours · Priorité : P1
+Statut : ✅ Fait (3 routes) + 1 reconciliée (décision produit) · Priorité : P1
 - ✅ `shifts/duplicate` — créations en `$transaction` + dédup intra-lot préservée.
 - ✅ `stores/[id]/toggle-status` — désactivation (deleteMany shifts + update statut) atomique.
 - ✅ `absences/[id]` — **reconcilié** : le cœur (statut+indispos) était DÉJÀ transactionnel et la route DÉJÀ store-scopée ; vrai défaut = `createReplacementOffers` throw après commit → 500 trompeur. Corrigé : best-effort non-bloquant (try/catch + log).
-- ⬜ Reste : `planning/manager-ia` (apply plan) — gros helper multi-écritures, passe dédiée.
+- 🟦 `planning/manager-ia` (`executeProposal`) — **reconcilié** : applique chaque action en try/catch isolé et rapporte `applied`/`errors` par action = **best-effort intentionnel**. Une `$transaction` casserait ce contrat (partiel → tout-ou-rien). → **décision produit** (apply atomique optionnel) = M150, PAS un bug. Non modifié.
 
 #### M120 — Rate-limiter partagé (Redis)
 Statut : ⛔ Bloqué (infra) · Priorité : P1
@@ -183,6 +183,12 @@ Statut : ⚠️ À vérifier · Priorité : P2 — write timestamp sur row arbit
 
 #### M122 — Index manquants
 Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock.shiftId`, `AuditLog.userId`, `ReplacementOffer.absentEmployeeId`.
+
+#### M150 — Manager-IA : mode apply atomique (optionnel)
+Statut : ⬜ À faire (décision produit) · Priorité : P2 · Module : M004
+Contexte : `executeProposal` est best-effort (applique ce qui passe, rapporte le reste). 
+Question produit : veux-tu une option "tout-ou-rien" (`$transaction`) pour l'apply d'un plan IA ?
+Si oui : ajouter un flag `atomic` ; sinon garder le best-effort actuel. Aucun bug en l'état.
 
 #### M130 — CI GitHub Actions
 Statut : ⬜ À faire · Priorité : P2 — aucun workflow ; ajouter lint+test+typecheck sur PR.

@@ -27,7 +27,7 @@
 - **DEBT-013 (✅ corrigé)** — PIN/code via `Math.random`. → M104.
 - **DEBT-014 (✅ corrigé)** — fuites `err.message` (ai/test, ai/pos-analysis, pos-feed/store-schedules). → M105.
 - **DEBT-015 (⛔ infra)** — rate-limiter en mémoire (`lib/rate-limit.ts:11`), `x-forwarded-for` trusté (`:88-93`). → M120.
-- **DEBT-016 (⬜)** — écritures multiples sans `$transaction` (manager-ia apply, shifts/duplicate, toggle-status, absences/[id]). → M112.
+- **DEBT-016 (✅ traité)** — écritures multiples sans `$transaction` : `shifts/duplicate` + `toggle-status` rendues atomiques ; `absences/[id]` reconciliée (cœur déjà transactionnel) ; `manager-ia` **reconcilié** = best-effort intentionnel (try/catch + rapport par action), une tx casserait le contrat → décision produit M150, pas un défaut. → M112.
 - **DEBT-017 (⬜)** — deploy via `prisma db push` (`deploy.sh:140,179`) au lieu de `migrate deploy`. → M131.
 - **DEBT-018 (⬜)** — seed prod non gardé, mots de passe par défaut imprimés (`prisma/seed.ts`, `deploy.sh:195`). → M132.
 
