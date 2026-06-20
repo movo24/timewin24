@@ -27,7 +27,13 @@
 - **M101** Float→Decimal — bloqué sur décision « données prod existantes ? ».
 - **M120** rate-limiter Redis — infra absente.
 
+### Correctif exécuté (suite)
+- **M110 / DEBT-012** — `employees/[id]/access` : store-scoping manager via `getAccessibleStoreIds()` ; un non-admin hors périmètre → 403. Vérifié : tsc 0, lint 0 sur le fichier, jest 95/95. Runtime ⚠️ non vérifié. Reste : guard rôle ≥ (⬜).
+
+### Note M122 (index)
+Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`prisma migrate dev` nécessite une DB absente) créerait un drift schéma/migrations. Laissé ⬜/specifié ; SQL de migration à produire côté ops, ou via `db push` au prochain déploiement.
+
 ### Prochaines actions automatiques (P1 faisables sans accès prod)
-1. M110 — store-scoping manager sur `employees/[id]/access` (autorisation).
-2. M122 — index manquants (schéma, additif).
-3. M112 — transactions sur écritures multiples (par route, prudemment).
+1. M112 — transactions sur écritures multiples (par route, prudemment).
+2. M114 — relations Prisma manquantes (⚠️ migration → même contrainte que M122, à préparer sans appliquer).
+3. M116 — tests RBAC `hasPermission` (ajout de couverture, sans accès prod).

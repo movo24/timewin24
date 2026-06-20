@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, errorResponse, successResponse } from "@/lib/api-helpers";
 import bcrypt from "bcryptjs";
 
 function generateEmployeeCode(): string {
@@ -43,6 +43,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       select: { id: true, firstName: true, lastName: true, employeeCode: true, accessStatus: true },
     });
     if (!employee) return errorResponse("Employé introuvable", 404);
+
+    // M110 — store-scoping : un MANAGER ne gère que les employés de ses magasins.
+    // getAccessibleStoreIds() renvoie null pour un admin (tout accès).
+    const { storeIds: accessibleStoreIds } = await getAccessibleStoreIds();
+    if (accessibleStoreIds !== null) {
+      const inScope = await prisma.storeEmployee.findFirst({
+        where: { employeeId: id, storeId: { in: accessibleStoreIds } },
+        select: { storeId: true },
+      });
+      if (!inScope) return errorResponse("Accès refusé : employé hors de votre périmètre", 403);
+    }
 
     switch (action) {
       case "block": {

@@ -133,9 +133,10 @@ Si pas de données prod = migration additive (fenêtre idéale). Sinon = migrati
 Critères : aucune dérive d'arrondi ; tests calcul coût employeur.
 
 #### M110 — `employees/[id]/access` : store-scoping manager
-Statut : ⬜ À faire · Priorité : P1 · Module : M003
-Scope : un MANAGER ne doit gérer l'accès que des employés de ses magasins (`getAccessibleStoreIds`) ; interdire cibles de rôle ≥.
-Validation : test : manager hors-périmètre → 403.
+Statut : ✅ Fait (store-scoping) · Priorité : P1 · Module : M003
+Scope : un MANAGER ne gère l'accès que des employés de ses magasins (`getAccessibleStoreIds`).
+Validation : ✅ check `storeEmployee` ajouté (non-admin → 403 hors périmètre) ; tsc/lint/jest OK ; runtime ⚠️ non vérifié.
+Reste (⬜) : interdire d'agir sur une cible de rôle ≥ (employé lié à un user ADMIN).
 
 #### M104 — PIN/code en CSPRNG
 Statut : ✅ Fait · Priorité : P1 · Fichier : `employees/[id]/access/route.ts`
