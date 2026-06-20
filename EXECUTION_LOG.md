@@ -64,3 +64,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 10)
 - **M115 / DEBT-022** — frontieres `error.tsx` + `loading.tsx` ajoutees sur les groupes `(dashboard)` et `(employee)` : retry sur erreur + spinner au chargement (au lieu d'ecran blanc/etat vide trompeur). tsc 0, lint 0, jest 111/111. Reste : conversion RSC des pages read-only (refactor plus large).
+
+### Correctif execute (suite 11)
+- **M144 / DEBT-034** — `git rm --cached` de `firebase-debug.log`, `ai-engine-test-report.json` et 4 PNG racine + regles `.gitignore`. Restent sur disque, retires du suivi.

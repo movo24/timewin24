@@ -213,4 +213,4 @@ Statut : ⬜ À faire · P3/P1 mixte — bump `next`/`nodemailer`.
 #### M141 — `console.*` (268) → logger conditionné · P3
 #### M142 — `any` (186) / lint debt (~87) · P3
 #### M143 — README périmé (décrit un MVP 5 modèles vs 56) · P3
-#### M144 — Hygiène repo : binaires/logs trackés (`.playwright-mcp` déjà retiré, reste `firebase-debug.log`, PNG racine) · P3
+#### M144 — Hygiène repo · ✅ Fait · P3 — `firebase-debug.log`, `ai-engine-test-report.json`, 4 PNG racine retirés du suivi + `.gitignore` mis à jour. (`.playwright-mcp` déjà retiré.)

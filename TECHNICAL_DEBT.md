@@ -47,7 +47,7 @@
 - **DEBT-031** — 268 `console.*` en prod (pas de logger). → M141.
 - **DEBT-032** — 186 `any` / ~87 erreurs lint (dont `(prisma as any)` dans `pos-feed/store-schedules`, suggère un drift de typage Prisma à investiguer). → M142.
 - **DEBT-033** — README périmé. → M143.
-- **DEBT-034** — fichiers binaires/logs trackés résiduels (`firebase-debug.log`, PNG racine, `ai-engine-test-report.json`). → M144.
+- **DEBT-034 (✅ corrigé)** — `firebase-debug.log`, `ai-engine-test-report.json`, 4 PNG racine retirés du suivi + `.gitignore`. → M144.
 
 ## Points sains (à préserver)
 TS `strict` sans escape-hatch · Docker non-root multi-stage · `.env` gitignored · SW ne cache pas `/api/` · TLS 1.2/1.3 · invalidation session via `passwordChangedAt` · SQL brut paramétré (pas d'injection) · upload traversal contenu.
