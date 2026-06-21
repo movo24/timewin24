@@ -201,8 +201,9 @@ Statut : 🔄 En cours · Priorité : P2
 - ✅ RBAC : `src/__tests__/rbac.test.ts` (16 tests — matrice par rôle, hiérarchie, helpers, routes par défaut).
 - ✅ Coût employeur : `src/__tests__/employer-cost.test.ts` (7 tests).
 - ✅ Utilitaires purs : `src/__tests__/pure-utils.test.ts` (13 tests — geo/haversine + rayon pointage GPS, doTimesOverlap/calculateShiftHours, timeToMinutes/snapMinutes/clampMinutes). Suite : 95 → **131**.
-- ✅ Contraintes dures solveur : `src/__tests__/solver-constraints.test.ts` (19 tests — isNoOverlap, isAvailable FIXED/VARIABLE, daily/weekly max, hasEnoughRest 11h FR). Suite **131→150**.
-- ⬜ Reste : scoring/scénarios solveur ; `deriveProfileCategory` à extraire de `reliability-score` (co-localisé Prisma).
+- ✅ Contraintes dures solveur : `solver-constraints.test.ts` (19 — overlap, dispo FIXED/VARIABLE, max jour/semaine, repos 11h FR).
+- ✅ Scoring solveur : `solver-scoring.test.ts` (18 — priorité, magasin préféré, coût, objectif contractuel, équité, Manager Brain fiabilité/importance). Suite **131→168**.
+- ⬜ Reste (optionnel) : scénarios/suggestions solveur ; `deriveProfileCategory` à extraire de `reliability-score` (co-localisé Prisma).
 
 #### M121 — `notifications/clicked` non authentifié
 Statut : ✅ Fait · Priorité : P2 — endpoint public (SW sans cookie) durci par rate-limit IP (`RATE_LIMITS.api`, 429 si dépassé). Écriture `clickedAt` non destructive ; abus limité. tsc 0 / jest 118.

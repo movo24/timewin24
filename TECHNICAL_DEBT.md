@@ -36,7 +36,7 @@
 - **DEBT-020 (✅ corrigé)** — N+1 `replacement.ts` : overlap + heures hebdo calculés en mémoire sur `emp.shifts` (eager-loaded), 2N requêtes supprimées. → M113.
 - **DEBT-021 (🔄 préparé, ops-gated)** — « FK » `String` sans relation. **Finding** : `PosTimeClock` EXCLU (résilience POS — FK casserait l'ingestion d'entités non synchronisées). Les 3 modèles internes (`ShiftExchange`, `ReplacementOffer`, `ShiftMarketListing`) : plan complet (schéma + onDelete + détection orphelins + migration auto-réparatrice) dans `docs/M114-FK-RELATIONS-PLAN.md`. Non appliqué : `db push` casserait le déploiement si orphelins → pré-vol DB requis (ops). → M114.
 - **DEBT-022 (✅ boundaries / ⬜ RSC)** — `error.tsx`/`loading.tsx` sur les 4 groupes ((dashboard), (employee), (shared), inventory). Reste optionnel : conversion pages read-only en RSC (refactor séparé). → M115.
-- **DEBT-023 (✅ largement traité)** — tests ajoutés : RBAC (16), coût employeur+Decimal (7), utilitaires purs geo/shift/timeline (13). Suite 95→150 (+ 19 contraintes dures solveur : overlap, dispo, max jour/semaine, repos 11h). Reste : scoring/scénarios solveur. → M116.
+- **DEBT-023 (✅ largement traité)** — tests ajoutés : RBAC (16), coût employeur+Decimal (7), utilitaires purs geo/shift/timeline (13). Suite 95→168 (+19 contraintes dures + 18 scoring solveur). Reste optionnel : scénarios/suggestions solveur. → M116.
 - **DEBT-024 (✅ corrigé)** — index ajoutés (`@@index` + migration `20260620180000`). → M122.
 - **DEBT-025 (✅ corrigé)** — `notifications/clicked` : rate-limit IP ajouté (public by design — SW sans cookie ; écriture `clickedAt` non destructive). → M121.
 - **DEBT-026 (⬜)** — pas de CI (lint/test/typecheck) sur PR. → M130.

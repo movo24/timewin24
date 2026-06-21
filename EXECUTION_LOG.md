@@ -148,3 +148,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 27) — M116 contraintes dures solveur
 - **M116 / DEBT-023** — `src/__tests__/solver-constraints.test.ts` (19 tests). Couvre `constraints.ts` (pur, types-only) = les regles legales/metier du solveur : `isNoOverlap` (double-booking existant+genere, adjacence, autre employe/date), `isAvailable` (FIXED jour entier/partiel, VARIABLE par date), `isUnderDailyMax`/`isUnderWeeklyMax`, `hasEnoughRest` (repos 11h FR : gap inter-jours + gap inverse meme jour). Suite jest 131 -> 150. tsc 0.
+
+### Correctif execute (suite 28) — M116 scoring solveur
+- **M116 / DEBT-023** — `src/__tests__/solver-scoring.test.ts` (18 tests) sur `scoring.ts` (pur) : scorePriority, scorePreferredStore, scoreCostEfficiency (normalisation min/max), scoreContractualTarget (sous/au-dessus objectif), scoreFairDistribution (equite), scoreReliabilityMatch + scoreStoreImportanceMatch (Manager Brain). 1 fixture corrigee en cours (mon attendu 34+8=42 etait au-dessus de l'objectif 35 -> branche over=0.8, pas under=1 ; code correct). Suite jest 150 -> 168. tsc 0.
