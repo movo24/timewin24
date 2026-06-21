@@ -235,6 +235,7 @@ Statut : 🔄 En cours · P1/P3
 #### M142 — Dette lint · 🔄 En cours · P3
 - ✅ `no-unused-vars` (81) + `prefer-const` (2) résorbés (imports/vars morts retirés, params `_`-préfixés). **−75 lignes nettes**, tsc 0 / jest 118.
 - ✅ `eslint.config.mjs` durci : `ignoreRestSiblings` (les destructurations « omettre » qui **strip des secrets** ne sont plus signalées — évite un "fix" qui aurait **leak** `refreshToken`/`apiSecret`), `argsIgnorePattern '^_'`, `caughtErrors none`, ignore `src/generated/**`.
-- ⬜ Reste (runtime-sensible / cosmétique, non touché) : `no-explicit-any` (39), `react-hooks/set-state-in-effect` (30), `react/no-unescaped-entities` (9), `@next/next/no-img-element` (8), hooks refs/deps (3).
+- ✅ `react/no-unescaped-entities` (9) corrigé (apostrophes → `&apos;`, guillemets JSX → `&quot;`).
+- ⬜ Reste (runtime-sensible, non touché délibérément) : `no-explicit-any` (39), `react-hooks/set-state-in-effect` (30), `@next/next/no-img-element` (8), hooks refs/deps (3).
 #### M143 — README périmé · ✅ Fait · P3 — réécrit pour refléter le réel (56 modèles, 15 modules M001–M015, 118 tests, env vars réelles, sécurité réelle, pointeurs gouvernance/runbook).
 #### M144 — Hygiène repo · ✅ Fait · P3 — `firebase-debug.log`, `ai-engine-test-report.json`, 4 PNG racine retirés du suivi + `.gitignore` mis à jour. (`.playwright-mcp` déjà retiré.)
