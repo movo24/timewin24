@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { serializeStoreVat } from "@/lib/money-serialize";
 import { storeUpdateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 
@@ -24,7 +25,7 @@ export async function GET(
     });
 
     if (!store) return errorResponse("Magasin non trouvé", 404);
-    return successResponse(store);
+    return successResponse(serializeStoreVat(store));
   } catch (err) {
     console.error("GET /api/stores/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
@@ -56,7 +57,7 @@ export async function PUT(
       after: store,
     });
 
-    return successResponse(store);
+    return successResponse(serializeStoreVat(store));
   } catch (err) {
     console.error("PUT /api/stores/[id] error:", err);
     return errorResponse("Erreur serveur", 500);

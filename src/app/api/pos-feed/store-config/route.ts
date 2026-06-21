@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
+import { toNumN } from "@/lib/decimal";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
 
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
       country: store.country,
       timezone: store.timezone,
       currency: store.currency,
-      vatRate: store.vatRate,
+      vatRate: toNumN(store.vatRate),
       latitude: store.latitude,
       longitude: store.longitude,
       schedules: store.schedules,

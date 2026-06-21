@@ -105,5 +105,4 @@ ratios non monétaires (`upsellRate`) et **tous les `*Score`** 0-100 (`performan
   Float↔Decimal sur sommes/ratios/anomalies ;
 - soit un **feu vert explicite** pour appliquer A/B seulement maintenant, et différer C/D.
 
-> Statut : audit livré, **aucun code écrit**. En attente d'arbitrage sur A/B (faisables de suite)
-> vs C/D (gatés données).
+> Statut : audit livré. **LOT A+B EXÉCUTÉS** (migration `20260621120000`, `money-serialize.ts`, tsc 0 / jest 118 ; runtime non vérifié). **LOT C+D restent gatés** sur un jeu de données de parité.

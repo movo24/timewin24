@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse } from "@/lib/api-helpers";
+import { toNumN } from "@/lib/decimal";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
 
@@ -39,5 +40,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return successResponse({ stores, count: stores.length });
+  return successResponse({ stores: stores.map((s) => ({ ...s, vatRate: toNumN(s.vatRate) })), count: stores.length });
 }

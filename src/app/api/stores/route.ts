@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
+import { serializeStoreVat } from "@/lib/money-serialize";
 
 // GET /api/stores - List stores with pagination and search
 // RBAC: Manager sees only their assigned stores, Admin sees all
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return successResponse({
-      stores,
+      stores: stores.map(serializeStoreVat),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {

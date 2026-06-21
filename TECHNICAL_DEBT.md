@@ -21,7 +21,7 @@
 
 ## 3. P1 — Intégrité / auth / argent
 
-- **DEBT-010 (✅ noyau corrigé / ⬜ reste)** — argent en `Float` (IEEE-754). **Noyau paie corrigé** : `CountryConfig` + `EmployeeCost` → `Decimal` (migration `20260620190000`, frontière `decimal.ts`/`cost-mappers.ts`, forme API préservée, tsc 0 / jest 118). Débloqué par « pas de données prod » → migration additive. **Reste (M101b)** : `PosSalesData`, `Product.price/oldPrice/vatRate`, `Store.vatRate`, `EmployeePerformanceDaily/Hourly` — ~35 fichiers à chemins de sérialisation non vérifiables sans données. → M101/M101b.
+- **DEBT-010 (✅ noyau corrigé / ⬜ reste)** — argent en `Float` (IEEE-754). **Noyau paie corrigé** : `CountryConfig` + `EmployeeCost` → `Decimal` (migration `20260620190000`, frontière `decimal.ts`/`cost-mappers.ts`, forme API préservée, tsc 0 / jest 118). Débloqué par « pas de données prod » → migration additive. **M101b LOT A+B corrigés** : `Store.vatRate`, `Product.vatRate/price/oldPrice`, `Employee.maxDiscountPct`, `LabelPrintItem.priceAtPrint` → `Decimal` (migration `20260621120000`, `money-serialize.ts`, forme JSON préservée, bug `priceChanged` corrigé). **Reste LOT C/D** : `PosSalesData`, `EmployeePerformanceDaily/Hourly` — gatés jeu de données (parité analytics/IA). → M101b.
 - **DEBT-011 (⬜)** — hard-delete `Store`/`Employee` → Cascade détruit `ClockIn`/`Shift`/`AbsenceDeclaration`/`EmployeeCost` (preuve RH/légale). Call sites `stores/[id]/route.ts:79`, `employees/[id]/route.ts:138`. → M111.
 - **DEBT-012 (✅ corrigé)** — store-scoping ajouté sur `employees/[id]/access` (manager hors périmètre → 403). → M110.
 - **DEBT-013 (✅ corrigé)** — PIN/code via `Math.random`. → M104.

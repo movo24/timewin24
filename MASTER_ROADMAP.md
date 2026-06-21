@@ -170,7 +170,12 @@ Statut : ✅ Fait · Priorité : P2 · Fichier : `src/lib/replacement.ts`
 Remplacé `findOverlappingShift` + `calculateWeeklyHours` (2 requêtes DB/candidat) par des calculs en mémoire sur `emp.shifts` (déjà eager-loaded). Overlap via `doTimesOverlap` (même helper). tsc/lint/jest OK.
 
 #### M101b — `Float` → `Decimal` (champs € hors paie)
-Statut : ⬜ À faire · Priorité : P2 · Module : M008/M009/M013
+Statut : 🔄 LOT A+B faits · C/D gatés données · Priorité : P2 · Module : M008/M009/M013
+- ✅ **LOT A** (taux/%) : `Store.vatRate`, `Product.vatRate` → `Decimal(6,4)` ; `Employee.maxDiscountPct` → `Decimal(5,2)`.
+- ✅ **LOT B** (catalogue/étiquettes) : `Product.price/oldPrice`, `LabelPrintItem.priceAtPrint` → `Decimal(12,2)`.
+- Migration `20260621120000_money_float_to_decimal_lot_ab`. Frontière : `src/lib/money-serialize.ts` (serializeProduct/serializeStoreVat/serializeLabelJob) + `decimal.ts`. Forme JSON (number) préservée → composants labels/catalogue (`.toFixed`) intacts. Bug corrigé au passage : `products/[id]` comparait `data.price !== existing.price` (number vs Decimal, toujours vrai) → `toNumN(existing.price)`.
+- Vérifié : tsc 0, jest 118, build Vercel = garde-fou. Runtime ⚠️ non vérifié (pas de données ; impression PDF/ZPL non exécutée — chemins de valeurs tous coercés en number).
+- ⬜ **LOT C** (`PosSalesData` ventes) + **LOT D** (`EmployeePerformanceDaily/Hourly`) : gatés sur jeu de données (parité analytics/IA). Voir `docs/M101b-AUDIT.md`.
 Scope : `PosSalesData` (revenue, cardAmount, cashAmount, otherAmount), `Product.price/oldPrice/vatRate`, `Store.vatRate`, `EmployeePerformanceDaily/Hourly` (totalSales, avgBasket, montants).
 Note : ~20 fichiers consommateurs (POS sync, analytics, labels, AI engine, dashboards) dont plusieurs sérialisent ces champs en réponse API. Même méthode que M101 (frontière `decimal.ts`/serializers, forme JSON préservée), mais non vérifiable en runtime sans données → à exécuter avec données de test ou en fenêtre contrôlée.
 **Audit statique livré (sans code)** : `docs/M101b-AUDIT.md` — 4 lots priorisés : LOT A (taux/% : `Store.vatRate`, `Product.vatRate`, `Employee.maxDiscountPct`) **risque faible, faisable sans données** ; LOT B (catalogue/étiquettes : `Product.price/oldPrice`, `LabelPrintItem.priceAtPrint`) **moyen** ; LOT C (`PosSalesData` ventes) **élevé, gaté jeu de données** ; LOT D (`EmployeePerformanceDaily/Hourly`) **moyen-élevé, après C**. En attente d'arbitrage A/B vs C/D.

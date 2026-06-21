@@ -93,3 +93,13 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - **eslint.config.mjs durci** : `ignoreRestSiblings:true` (point CLE — les destructurations qui OMETTENT des champs sensibles d'un `...rest`, ex. strip de `refreshToken`/`apiSecret` avant reponse, ne sont plus signalees ; un "fix" naif aurait LEAK ces secrets), `argsIgnorePattern '^_'`, `varsIgnorePattern '^_'`, `caughtErrors 'none'`, ignore `src/generated/**`.
 - Verifie : **tsc 0, jest 118/118**, `no-unused-vars`+`prefer-const` = **0** restant. Total eslint 178 -> 94.
 - Reste (NON touche, runtime-sensible/cosmetique) : `no-explicit-any` (39), `set-state-in-effect` (30), `no-unescaped-entities` (9), `no-img-element` (8), hooks refs/deps (3).
+
+### Correctif execute (suite 17) — M101b LOT A+B (montants/taux hors paie)
+- **M101b LOT A+B / DEBT-010** — Float -> Decimal sur arbitrage user « LOT A + B maintenant ».
+  - Schema : LOT A `Store.vatRate`+`Product.vatRate` -> Decimal(6,4), `Employee.maxDiscountPct` -> Decimal(5,2) ; LOT B `Product.price/oldPrice`+`LabelPrintItem.priceAtPrint` -> Decimal(12,2). Migration `20260621120000_money_float_to_decimal_lot_ab` (ALTER ... USING ::numeric).
+  - Frontiere : `src/lib/money-serialize.ts` (serializeProduct / serializeStoreVat / serializeLabelJob) + `decimal.ts`. Sites de serialisation coerces en number (forme JSON preservee) : `products` (GET/POST), `products/[id]` (GET/PUT), `labels/print` (POST), `stores` (GET), `stores/[id]` (GET/PUT), `pos-feed/stores`, `pos-feed/store-config`, `pos-feed/employees`, `employees/[id]/context`, `auth/employee-login`.
+  - Compute : `employee-login` `buildPosPermissions(role, toNum(maxDiscountPct))`.
+  - BUG corrige : `products/[id]` comparait `data.price (number) !== existing.price (Decimal)` -> toujours vrai (priceUpdatedAt ecrit a chaque PUT). Desormais `toNumN(existing.price)`.
+  - Verifie statiquement que tous les chemins atteignant `.toFixed()` (composants labels/catalogue, generateurs PDF/ZPL via cart) passent par un endpoint coerce -> number. `print-history.item.price` est un quirk pre-existant (le modele a `priceAtPrint`, le GET ne renvoie pas d'items) qui ne rend jamais de Decimal.
+  - Verifie : prisma validate OK, **tsc 0, jest 118/118**. Build Vercel = garde-fou. Runtime applicatif ⚠️ non verifie (pas de donnees ; impression non executee).
+  - Reste **LOT C** (`PosSalesData`) + **LOT D** (`EmployeePerformanceDaily/Hourly`) : gates jeu de donnees.

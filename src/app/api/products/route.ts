@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { productCreateSchema } from "@/lib/validations";
+import { serializeProduct } from "@/lib/money-serialize";
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
       prisma.product.count({ where }),
     ]);
 
-    return successResponse({ products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+    return successResponse({ products: products.map(serializeProduct), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (e) {
     console.error("[GET /api/products]", e);
     return errorResponse("Erreur serveur", 500);
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     await logAudit(session!.user.id, "CREATE", "Product", product.id);
 
-    return successResponse(product, 201);
+    return successResponse(serializeProduct(product), 201);
   } catch (e) {
     console.error("[POST /api/products]", e);
     return errorResponse("Erreur serveur", 500);

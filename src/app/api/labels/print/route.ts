@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { labelPrintJobCreateSchema } from "@/lib/validations";
+import { serializeLabelJob } from "@/lib/money-serialize";
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
       format: data.format,
     });
 
-    return successResponse(job, 201);
+    return successResponse(serializeLabelJob(job), 201);
   } catch (e) {
     console.error("[POST /api/labels/print]", e);
     return errorResponse("Erreur serveur", 500);

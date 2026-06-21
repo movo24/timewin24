@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse, getSessionOrUnauthorized } from "@/lib/api-helpers";
+import { toNum } from "@/lib/decimal";
 
 // ─── GET /api/employees/[id]/context ─────────────────
 // Le POS appelle cet endpoint pour récupérer le contexte d'un employé.
@@ -51,7 +52,7 @@ export async function GET(
       // Rôle POS
       pos_role: employee.posRole || "cashier",
       timewin_role: employee.user?.role || "EMPLOYEE",
-      max_discount: employee.maxDiscountPct || 0,
+      max_discount: toNum(employee.maxDiscountPct ?? 0),
 
       // Compétences (utiles pour la caisse)
       skills: employee.skills,

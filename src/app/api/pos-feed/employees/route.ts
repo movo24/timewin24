@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
+import { toNumN } from "@/lib/decimal";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
 
@@ -48,7 +49,8 @@ export async function GET(req: NextRequest) {
 
   const employees = storeEmployees
     .map((se) => se.employee)
-    .filter((e) => e.active);
+    .filter((e) => e.active)
+    .map((e) => ({ ...e, maxDiscountPct: toNumN(e.maxDiscountPct) })); // M101b
 
   return successResponse({ employees });
 }
