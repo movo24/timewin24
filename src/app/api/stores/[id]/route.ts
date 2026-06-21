@@ -82,6 +82,13 @@ export async function DELETE(
 
     return successResponse({ success: true });
   } catch (err) {
+    // M111: FK RESTRICT — historique présent (shifts, pointages…)
+    if ((err as { code?: string }).code === "P2003") {
+      return errorResponse(
+        "Ce magasin a un historique (shifts, pointages) et ne peut pas être supprimé. Désactivez-le à la place.",
+        409
+      );
+    }
     console.error("DELETE /api/stores/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }

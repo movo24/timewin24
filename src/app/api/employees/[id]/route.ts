@@ -144,6 +144,13 @@ export async function DELETE(
 
     return successResponse({ success: true });
   } catch (err) {
+    // M111: FK RESTRICT — historique présent (pointages, absences, coûts…)
+    if ((err as { code?: string }).code === "P2003") {
+      return errorResponse(
+        "Cet employé a un historique (pointages, absences, coûts) et ne peut pas être supprimé. Désactivez-le à la place.",
+        409
+      );
+    }
     console.error("DELETE /api/employees/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }

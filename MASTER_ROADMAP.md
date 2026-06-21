@@ -144,9 +144,9 @@ Statut : ✅ Fait · Priorité : P1 · Fichier : `employees/[id]/access/route.ts
 Validation : ✅ `Math.random` → `crypto.randomInt` ; tsc/lint OK.
 
 #### M111 — Cascades de suppression destructrices
-Statut : ⬜ À faire · Priorité : P1 · Module : M002
-Scope : soft-delete `Store`/`Employee`/`User` ; `ClockIn`/`Shift`/`AbsenceDeclaration`/`EmployeeCost` Cascade → `Restrict`/`SetNull` + snapshot.
-Note : migration de schéma — préparer, valider hors prod.
+Statut : ✅ Fait · Priorité : P1 · Module : M002
+Fait : 5 relations `Cascade` → **`Restrict`** protégeant les preuves RH/légales — `Shift→Store`, `ClockIn→{Employee,Store}`, `AbsenceDeclaration→Employee`, `EmployeeCost→Employee`. Migration `20260621160000_protect_evidence_restrict` (DROP/ADD FK `ON DELETE RESTRICT`). `Shift→Employee` laissé `SetNull` (le shift survit, pas de perte). Routes `DELETE stores/[id]` + `employees/[id]` : traduisent le FK violation (`P2003`) en **409 clair** (« historique présent → désactivez »).
+Validation : tsc 0, jest 118 ; runtime ⚠️ non vérifié (pas de DB ; migration s'applique via `db push`/`migrate deploy`). Cascades légitimes (POS, feed, conversations, inventaire, étiquettes, jonctions) **non touchées**.
 
 #### M112 — Transactions sur écritures multiples
 Statut : ✅ Fait (3 routes) + 1 reconciliée (décision produit) · Priorité : P1

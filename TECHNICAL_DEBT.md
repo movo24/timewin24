@@ -22,7 +22,7 @@
 ## 3. P1 — Intégrité / auth / argent
 
 - **DEBT-010 (✅ noyau corrigé / ⬜ reste)** — argent en `Float` (IEEE-754). **Noyau paie corrigé** : `CountryConfig` + `EmployeeCost` → `Decimal` (migration `20260620190000`, frontière `decimal.ts`/`cost-mappers.ts`, forme API préservée, tsc 0 / jest 118). Débloqué par « pas de données prod » → migration additive. **M101b COMPLET (A+B+C+D)** : tous les montants € hors paie → `Decimal`. LOT A/B (migration `20260621120000`), LOT C/D (`20260621140000` : PosSalesData + EmployeePerformanceDaily/Hourly). Méthode parité-sûre (`toNum` frontière → arithmétique number inchangée). **2 bugs corrigés** : `products/[id]` `priceChanged` (number vs Decimal) + `pos-events/webhook` `Decimal + any` (concat chaîne runtime). **DEBT-010 entièrement résolu.** → M101/M101b.
-- **DEBT-011 (⬜)** — hard-delete `Store`/`Employee` → Cascade détruit `ClockIn`/`Shift`/`AbsenceDeclaration`/`EmployeeCost` (preuve RH/légale). Call sites `stores/[id]/route.ts:79`, `employees/[id]/route.ts:138`. → M111.
+- **DEBT-011 (✅ corrigé)** — cascades destructrices → `Restrict` sur les 5 relations de preuve (Shift→Store, ClockIn→{Employee,Store}, AbsenceDeclaration→Employee, EmployeeCost→Employee). Migration `20260621160000`. Routes DELETE stores/[id] + employees/[id] : `P2003` → 409 « historique présent, désactivez ». Suppression bloquée tant qu'il existe un historique. → M111.
 - **DEBT-012 (✅ corrigé)** — store-scoping ajouté sur `employees/[id]/access` (manager hors périmètre → 403). → M110.
 - **DEBT-013 (✅ corrigé)** — PIN/code via `Math.random`. → M104.
 - **DEBT-014 (✅ corrigé)** — fuites `err.message` (ai/test, ai/pos-analysis, pos-feed/store-schedules). → M105.

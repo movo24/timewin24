@@ -112,3 +112,11 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - **Serialisation** : `dailyTrend` (employees/[id]) renvoyait des lignes Decimal brutes -> map toNum sur totalSales/avgBasket/salesPerHour/cashAmount/cardAmount. Autres reponses analytics = valeurs deja calculees en number.
 - Verifie : prisma validate OK, **tsc 0, jest 118/118**. Build Vercel = garde-fou. Runtime applicatif analytics ⚠️ non execute (pas de donnees) mais arithmetique prouvee identique (number) + bug d'ingestion corrige.
 - **M101b CLOS** : plus aucun montant € en `Float` dans le schema. DEBT-010 entierement resolu.
+
+### Correctif execute (suite 19) — M111 protection preuves (cascades -> Restrict)
+- **M111 / DEBT-011** — Les cascades destructrices qui detruisaient les preuves RH/legales sont passees en `Restrict`. Supprimer un Store/Employee ne peut plus aneantir l'historique.
+  - Schema : 5 relations `onDelete: Cascade` -> `Restrict` : `Shift->Store`, `ClockIn->Employee`, `ClockIn->Store`, `AbsenceDeclaration->Employee`, `EmployeeCost->Employee`. (`Shift->Employee` laisse `SetNull` : le shift survit en non-assigne, deja non destructif.) Migration `20260621160000_protect_evidence_restrict` (DROP CONSTRAINT + ADD ... ON DELETE RESTRICT ON UPDATE CASCADE).
+  - Cascades LEGITIMES non touchees : PosProvider children, FeedComment, Broadcast, AiMessage, InventorySession/Count, LabelPrintItem, ManagerAlert, notifications, EmployeeAiMetrics, EmployeePerformance*, PosEvent, jonctions (StoreEmployee), Unavailability — donnees operationnelles/derivees OK a cascader.
+  - Routes : `DELETE /api/stores/[id]` + `DELETE /api/employees/[id]` traduisent le FK violation Prisma `P2003` en **409** clair (« historique present (shifts/pointages/absences/couts) -> desactivez au lieu de supprimer »). Le `$transaction` employe (delete User puis Employee) rollback proprement si Employee.delete echoue.
+  - Decision pro : `Restrict` (et non soft-delete global) = protection maximale sans refactor des filtres `deletedAt` sur tout le codebase ; la desactivation (`active=false` / toggle-status) existe deja comme voie normale.
+  - Verifie : prisma validate OK, tsc 0, jest 118/118. Runtime ⚠️ non verifie (pas de DB ; s'applique via db push/migrate deploy).

@@ -323,7 +323,7 @@ model StoreEmployee {
 
 model Shift {
   id               String            @id @default(cuid())
-  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
   storeId          String
   employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   employeeId       String?
@@ -374,7 +374,7 @@ model CountryConfig {
 // Per-employee cost parameters (overrides country defaults if needed)
 model EmployeeCost {
   id               String        @id @default(cuid())
-  employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
   employeeId       String        @unique
   country          CountryConfig @relation(fields: [countryCode], references: [code])
   countryCode      String
@@ -867,7 +867,7 @@ model AbsenceDeclaration {
   id String @id @default(cuid())
 
   // Employé déclarant
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
   employeeId String
 
   // Type et motif
@@ -909,9 +909,9 @@ enum ClockInStatus {
 
 model ClockIn {
   id         String   @id @default(cuid())
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
   employeeId String
-  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
   storeId    String
   shift      Shift?   @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   shiftId    String?  @unique // Un shift ne peut avoir qu'un seul pointage
