@@ -151,3 +151,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 28) — M116 scoring solveur
 - **M116 / DEBT-023** — `src/__tests__/solver-scoring.test.ts` (18 tests) sur `scoring.ts` (pur) : scorePriority, scorePreferredStore, scoreCostEfficiency (normalisation min/max), scoreContractualTarget (sous/au-dessus objectif), scoreFairDistribution (equite), scoreReliabilityMatch + scoreStoreImportanceMatch (Manager Brain). 1 fixture corrigee en cours (mon attendu 34+8=42 etait au-dessus de l'objectif 35 -> branche over=0.8, pas under=1 ; code correct). Suite jest 150 -> 168. tsc 0.
+
+### Correctif execute (suite 29) — M116 contraintes solveur (complet)
+- **M116 / DEBT-023** — Ajout des 5 contraintes restantes a `solver-constraints.test.ts` (+19 tests) : `isShiftPreferenceCompatible` (MATIN/AM vs milieu magasin), `isStoreOverlapCompliant` (relais/tolerance overlap, ignore self), `isUnderMaxDistinctEmployees`, `isUnderMaxSimultaneous` (sweep-line, relais exact = 1), `isProfileSafeForSlot` (Manager Brain : profil C jamais seul ouverture/fermeture/critique/entre-C). **constraints.ts = 100% des fonctions exportees couvertes.** Suite jest 168 -> 187. tsc 0.

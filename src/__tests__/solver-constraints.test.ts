@@ -4,13 +4,26 @@ import {
   isUnderDailyMax,
   isUnderWeeklyMax,
   hasEnoughRest,
+  isShiftPreferenceCompatible,
+  isStoreOverlapCompliant,
+  isUnderMaxDistinctEmployees,
+  isUnderMaxSimultaneous,
+  isProfileSafeForSlot,
 } from "@/lib/solver/constraints";
 import type {
   EmployeeState,
   SolverShift,
   SolverExistingShift,
   SolverUnavailability,
+  SolverEmployee,
 } from "@/lib/solver/types";
+
+const emp = (profile: "A" | "B" | "C" | null): SolverEmployee => ({
+  id: "e1", firstName: "X", lastName: "Y", weeklyHours: 35, contractType: "CDI",
+  priority: 1, maxHoursPerDay: 10, maxHoursPerWeek: 48, minRestBetween: 11,
+  skills: [], preferredStoreId: null, shiftPreference: "JOURNEE", costPerHour: null,
+  unavailabilities: [], reliabilityScore: null, profileCategory: profile,
+});
 
 // M116 — couverture des contraintes dures du solveur (règles légales/métier).
 // Fichier pur (types only) → testable directement, zéro DB.
@@ -142,5 +155,88 @@ describe("hasEnoughRest (repos min 11h — droit du travail FR)", () => {
     // proposé finit 12:00, existant commence 14:00 → 2h
     const s = state({ shifts: [shift({ date: "2026-06-22", startTime: "14:00", endTime: "22:00" })] });
     expect(hasEnoughRest(s, "2026-06-22", "08:00", "12:00", 11)).toBe(false);
+  });
+});
+
+describe("isShiftPreferenceCompatible (magasin 08:00–20:00, milieu 14:00)", () => {
+  it("JOURNEE accepte tout créneau", () => {
+    expect(isShiftPreferenceCompatible("JOURNEE", "08:00", "20:00", "08:00", "20:00")).toBe(true);
+  });
+  it("MATIN : doit finir avant le milieu (+30min)", () => {
+    expect(isShiftPreferenceCompatible("MATIN", "08:00", "12:00", "08:00", "20:00")).toBe(true);
+    expect(isShiftPreferenceCompatible("MATIN", "13:00", "17:00", "08:00", "20:00")).toBe(false);
+  });
+  it("APRES_MIDI : doit commencer après le milieu (−30min)", () => {
+    expect(isShiftPreferenceCompatible("APRES_MIDI", "15:00", "20:00", "08:00", "20:00")).toBe(true);
+    expect(isShiftPreferenceCompatible("APRES_MIDI", "08:00", "12:00", "08:00", "20:00")).toBe(false);
+  });
+});
+
+describe("isStoreOverlapCompliant (relais entre collègues)", () => {
+  const other = [existing({ employeeId: "e2", startTime: "08:00", endTime: "12:00" })];
+  it("chevauchement > maxOverlap → refusé", () => {
+    expect(isStoreOverlapCompliant("s1", "2026-06-22", "11:00", "15:00", "e1", 0, other, [])).toBe(false);
+  });
+  it("relais adjacent (0 chevauchement) → ok", () => {
+    expect(isStoreOverlapCompliant("s1", "2026-06-22", "12:00", "16:00", "e1", 0, other, [])).toBe(true);
+  });
+  it("chevauchement ≤ maxOverlap toléré → ok", () => {
+    expect(isStoreOverlapCompliant("s1", "2026-06-22", "11:00", "15:00", "e1", 60, other, [])).toBe(true);
+  });
+  it("ignore ses propres shifts", () => {
+    const mine = [existing({ employeeId: "e1", startTime: "08:00", endTime: "18:00" })];
+    expect(isStoreOverlapCompliant("s1", "2026-06-22", "09:00", "17:00", "e1", 0, mine, [])).toBe(true);
+  });
+});
+
+describe("isUnderMaxDistinctEmployees", () => {
+  const two = [
+    existing({ employeeId: "e2", id: "a" }),
+    existing({ employeeId: "e3", id: "b" }),
+  ];
+  it("null = illimité", () => {
+    expect(isUnderMaxDistinctEmployees("e1", "s1", "2026-06-22", null, two, [])).toBe(true);
+  });
+  it("refuse un nouvel employé au-delà de la limite", () => {
+    expect(isUnderMaxDistinctEmployees("e1", "s1", "2026-06-22", 2, two, [])).toBe(false);
+  });
+  it("autorise sous la limite", () => {
+    const one = [existing({ employeeId: "e2", id: "a" })];
+    expect(isUnderMaxDistinctEmployees("e1", "s1", "2026-06-22", 2, one, [])).toBe(true);
+  });
+  it("un employé déjà présent ne compte pas en plus", () => {
+    expect(isUnderMaxDistinctEmployees("e2", "s1", "2026-06-22", 2, two, [])).toBe(true);
+  });
+});
+
+describe("isUnderMaxSimultaneous (sweep-line, relais exact = 1)", () => {
+  it("refuse un chevauchement qui dépasse le max simultané", () => {
+    const ex = [existing({ employeeId: "e2", startTime: "09:00", endTime: "17:00" })];
+    expect(isUnderMaxSimultaneous("s1", "2026-06-22", "11:00", "15:00", 1, ex, [])).toBe(false);
+  });
+  it("autorise un relais exact (A finit 12:00, B démarre 12:00)", () => {
+    const ex = [existing({ employeeId: "e2", startTime: "09:00", endTime: "12:00" })];
+    expect(isUnderMaxSimultaneous("s1", "2026-06-22", "12:00", "15:00", 1, ex, [])).toBe(true);
+  });
+});
+
+describe("isProfileSafeForSlot (Manager Brain — profil C non seul)", () => {
+  it("C seul à l'ouverture → bloqué", () => {
+    expect(isProfileSafeForSlot(emp("C"), "OUVERTURE", 2, [])).toBe(false);
+  });
+  it("C seul à la fermeture → bloqué", () => {
+    expect(isProfileSafeForSlot(emp("C"), "FERMETURE", 2, [])).toBe(false);
+  });
+  it("C seul sur magasin critique → bloqué", () => {
+    expect(isProfileSafeForSlot(emp("C"), "MILIEU", 1, [])).toBe(false);
+  });
+  it("C uniquement avec d'autres C → bloqué", () => {
+    expect(isProfileSafeForSlot(emp("C"), "MILIEU", 2, [emp("C")])).toBe(false);
+  });
+  it("C accompagné d'un B à l'ouverture → ok", () => {
+    expect(isProfileSafeForSlot(emp("C"), "OUVERTURE", 2, [emp("B")])).toBe(true);
+  });
+  it("profil A seul à l'ouverture → ok", () => {
+    expect(isProfileSafeForSlot(emp("A"), "OUVERTURE", 1, [])).toBe(true);
   });
 });
