@@ -157,3 +157,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 30) — M116/M010 tests generateur ZPL
 - **M116 / M010** — `src/__tests__/labels-zpl.test.ts` (12 tests) sur `zpl-generator.ts` (pur) : 1 etiquette/quantite, conversion mm->dots (x8 @203DPI), defauts 58x40, prix `.toFixed(2) EUR` + ancien prix, code-barres EAN13(^BEN)/EAN8(^B8N)/CODE128(^BCN), echappement ZPL (^ et ~ strippes), troncature nom a 30 char, nom magasin, bloc ^XA..^XZ. Suite jest 187 -> 199. tsc 0. M010 (etiquettes) avait zero test.
+
+### Correctif execute (suite 31) — M116 schemas de validation (Zod)
+- **M116 / DEBT-023** — `src/__tests__/validations.test.ts` (22 tests) sur `validations.ts` (pur) = la frontiere de validation de CHAQUE ecriture API : storeCreateSchema (nom requis, bornes lat/lng, maxOverlap, emptyToNull, defauts), employeeCreateSchema (email, password>=8, priorite 1-3, defauts), shiftCreateSchema (regex HH:mm + refine fin>debut), unavailabilityCreateSchema (enum type, dayOfWeek 0-6), autoGenerateSchema (mode/duree/defauts), productCreateSchema (prix>=0, source enum). Suite jest 199 -> 221. tsc 0.
+- **Bilan couverture session** : suite 95 -> 221 (+126 tests) : RBAC, cout employeur+Decimal, geo/shift/timeline, solveur contraintes (38) + scoring (18), ZPL etiquettes, schemas Zod. M116/DEBT-023 (zero test solver/RBAC/cout) substantiellement resolu.
