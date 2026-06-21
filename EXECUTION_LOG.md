@@ -120,3 +120,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
   - Routes : `DELETE /api/stores/[id]` + `DELETE /api/employees/[id]` traduisent le FK violation Prisma `P2003` en **409** clair (« historique present (shifts/pointages/absences/couts) -> desactivez au lieu de supprimer »). Le `$transaction` employe (delete User puis Employee) rollback proprement si Employee.delete echoue.
   - Decision pro : `Restrict` (et non soft-delete global) = protection maximale sans refactor des filtres `deletedAt` sur tout le codebase ; la desactivation (`active=false` / toggle-status) existe deja comme voie normale.
   - Verifie : prisma validate OK, tsc 0, jest 118/118. Runtime ⚠️ non verifie (pas de DB ; s'applique via db push/migrate deploy).
+
+### Correctif execute (suite 20) — M121 rate-limit notifications/clicked
+- **M121 / DEBT-025** — `notifications/clicked` (public, appele par le service worker sans cookie -> ne peut pas etre authentifie) durci par rate-limit IP (`checkRateLimit(notif-clicked:ip, RATE_LIMITS.api)`, 429 si depasse). L'ecriture est non destructive (set `clickedAt` sur une row NotificationLog) ; le rate-limit empeche l'abus/spam. tsc 0, jest 118. (Note : rate-limiter en memoire = meme limite que M120, Redis recommande.)

@@ -200,7 +200,7 @@ Statut : 🔄 En cours · Priorité : P2
 - ⬜ Reste : couverture solver étendue.
 
 #### M121 — `notifications/clicked` non authentifié
-Statut : ⚠️ À vérifier · Priorité : P2 — write timestamp sur row arbitraire (intentionnel SW ; rate-limiter).
+Statut : ✅ Fait · Priorité : P2 — endpoint public (SW sans cookie) durci par rate-limit IP (`RATE_LIMITS.api`, 429 si dépassé). Écriture `clickedAt` non destructive ; abus limité. tsc 0 / jest 118.
 
 #### M122 — Index manquants
 Statut : ✅ Fait · Priorité : P2 · `schema.prisma` + migration `20260620180000_add_missing_indexes`

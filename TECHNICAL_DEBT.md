@@ -38,7 +38,7 @@
 - **DEBT-022 (🔄)** — `error.tsx`/`loading.tsx` ajoutés sur (dashboard) et (employee). Reste : conversion pages read-only en RSC (refactor). → M115.
 - **DEBT-023 (⬜)** — zéro test RBAC / coût employeur / solver complet. → M116.
 - **DEBT-024 (✅ corrigé)** — index ajoutés (`@@index` + migration `20260620180000`). → M122.
-- **DEBT-025 (⚠️)** — `notifications/clicked` non authentifié (write timestamp arbitraire). → M121.
+- **DEBT-025 (✅ corrigé)** — `notifications/clicked` : rate-limit IP ajouté (public by design — SW sans cookie ; écriture `clickedAt` non destructive). → M121.
 - **DEBT-026 (⬜)** — pas de CI (lint/test/typecheck) sur PR. → M130.
 
 ## 5. P3 — Nettoyage
