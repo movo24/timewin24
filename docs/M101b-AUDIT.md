@@ -105,4 +105,4 @@ ratios non monétaires (`upsellRate`) et **tous les `*Score`** 0-100 (`performan
   Float↔Decimal sur sommes/ratios/anomalies ;
 - soit un **feu vert explicite** pour appliquer A/B seulement maintenant, et différer C/D.
 
-> Statut : audit livré. **LOT A+B EXÉCUTÉS** (migration `20260621120000`, `money-serialize.ts`, tsc 0 / jest 118 ; runtime non vérifié). **LOT C+D restent gatés** sur un jeu de données de parité.
+> Statut : audit livré. **LOT A+B EXÉCUTÉS** (migration `20260621120000`, `money-serialize.ts`, tsc 0 / jest 118 ; runtime non vérifié). **LOT C+D EXÉCUTÉS** (migration `20260621140000`) — méthode `toNum` parité-sûre (arithmétique number inchangée, aucune donnée requise) ; bug runtime webhook `Decimal+any` corrigé. tsc 0 / jest 118. **M101b complet.**

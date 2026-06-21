@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import { AI_CONFIG } from "../config";
 import type { DetectedAnomaly, AnomalySeverity } from "../types";
 
@@ -158,7 +159,7 @@ async function detectRevenueDrop(
   for (const sale of salesData) {
     const dateStr = (sale.date as Date).toISOString().split("T")[0];
     const key = `${sale.storeId}:${dateStr}`;
-    dateRevMap.set(key, (dateRevMap.get(key) || 0) + sale.revenue);
+    dateRevMap.set(key, (dateRevMap.get(key) || 0) + toNum(sale.revenue));
   }
 
   for (const [key, revenue] of dateRevMap) {

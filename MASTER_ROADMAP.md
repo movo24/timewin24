@@ -55,7 +55,7 @@ Validation : ⚠️ N+1 dans `replacement.ts` (M113) ; `String` FK sans relation
 ### M007 — Coûts & Masse salariale
 Statut : ⚠️ À vérifier · Priorité : P1
 Fichiers : `src/lib/employer-cost.ts` · Pages : `costs` · API : `costs/*` · Base : `EmployeeCost`, `CountryConfig`
-Validation : ✅ noyau paie en `Decimal` (M101) ; ⬜ reste analytics/POS/produits en `Float` (M101b).
+Validation : ✅ **tous les montants € en `Decimal`** (M101 paie + M101b LOT A/B/C/D : POS, produits, étiquettes, analytics). Plus aucun montant en `Float`.
 
 ### M008 — POS & Intégrations
 Statut : ⚠️ À vérifier · Priorité : P1
@@ -170,7 +170,12 @@ Statut : ✅ Fait · Priorité : P2 · Fichier : `src/lib/replacement.ts`
 Remplacé `findOverlappingShift` + `calculateWeeklyHours` (2 requêtes DB/candidat) par des calculs en mémoire sur `emp.shifts` (déjà eager-loaded). Overlap via `doTimesOverlap` (même helper). tsc/lint/jest OK.
 
 #### M101b — `Float` → `Decimal` (champs € hors paie)
-Statut : 🔄 LOT A+B faits · C/D gatés données · Priorité : P2 · Module : M008/M009/M013
+Statut : ✅ **Fait (LOT A+B+C+D)** · Priorité : P2 · Module : M008/M009/M013
+- ✅ **LOT C** : `PosSalesData.revenue/cardAmount/cashAmount/otherAmount` → `Decimal(12,2)`.
+- ✅ **LOT D** : `EmployeePerformanceDaily.totalSales/avgBasket/cashAmount/cardAmount/salesPerHour` + `EmployeePerformanceHourly.sales` → `Decimal(12,2)`.
+- Migration `20260621140000_money_float_to_decimal_lot_cd`. Méthode **parité-sûre** : `toNum` à la frontière → l'arithmétique reste en `number` à l'identique (35 sites de calcul recâblés, guidés par `tsc`), seul le STOCKAGE devient exact → **aucune dérive analytics/IA possible**. Aucune donnée de test requise.
+- **Bug runtime corrigé** : `pos-events/webhook` faisait `existing.totalSales (Decimal) + revenue (any payload)` → concaténation de chaîne au runtime (invisible à tsc). Désormais `toNum(existing.totalSales) + revenue` (2 blocs). Sérialisation `dailyTrend` recoercée.
+- Vérifié : prisma validate OK, tsc 0, jest 118. Build Vercel = garde-fou.
 - ✅ **LOT A** (taux/%) : `Store.vatRate`, `Product.vatRate` → `Decimal(6,4)` ; `Employee.maxDiscountPct` → `Decimal(5,2)`.
 - ✅ **LOT B** (catalogue/étiquettes) : `Product.price/oldPrice`, `LabelPrintItem.priceAtPrint` → `Decimal(12,2)`.
 - Migration `20260621120000_money_float_to_decimal_lot_ab`. Frontière : `src/lib/money-serialize.ts` (serializeProduct/serializeStoreVat/serializeLabelJob) + `decimal.ts`. Forme JSON (number) préservée → composants labels/catalogue (`.toFixed`) intacts. Bug corrigé au passage : `products/[id]` comparait `data.price !== existing.price` (number vs Decimal, toujours vrai) → `toNumN(existing.price)`.

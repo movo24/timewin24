@@ -8,6 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 
 // ─── Helpers ────────────────────────────────────────
 
@@ -170,11 +171,11 @@ export async function aggregatePerformanceData(
 
       if (sale) {
         const numEmployees = coverageIndex.get(salesKey) || 1;
-        const revShare = sale.revenue / numEmployees;
+        const revShare = toNum(sale.revenue) / numEmployees;
         const txShare = sale.transactions / numEmployees;
         const itemsShare = sale.itemsSold / numEmployees;
-        const cardShare = sale.cardAmount / numEmployees;
-        const cashShare = sale.cashAmount / numEmployees;
+        const cardShare = toNum(sale.cardAmount) / numEmployees;
+        const cashShare = toNum(sale.cashAmount) / numEmployees;
 
         daily.totalSales += revShare;
         daily.transactions += txShare;
@@ -338,7 +339,7 @@ export async function calculatePerformanceScores(
       });
     }
     const emp = empStoreMap.get(key)!;
-    emp.totalSales += d.totalSales;
+    emp.totalSales += toNum(d.totalSales);
     emp.totalTransactions += d.transactions;
     emp.totalItemsSold += d.itemsSold;
     emp.totalHours += d.workingHours;

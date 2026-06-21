@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNumN } from "@/lib/decimal";
 import {
   requireManagerOrAdmin,
   getAccessibleStoreIds,
@@ -146,7 +147,7 @@ export async function GET(_req: NextRequest) {
       _sum: { workingHours: null },
     };
     try {
-      recentPerf = await prisma.employeePerformanceDaily.aggregate({
+      const perfAgg = await prisma.employeePerformanceDaily.aggregate({
         where: {
           date: { gte: sevenDaysAgo, lte: today },
           ...(storeIds ? { storeId: { in: storeIds } } : {}),
@@ -154,6 +155,10 @@ export async function GET(_req: NextRequest) {
         _avg: { salesPerHour: true },
         _sum: { workingHours: true },
       });
+      recentPerf = {
+        _avg: { salesPerHour: toNumN(perfAgg._avg.salesPerHour) }, // M101b
+        _sum: { workingHours: perfAgg._sum.workingHours },
+      };
     } catch {
       // Table vide ou non encore alimentée
     }

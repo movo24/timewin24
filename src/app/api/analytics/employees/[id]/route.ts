@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import {
   requireManagerOrAdmin,
   getAccessibleStoreIds,
@@ -105,7 +106,7 @@ export async function GET(
     });
 
     // 2. Tendance journalière
-    const dailyTrend = await prisma.employeePerformanceDaily.findMany({
+    const dailyTrendRaw = await prisma.employeePerformanceDaily.findMany({
       where: {
         employeeId,
         date: { gte: dateFrom, lte: dateTo },
@@ -127,6 +128,15 @@ export async function GET(
       },
     });
 
+    const dailyTrend = dailyTrendRaw.map((d) => ({
+      ...d,
+      totalSales: toNum(d.totalSales),
+      avgBasket: toNum(d.avgBasket),
+      salesPerHour: toNum(d.salesPerHour),
+      cashAmount: toNum(d.cashAmount),
+      cardAmount: toNum(d.cardAmount),
+    })); // M101b: Decimal -> number
+
     // 3. Pattern horaire
     const hourlyRaw = await prisma.employeePerformanceHourly.groupBy({
       by: ["hour"],
@@ -147,9 +157,9 @@ export async function GET(
       hour: h.hour,
       avgSales:
         h._count > 0
-          ? Math.round(((h._sum.sales || 0) / h._count) * 100) / 100
+          ? Math.round((toNum(h._sum.sales ?? 0) / h._count) * 100) / 100
           : 0,
-      totalSales: Math.round((h._sum.sales || 0) * 100) / 100,
+      totalSales: Math.round(toNum(h._sum.sales ?? 0) * 100) / 100,
       totalTransactions: h._sum.transactions || 0,
       days: h._count,
     }));
@@ -236,7 +246,7 @@ export async function GET(
       },
     });
 
-    const empTotalSales = paymentAgg._sum.totalSales || 0;
+    const empTotalSales = toNum(paymentAgg._sum.totalSales ?? 0);
     const empTotalHours = paymentAgg._sum.workingHours || 0;
     const empSalesPerHour =
       empTotalHours > 0
@@ -266,7 +276,7 @@ export async function GET(
       });
 
     const storeEmpCount = storeDistinctEmployees.length;
-    const storeTotalSales = storeAvgAgg._sum.totalSales || 0;
+    const storeTotalSales = toNum(storeAvgAgg._sum.totalSales ?? 0);
     const storeTotalHours = storeAvgAgg._sum.workingHours || 0;
     const storeAvgSalesPerHour =
       storeTotalHours > 0 && storeEmpCount > 0
@@ -308,8 +318,8 @@ export async function GET(
         itemsCounted: inventoryCountAgg._count || 0,
       },
       paymentBreakdown: {
-        cardAmount: Math.round((paymentAgg._sum.cardAmount || 0) * 100) / 100,
-        cashAmount: Math.round((paymentAgg._sum.cashAmount || 0) * 100) / 100,
+        cardAmount: Math.round(toNum(paymentAgg._sum.cardAmount ?? 0) * 100) / 100,
+        cashAmount: Math.round(toNum(paymentAgg._sum.cashAmount ?? 0) * 100) / 100,
         totalSales: Math.round(empTotalSales * 100) / 100,
       },
       comparison: {

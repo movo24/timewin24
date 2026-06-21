@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
@@ -168,7 +169,7 @@ async function processEvent(
                 select: { id: true, totalSales: true, transactions: true, itemsSold: true },
               });
               if (existing) {
-                const newTotal = existing.totalSales + revenue;
+                const newTotal = toNum(existing.totalSales) + revenue;
                 const newTx = existing.transactions + transactions;
                 await prisma.employeePerformanceDaily.update({
                   where: { id: existing.id },
@@ -337,7 +338,7 @@ async function processEvent(
         const ticketCount = data.ticketCount || 0;
 
         if (existing) {
-          const newTotal = existing.totalSales + totalRevenue;
+          const newTotal = toNum(existing.totalSales) + totalRevenue;
           const newTx = existing.transactions + ticketCount;
           await prisma.employeePerformanceDaily.update({
             where: { id: existing.id },

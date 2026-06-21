@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import {
   requireManagerOrAdmin,
   getAccessibleStoreIds,
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
       distinct: ["employeeId"],
     });
 
-    const totalSales = salesAgg._sum.revenue || 0;
+    const totalSales = toNum(salesAgg._sum.revenue ?? 0);
     const totalTransactions = salesAgg._sum.transactions || 0;
     const totalHours = hoursAgg._sum.workingHours || 0;
 
@@ -93,9 +94,9 @@ export async function GET(req: NextRequest) {
         totalHours > 0
           ? Math.round((totalSales / totalHours) * 100) / 100
           : 0,
-      cashAmount: Math.round((salesAgg._sum.cashAmount || 0) * 100) / 100,
-      cardAmount: Math.round((salesAgg._sum.cardAmount || 0) * 100) / 100,
-      otherAmount: Math.round((salesAgg._sum.otherAmount || 0) * 100) / 100,
+      cashAmount: Math.round(toNum(salesAgg._sum.cashAmount ?? 0) * 100) / 100,
+      cardAmount: Math.round(toNum(salesAgg._sum.cardAmount ?? 0) * 100) / 100,
+      otherAmount: Math.round(toNum(salesAgg._sum.otherAmount ?? 0) * 100) / 100,
       employeeCount: employeeCountResult.length,
       totalHours: Math.round(totalHours * 100) / 100,
     };
@@ -116,7 +117,7 @@ export async function GET(req: NextRequest) {
 
     const dailyTrend = dailyTrendRaw.map((d) => ({
       date: d.date,
-      revenue: Math.round((d._sum.revenue || 0) * 100) / 100,
+      revenue: Math.round(toNum(d._sum.revenue ?? 0) * 100) / 100,
       transactions: d._sum.transactions || 0,
     }));
 
@@ -136,7 +137,7 @@ export async function GET(req: NextRequest) {
 
     const hourlyDistribution = hourlyRaw.map((h) => ({
       hour: h.hourSlot,
-      revenue: Math.round((h._sum.revenue || 0) * 100) / 100,
+      revenue: Math.round(toNum(h._sum.revenue ?? 0) * 100) / 100,
       transactions: h._sum.transactions || 0,
     }));
 

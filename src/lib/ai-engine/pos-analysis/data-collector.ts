@@ -91,20 +91,21 @@ export async function collectPosData(
 
   for (const row of salesData) {
     const dateStr = row.date.toISOString().split("T")[0];
-    totalRevenue += row.revenue;
+    const revenue = toNum(row.revenue); // M101b: Decimal -> number (arithmétique inchangée)
+    totalRevenue += revenue;
     totalTransactions += row.transactions;
     totalItems += row.itemsSold;
 
     // By day
     const dayEntry = byDayMap.get(dateStr) || { revenue: 0, transactions: 0, items: 0 };
-    dayEntry.revenue += row.revenue;
+    dayEntry.revenue += revenue;
     dayEntry.transactions += row.transactions;
     dayEntry.items += row.itemsSold;
     byDayMap.set(dateStr, dayEntry);
 
     // By hour
     const hourEntry = byHourMap.get(row.hourSlot) || { revenue: 0, transactions: 0 };
-    hourEntry.revenue += row.revenue;
+    hourEntry.revenue += revenue;
     hourEntry.transactions += row.transactions;
     byHourMap.set(row.hourSlot, hourEntry);
   }
@@ -173,7 +174,7 @@ export async function collectPosData(
     _sum: { revenue: true, transactions: true },
   });
 
-  const prevRevenue = prevSales._sum.revenue || 0;
+  const prevRevenue = toNum(prevSales._sum.revenue ?? 0);
   const prevTransactions = prevSales._sum.transactions || 0;
   const prevAvgBasket = prevTransactions > 0 ? prevRevenue / prevTransactions : 0;
   const currentAvgBasket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
