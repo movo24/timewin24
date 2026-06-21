@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     const storeId = new URL(req.url).searchParams.get("storeId");
     if (!storeId) return errorResponse("storeId requis");
 
-    const schedules = await (prisma as any).storeSchedule.findMany({
+    const schedules = await prisma.storeSchedule.findMany({
       where: { storeId },
       orderBy: { dayOfWeek: "asc" },
     });
@@ -73,9 +73,9 @@ export async function PUT(req: NextRequest) {
     const store = await prisma.store.findUnique({ where: { id: storeId } });
     if (!store) return errorResponse("Magasin introuvable", 404);
 
-    const result = await (prisma as any).$transaction(
+    const result = await prisma.$transaction(
       schedules.map((s) =>
-        (prisma as any).storeSchedule.upsert({
+        prisma.storeSchedule.upsert({
           where: { storeId_dayOfWeek: { storeId, dayOfWeek: s.dayOfWeek } },
           update: {
             closed: s.closed,

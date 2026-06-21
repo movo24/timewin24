@@ -172,3 +172,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Correctif execute (suite 33) — M142 reduction `any` (inference)
 - **M142 / DEBT-032** — Retire `: any` des callbacks `.map/.filter/.flatMap` de resultats Prisma (market-listings, messages, costs, integrations/pos) : l'inference fournit les vrais types (les `as string` deja presents garantissent la compat). 8 directives `eslint-disable no-explicit-any` orphelines retirees. `any` 39->29, total eslint 85->72. tsc 0, jest 230.
 - **Decision** : `where: any` (constructeurs de filtre Prisma dynamiques) laisses tels quels — les typer en `Prisma.XWhereInput` revele surtout des assignations string->enum (params de requete) necessitant des casts par site, valeur faible / churn reel. Pattern intentionnel (commentaires eslint-disable conserves la ou l'any subsiste).
+
+### Correctif execute (suite 34) — M142 retrait `(prisma as any)` (drift)
+- **M142 / DEBT-032** — `pos-feed/store-schedules/route.ts` : 3 casts `(prisma as any).storeSchedule`/`.$transaction` retires. Diagnostic : `prisma.storeSchedule` typecheck SANS cast (utilise non-caste dans stores/[id]/schedules, alerts.ts, shifts.ts) -> le cast etait un artefact inutile qui SUPPRIMAIT le type-checking sur les args findMany/upsert (risque de bug masque). Retrait = type-safety restauree. tsc 0, jest 230.
