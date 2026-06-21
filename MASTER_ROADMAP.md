@@ -189,9 +189,9 @@ Note : ~20 fichiers consommateurs (POS sync, analytics, labels, AI engine, dashb
 Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`.
 
 #### M115 — Frontières error/loading (front)
-Statut : 🔄 En cours · Priorité : P2
-- ✅ `error.tsx` + `loading.tsx` ajoutés sur `(dashboard)` et `(employee)` (plus d'écran blanc / état vide trompeur).
-- ⬜ Reste (optionnel) : `(shared)`, et conversion des pages read-only en RSC (refactor plus large).
+Statut : ✅ Fait (boundaries) · Priorité : P2
+- ✅ `error.tsx` + `loading.tsx` sur les 4 groupes utilisateur : `(dashboard)`, `(employee)`, `(shared)`, `inventory` (mobile). Plus d'écran blanc / état figé.
+- ⬜ Reste (optionnel, refactor séparé) : conversion des pages read-only en RSC.
 
 #### M116 — Tests chemins critiques
 Statut : 🔄 En cours · Priorité : P2

@@ -123,3 +123,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 20) — M121 rate-limit notifications/clicked
 - **M121 / DEBT-025** — `notifications/clicked` (public, appele par le service worker sans cookie -> ne peut pas etre authentifie) durci par rate-limit IP (`checkRateLimit(notif-clicked:ip, RATE_LIMITS.api)`, 429 si depasse). L'ecriture est non destructive (set `clickedAt` sur une row NotificationLog) ; le rate-limit empeche l'abus/spam. tsc 0, jest 118. (Note : rate-limiter en memoire = meme limite que M120, Redis recommande.)
+
+### Correctif execute (suite 21) — M115 frontieres (shared)+inventory
+- **M115 / DEBT-022** — `error.tsx` + `loading.tsx` ajoutes aux groupes `(shared)` (fil-actualite/annonces) et `inventory` (app mobile POS), completant `(dashboard)`/`(employee)`. Les 4 groupes utilisateur ont desormais une frontiere d'erreur (retry) + un etat de chargement (spinner). Inventory : variante full-screen tactile. tsc 0, lint 0 sur les 4 fichiers, jest 118. Pure addition front. Reste optionnel : conversion RSC (refactor separe).
