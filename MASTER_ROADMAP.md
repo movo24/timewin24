@@ -222,5 +222,5 @@ Statut : 🔄 En cours · P1/P3
 - ⚠️ `nodemailer` : fix = `9.0.1` (**bump majeur 7→9, breaking**) → **non forcé** (risque sur l'envoi d'emails). À planifier + tester.
 #### M141 — `console.*` (268) → logger conditionné · P3
 #### M142 — `any` (186) / lint debt (~87) · P3
-#### M143 — README périmé (décrit un MVP 5 modèles vs 56) · P3
+#### M143 — README périmé · ✅ Fait · P3 — réécrit pour refléter le réel (56 modèles, 15 modules M001–M015, 118 tests, env vars réelles, sécurité réelle, pointeurs gouvernance/runbook).
 #### M144 — Hygiène repo · ✅ Fait · P3 — `firebase-debug.log`, `ai-engine-test-report.json`, 4 PNG racine retirés du suivi + `.gitignore` mis à jour. (`.playwright-mcp` déjà retiré.)

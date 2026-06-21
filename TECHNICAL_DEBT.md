@@ -46,7 +46,7 @@
 - **DEBT-030 (🔄)** — `next` bumpé 16.1.6→16.2.9 (CVE next éliminées). `nodemailer` : fix=9.0.1 **majeur breaking** → flag, non forcé. → M140.
 - **DEBT-031** — 268 `console.*` en prod (pas de logger). → M141.
 - **DEBT-032** — 186 `any` / ~87 erreurs lint (dont `(prisma as any)` dans `pos-feed/store-schedules`, suggère un drift de typage Prisma à investiguer). → M142.
-- **DEBT-033** — README périmé. → M143.
+- **DEBT-033 (✅ corrigé)** — README périmé réécrit (56 modèles, modules M001–M015, 118 tests, variables d'env réelles, posture sécurité réelle, pointeurs docs de gouvernance + runbook rotation). → M143.
 - **DEBT-034 (✅ corrigé)** — `firebase-debug.log`, `ai-engine-test-report.json`, 4 PNG racine retirés du suivi + `.gitignore`. → M144.
 
 ## Points sains (à préserver)
