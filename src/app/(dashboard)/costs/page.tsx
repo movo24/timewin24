@@ -628,8 +628,8 @@ function ConfigTab() {
     }
   }
 
-  const configuredIds = new Set(employeeConfigs.map((c: any) => c.employeeId));
-  const unconfiguredEmployees = employees.filter((e: any) => !configuredIds.has(e.id));
+  const configuredIds = new Set(employeeConfigs.map((c) => c.employeeId));
+  const unconfiguredEmployees = employees.filter((e) => !configuredIds.has(e.id));
 
   return (
     <div className="space-y-8">
@@ -769,7 +769,7 @@ function ConfigTab() {
                   onChange={(e) => setEmpForm({ ...empForm, employeeId: e.target.value })}
                 >
                   <option value="">S&eacute;lectionner...</option>
-                  {unconfiguredEmployees.map((emp: any) => (
+                  {unconfiguredEmployees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.firstName} {emp.lastName}
                     </option>
@@ -797,7 +797,7 @@ function ConfigTab() {
         {employeeConfigs.length > 0 ? (
           <>
             <div className="space-y-2 lg:hidden">
-              {employeeConfigs.map((c: any) => (
+              {employeeConfigs.map((c) => (
                 <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
                   <span className="font-medium text-sm">{c.employee.firstName} {c.employee.lastName}</span>
                   <span className="font-mono font-semibold text-sm">{c.hourlyRateGross.toFixed(2)} &euro;/h</span>
@@ -815,7 +815,7 @@ function ConfigTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {employeeConfigs.map((c: any) => (
+                  {employeeConfigs.map((c) => (
                     <tr key={c.id} className="border-b border-gray-100">
                       <td className="px-4 py-2">{c.employee.firstName} {c.employee.lastName}</td>
                       <td className="px-4 py-2 text-right font-mono font-medium">{c.hourlyRateGross.toFixed(2)} &euro;</td>

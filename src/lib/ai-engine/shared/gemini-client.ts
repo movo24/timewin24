@@ -192,7 +192,6 @@ export async function generateEmbedding(
   try {
     await _rateLimiter.waitIfNeeded();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: EmbedContentResponse = await model.embedContent({
       content: { role: "user", parts: [{ text }] },
       outputDimensionality: AI_CONFIG.gemini.embeddingDimension,
@@ -240,7 +239,6 @@ export async function generateEmbeddingBatch(
   try {
     await _rateLimiter.waitIfNeeded();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await model.batchEmbedContents({
       requests: texts.map((text) => ({
         content: { role: "user", parts: [{ text }] },

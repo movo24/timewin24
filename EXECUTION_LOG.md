@@ -168,3 +168,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Bilan M116 (DEBT-023 resolu) — couverture de tests
 - Suite 95 -> 230 (+135 tests cette session) sur toute la logique pure/metier tractable : solveur (constraints 38 + scoring 18), validations Zod (22), utils dates (9), ZPL etiquettes (12), RBAC (16), cout employeur (7), geo/shift/timeline (13).
 - **Exclusion deliberee** : `scenario-scoring.scoreScenario` (blend pondere de 7 sous-scores sur un `SolverResult` complet) et `suggestions.generateCrossStoreSuggestions` — testables mais fixtures lourdes + assertions fragiles (rejouent le modele de scoring) = ROI negatif, risque de casse au moindre refactor legitime. Decision pro : ne pas gonfler avec des tests cassants. DEBT-023 considere resolu.
+
+### Correctif execute (suite 33) — M142 reduction `any` (inference)
+- **M142 / DEBT-032** — Retire `: any` des callbacks `.map/.filter/.flatMap` de resultats Prisma (market-listings, messages, costs, integrations/pos) : l'inference fournit les vrais types (les `as string` deja presents garantissent la compat). 8 directives `eslint-disable no-explicit-any` orphelines retirees. `any` 39->29, total eslint 85->72. tsc 0, jest 230.
+- **Decision** : `where: any` (constructeurs de filtre Prisma dynamiques) laisses tels quels — les typer en `Prisma.XWhereInput` revele surtout des assignations string->enum (params de requete) necessitant des casts par site, valeur faible / churn reel. Pattern intentionnel (commentaires eslint-disable conserves la ou l'any subsiste).

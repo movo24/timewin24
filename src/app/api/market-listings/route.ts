@@ -56,17 +56,12 @@ export async function GET(req: NextRequest) {
     });
 
     // Enrich with shift, store, poster, and claimant info
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const shiftIds: string[] = [...new Set(listings.map((l: any) => l.shiftId as string))];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const shiftIds: string[] = [...new Set(listings.map((l) => l.shiftId as string))];
     const empIds: string[] = [...new Set([
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...listings.map((l: any) => l.posterId as string),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...listings.filter((l: any) => l.claimantId).map((l: any) => l.claimantId as string),
+      ...listings.map((l) => l.posterId as string),
+      ...listings.filter((l) => l.claimantId).map((l) => l.claimantId as string),
     ])];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const storeIds: string[] = [...new Set(listings.map((l: any) => l.storeId as string))];
+    const storeIds: string[] = [...new Set(listings.map((l) => l.storeId as string))];
 
     const [shifts, employees, stores] = await Promise.all([
       prisma.shift.findMany({
@@ -87,8 +82,7 @@ export async function GET(req: NextRequest) {
     const empMap = new Map(employees.map((e) => [e.id, e]));
     const storeMap = new Map(stores.map((s) => [s.id, s]));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const enriched = listings.map((l: any) => ({
+    const enriched = listings.map((l) => ({
       ...l,
       shift: shiftMap.get(l.shiftId) || null,
       store: storeMap.get(l.storeId) || null,

@@ -55,7 +55,7 @@ export async function GET() {
   });
 
   // Strip sensitive fields from each provider before returning
-  const safeProviders = providers.map((p: any) => {
+  const safeProviders = providers.map((p) => {
     const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safe } = p;
     return {
       ...safe,

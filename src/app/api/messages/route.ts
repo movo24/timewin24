@@ -89,9 +89,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Load attachments for all messages + replies
-    const allMessageIds = rawMessages.flatMap((m: any) => [
+    const allMessageIds = rawMessages.flatMap((m) => [
       m.id,
-      ...m.replies.map((r: any) => r.id),
+      ...m.replies.map((r) => r.id),
     ]);
     const attachments = allMessageIds.length > 0
       ? await prisma.messageAttachment.findMany({
@@ -104,10 +104,10 @@ export async function GET(req: NextRequest) {
       list.push(att);
       attachmentMap.set(att.entityId, list);
     }
-    const messages = rawMessages.map((m: any) => ({
+    const messages = rawMessages.map((m) => ({
       ...m,
       attachments: attachmentMap.get(m.id) || [],
-      replies: m.replies.map((r: any) => ({
+      replies: m.replies.map((r) => ({
         ...r,
         attachments: attachmentMap.get(r.id) || [],
       })),
