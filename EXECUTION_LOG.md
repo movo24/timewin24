@@ -175,3 +175,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 34) — M142 retrait `(prisma as any)` (drift)
 - **M142 / DEBT-032** — `pos-feed/store-schedules/route.ts` : 3 casts `(prisma as any).storeSchedule`/`.$transaction` retires. Diagnostic : `prisma.storeSchedule` typecheck SANS cast (utilise non-caste dans stores/[id]/schedules, alerts.ts, shifts.ts) -> le cast etait un artefact inutile qui SUPPRIMAIT le type-checking sur les args findMany/upsert (risque de bug masque). Retrait = type-safety restauree. tsc 0, jest 230.
+
+### Correctif execute (suite 35) — hygiene build Next 16 (viewport metadata)
+- **Build hygiene** — `src/app/inventory/layout.tsx` : `viewport` deplace de l'export `metadata` (deprecie Next 16) vers l'export dedie `export const viewport: Viewport`. Emet le MEME `<meta name="viewport">` (rendu identique) -> resout les 5 warnings build « Unsupported metadata viewport » (/inventory/counts,history,home,login,scan, qui heritent de ce layout). Root layout deja conforme (themeColor dans viewport export). tsc 0, jest 230. Verifiable : warnings absents au prochain build Vercel.

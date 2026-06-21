@@ -1,9 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: "Inventaire Mobile — TimeWin",
   description: "Application d'inventaire terrain",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+};
+
+// Next 16 : la config viewport doit vivre dans l'export `viewport` (pas `metadata`).
+// Émet le même <meta name="viewport"> qu'avant.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function InventoryLayout({
