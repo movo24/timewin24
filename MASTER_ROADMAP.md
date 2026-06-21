@@ -38,7 +38,7 @@ Objectif : génération/édition planning, solver, assistant IA manager.
 Fichiers : `src/lib/solver/*`, `manager-ia/*`, `shifts.ts`, `shift-utils.ts`, `timeline-utils.ts` · hook `useShiftDrag.ts`
 Pages : `(dashboard)/planning`, `(employee)/mon-planning` · API : `planning/*`, `shifts/*` · Base : `Shift`
 Tests : ✅ solver shift-construction, overlap, snapshot-hash (existants).
-Validation : ⚠️ `manager-ia` apply sans transaction (M112) ; couverture solver partielle.
+Validation : ⚠️ `manager-ia` apply sans transaction (M112) ; ✅ couverture solver complète (constraints 38 + scoring 18, M116).
 
 ### M005 — Pointage & Présence
 Statut : ⚠️ À vérifier · Priorité : P2

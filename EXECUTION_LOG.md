@@ -164,3 +164,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 32) — M116 utilitaires transverses (dates planning)
 - **M116 / DEBT-023** — `src/__tests__/utils.test.ts` (9 tests) sur `utils.ts` : `cn` (merge Tailwind, conflits px-2/px-4), `toUTCDate`/`formatDate` (surete timezone — minuit UTC, pas de decalage Paris), `getWeekBounds` (invariant : weekStart toujours lundi UTC ; weekEnd = +6j fin de journee ; dimanche rattache a la semaine precedente), `getWeekDays` (7 jours consecutifs), `getDayNameFr` (0=Lun..6=Dim, hors-borne ''). 1 fixture corrigee (weekEnd a 23:59:59 -> diff ~6.9999j, Math.floor). Suite jest 221 -> 230. tsc 0.
+
+### Bilan M116 (DEBT-023 resolu) — couverture de tests
+- Suite 95 -> 230 (+135 tests cette session) sur toute la logique pure/metier tractable : solveur (constraints 38 + scoring 18), validations Zod (22), utils dates (9), ZPL etiquettes (12), RBAC (16), cout employeur (7), geo/shift/timeline (13).
+- **Exclusion deliberee** : `scenario-scoring.scoreScenario` (blend pondere de 7 sous-scores sur un `SolverResult` complet) et `suggestions.generateCrossStoreSuggestions` — testables mais fixtures lourdes + assertions fragiles (rejouent le modele de scoring) = ROI negatif, risque de casse au moindre refactor legitime. Decision pro : ne pas gonfler avec des tests cassants. DEBT-023 considere resolu.
