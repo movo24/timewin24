@@ -319,7 +319,7 @@ function ExchangeCard({
       {/* Message */}
       {exchange.message && (
         <div className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2 italic">
-          "{exchange.message}"
+          &quot;{exchange.message}&quot;
         </div>
       )}
 
@@ -327,7 +327,7 @@ function ExchangeCard({
       {exchange.managerResponse && (
         <div className="mt-1 text-xs text-blue-600 bg-blue-50 rounded p-2 flex items-start gap-1">
           <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-          Manager : "{exchange.managerResponse}"
+          Manager : &quot;{exchange.managerResponse}&quot;
         </div>
       )}
 

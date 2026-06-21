@@ -126,3 +126,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 21) — M115 frontieres (shared)+inventory
 - **M115 / DEBT-022** — `error.tsx` + `loading.tsx` ajoutes aux groupes `(shared)` (fil-actualite/annonces) et `inventory` (app mobile POS), completant `(dashboard)`/`(employee)`. Les 4 groupes utilisateur ont desormais une frontiere d'erreur (retry) + un etat de chargement (spinner). Inventory : variante full-screen tactile. tsc 0, lint 0 sur les 4 fichiers, jest 118. Pure addition front. Reste optionnel : conversion RSC (refactor separe).
+
+### Correctif execute (suite 22) — M142 cosmetique (no-unescaped-entities)
+- **M142 / DEBT-032** —  (9) corrige : apostrophes (, , ) ->  et guillemets JSX () -> . Rendu identique, zero runtime. Categorie a 0. tsc 0, jest 118. Reste lint runtime-sensible (any 39, set-state-in-effect 30, no-img-element 8, hooks 3) laisse delibere.

@@ -98,7 +98,7 @@ export default function InventoryHomePage() {
           </div>
           <div>
             <p className="font-semibold">Comptages en cours</p>
-            <p className="text-sm text-gray-400">Sessions d'inventaire actives</p>
+            <p className="text-sm text-gray-400">Sessions d&apos;inventaire actives</p>
           </div>
         </Link>
 
@@ -113,7 +113,7 @@ export default function InventoryHomePage() {
           </div>
           <div>
             <p className="font-semibold">Historique</p>
-            <p className="text-sm text-gray-400">Sessions d'inventaire termin&eacute;es</p>
+            <p className="text-sm text-gray-400">Sessions d&apos;inventaire termin&eacute;es</p>
           </div>
         </Link>
       </div>
