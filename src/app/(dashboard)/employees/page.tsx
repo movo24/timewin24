@@ -137,8 +137,7 @@ export default function EmployeesPage() {
     setLoading(true);
     setError("");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       firstName: form.firstName, lastName: form.lastName,
       email: form.email.trim(), active: form.active,
       weeklyHours: form.weeklyHours ? parseFloat(form.weeklyHours) : null,

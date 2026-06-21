@@ -1,5 +1,6 @@
 "use client";
 
+import type { ScoreBreakdown } from "@/lib/reliability-score";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +39,7 @@ interface Props {
   scoreDialogOpen: boolean;
   setScoreDialogOpen: (v: boolean) => void;
   scoreLoading: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  scoreBreakdown: any;
+  scoreBreakdown: ScoreBreakdown | null;
   scoreEmployee: { firstName: string; lastName: string } | null;
   // Password success dialog (managed by parent)
   passwordSuccessOpen: boolean;
