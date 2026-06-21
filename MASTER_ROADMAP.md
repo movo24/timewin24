@@ -101,7 +101,7 @@ Statut : ⚠️ À vérifier · Priorité : P2
 Fichiers : `src/lib/alerts.ts`, `audit.ts` · Pages : `alertes`, `audit`, `journal` · API : `alerts/*`, `audit/*`, `journal/*`
 Base : `ManagerAlert`, `AuditLog`, `JournalEntry`
 
-**Transverse** : `prisma.ts`, `validations.ts` (✅ 22 tests Zod), `utils.ts`, `uploads.ts`, `health`.
+**Transverse** : `prisma.ts`, `validations.ts` (✅ 22 tests Zod), `utils.ts` (✅ 9 tests dates/cn), `uploads.ts`, `health`.
 
 ---
 
@@ -203,7 +203,7 @@ Statut : 🔄 En cours · Priorité : P2
 - ✅ Coût employeur : `src/__tests__/employer-cost.test.ts` (7 tests).
 - ✅ Utilitaires purs : `src/__tests__/pure-utils.test.ts` (13 tests — geo/haversine + rayon pointage GPS, doTimesOverlap/calculateShiftHours, timeToMinutes/snapMinutes/clampMinutes). Suite : 95 → **131**.
 - ✅ Contraintes dures solveur : `solver-constraints.test.ts` (38 — overlap, dispo FIXED/VARIABLE, max jour/semaine, repos 11h FR, préférence MATIN/AM, relais inter-magasins, max distinct/simultané sweep-line, profil C Manager Brain). **constraints.ts entièrement couvert.**
-- ✅ Scoring solveur : `solver-scoring.test.ts` (18 — priorité, magasin préféré, coût, objectif contractuel, équité, Manager Brain fiabilité/importance). Suite **131→221**.
+- ✅ Scoring solveur : `solver-scoring.test.ts` (18 — priorité, magasin préféré, coût, objectif contractuel, équité, Manager Brain fiabilité/importance). Suite **131→230**.
 - ⬜ Reste (optionnel) : scénarios/suggestions solveur ; `deriveProfileCategory` à extraire de `reliability-score` (co-localisé Prisma).
 
 #### M121 — `notifications/clicked` non authentifié
