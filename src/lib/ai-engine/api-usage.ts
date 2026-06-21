@@ -5,6 +5,7 @@
  * dans la table AiApiUsage pour le suivi des coûts.
  */
 
+import { logger } from "@/lib/logger";
 import { onApiUsage } from "./shared/gemini-client";
 import type { ApiUsageEntry } from "./types";
 
@@ -37,9 +38,9 @@ export function initApiUsageTracking(): void {
       });
     } catch (err) {
       // Ne jamais casser le flow principal pour du tracking
-      console.warn("[AI Engine] Usage tracking failed:", (err as Error).message);
+      logger.warn("[AI Engine] Usage tracking failed:", (err as Error).message);
     }
   });
 
-  console.log("[AI Engine] API usage tracking initialized");
+  logger.debug("[AI Engine] API usage tracking initialized");
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -108,7 +109,7 @@ export const authOptions: NextAuthOptions = {
             throw new Error(err.message);
           }
           // Erreur système/Prisma → log + message générique
-          console.error("[AUTH] Database error:", err instanceof Error ? err.message : err);
+          logger.error("[AUTH] Database error:", err instanceof Error ? err.message : err);
           throw new Error("Service temporairement indisponible. Vérifiez la connexion à la base de données.");
         }
       },
@@ -152,7 +153,7 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (err) {
           // DB unreachable — keep existing token valid to avoid logout storm
-          console.error("[JWT] DB unreachable during refresh, keeping token:", err);
+          logger.error("[JWT] DB unreachable during refresh, keeping token:", err);
         }
       }
 

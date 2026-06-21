@@ -5,6 +5,7 @@
 // 1. Créer l'adaptateur dans src/lib/pos/adapters/
 // 2. Ajouter le case dans createAdapter()
 
+import { logger } from "@/lib/logger";
 import type { PosAdapter } from "./adapter";
 import type { PosProviderConfig } from "./types";
 import { MockPosAdapter } from "./adapters/mock";
@@ -38,7 +39,7 @@ function createAdapter(type: string): PosAdapter {
 
     default:
       // En dev/test, on utilise le mock par défaut
-      console.warn(
+      logger.warn(
         `[POS Factory] No adapter for type "${type}", using MockPosAdapter`
       );
       return new MockPosAdapter();

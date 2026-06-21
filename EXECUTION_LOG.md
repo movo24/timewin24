@@ -132,3 +132,8 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 23) — M116 tests utilitaires purs
 - **M116 / DEBT-023** — `src/__tests__/pure-utils.test.ts` (13 tests) : `geo` (haversineDistance + isWithinRadius = validation rayon pointage GPS, M005), `shift-utils` (doTimesOverlap : overlap/adjacent/dates/self-id ; calculateShiftHours), `timeline-utils` (timeToMinutes/minutesToTime roundtrip, snapMinutes, clampMinutes). Suite jest 118 -> 131. tsc 0. `deriveProfileCategory` (reliability-score) non teste : pur mais co-localise avec Prisma (import.meta incompatible jest) -> extraction necessaire (note dette).
+
+### Correctif execute (suite 24) — M141 logger conditionne (phase 1 : lib)
+- **M141 / DEBT-031** — `src/lib/logger.ts` cree : `error`/`warn` toujours emis (les blocs catch prod gardent leur observabilite), `info`/`debug` uniquement hors production (ou `LOG_LEVEL=debug`) -> supprime le bruit de logs en prod sans perdre les vrais incidents. Aucune dependance (pas de risque d'import circulaire).
+- Phase 1 : 16 fichiers `src/lib/**` migres (37 `console.*` -> `logger.*`), import injecte avant le premier import (insertion sure ; 1ere tentative cassait les imports multi-lignes -> revert + correction). `console.log`->`logger.debug` (dev-only), `console.error/warn` conserves en prod.
+- Verifie : tsc 0, jest 131, 0 `console.*` restant dans `src/lib`. (Les 2 erreurs eslint `any` de gemini-client sont pre-existantes, dette M142.) Reste phase 2 : API (207) + composants (24).

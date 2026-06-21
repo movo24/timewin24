@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import nodemailer from "nodemailer";
 
 const SMTP_HOST = process.env.SMTP_HOST;
@@ -59,7 +60,7 @@ export async function sendEmail(
     // Log a sanitized server-side message — full SMTP errors can include
     // credentials, internal hostnames, or recipient lists.
     const sanitized = sanitizeSmtpError(fullMessage);
-    console.error(`Email send error [${sanitized}] code=${(err as { code?: string })?.code ?? "unknown"}`);
+    logger.error(`Email send error [${sanitized}] code=${(err as { code?: string })?.code ?? "unknown"}`);
     return { success: false, error: sanitized };
   }
 }

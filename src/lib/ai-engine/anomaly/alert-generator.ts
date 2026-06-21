@@ -5,6 +5,7 @@
  * optionnellement des ManagerAlerts.
  */
 
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { AI_CONFIG, isFeatureEnabled } from "../config";
 import type { DetectedAnomaly } from "../types";
@@ -48,7 +49,7 @@ export async function generateAlerts(
   for (const anomaly of anomalies) {
     // FIX C3: Skip anomalies with missing/invalid storeId
     if (!anomaly.storeId || anomaly.storeId === "unknown") {
-      console.warn(`[AI Engine] Skipping anomaly with missing storeId: ${anomaly.type}`);
+      logger.warn(`[AI Engine] Skipping anomaly with missing storeId: ${anomaly.type}`);
       continue;
     }
     try {
@@ -68,7 +69,7 @@ export async function generateAlerts(
       anomaliesSaved++;
     } catch (err) {
       // Skip duplicates or errors silently
-      console.warn(`[AI Engine] Failed to save anomaly: ${(err as Error).message}`);
+      logger.warn(`[AI Engine] Failed to save anomaly: ${(err as Error).message}`);
     }
   }
 
@@ -101,7 +102,7 @@ export async function generateAlerts(
   for (const anomaly of criticalAnomalies) {
     // FIX C3: Skip alerts when storeId is empty/invalid (FK constraint)
     if (!anomaly.storeId || anomaly.storeId === "unknown") {
-      console.warn(`[AI Engine] Skipping alert for anomaly with missing storeId: ${anomaly.type}`);
+      logger.warn(`[AI Engine] Skipping alert for anomaly with missing storeId: ${anomaly.type}`);
       continue;
     }
     try {
@@ -148,7 +149,7 @@ export async function generateAlerts(
 
       // FIX C3: Skip fraud alerts when no valid storeId found
       if (!storeId || storeId === "unknown") {
-        console.warn(`[AI Engine] Skipping fraud alert for employee ${fs.employeeId}: no valid storeId`);
+        logger.warn(`[AI Engine] Skipping fraud alert for employee ${fs.employeeId}: no valid storeId`);
         continue;
       }
 
@@ -188,7 +189,7 @@ export async function generateAlerts(
     }
   }
 
-  console.log(
+  logger.debug(
     `[AI Engine] Alert generation: ${anomaliesSaved} anomalies saved, ${alertsCreated} alerts created, ${fraudScores.length} fraud scores`
   );
 

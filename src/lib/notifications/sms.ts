@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 const TWILIO_SID = process.env.TWILIO_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
 const TWILIO_FROM = process.env.TWILIO_FROM_NUMBER;
@@ -50,7 +51,7 @@ export async function sendSMS(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Erreur SMS inconnue";
-    console.error("SMS send error:", message);
+    logger.error("SMS send error:", message);
     return { success: false, error: message };
   }
 }

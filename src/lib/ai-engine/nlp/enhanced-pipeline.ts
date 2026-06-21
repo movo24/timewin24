@@ -5,6 +5,7 @@
  * Le parser existant reste inchangé, ce module l'enveloppe.
  */
 
+import { logger } from "@/lib/logger";
 import { parseCommand } from "@/lib/manager-ia/parser";
 import type { ParsedIntent } from "@/lib/manager-ia/types";
 import { scoreConfidence } from "./confidence";
@@ -68,7 +69,7 @@ export async function enhancedParse(
   // 2. Scorer la confiance
   const confidenceScore = scoreConfidence(deterministicResult, parseContext);
 
-  console.log(
+  logger.debug(
     `[AI Engine NLP] Deterministic confidence: ${confidenceScore.overall} ` +
     `(action: ${confidenceScore.actionConfidence}, entity: ${confidenceScore.entityConfidence}, ` +
     `date: ${confidenceScore.dateConfidence}, time: ${confidenceScore.timeConfidence})`
@@ -79,7 +80,7 @@ export async function enhancedParse(
     !options?.forceGemini &&
     confidenceScore.overall >= AI_CONFIG.nlp.confidenceThreshold
   ) {
-    console.log(
+    logger.debug(
       `[AI Engine NLP] Using deterministic result (${confidenceScore.overall} >= ${AI_CONFIG.nlp.confidenceThreshold})`
     );
     return {
@@ -91,7 +92,7 @@ export async function enhancedParse(
   }
 
   // 4. Fallback vers Gemini
-  console.log(
+  logger.debug(
     `[AI Engine NLP] Low confidence (${confidenceScore.overall} < ${AI_CONFIG.nlp.confidenceThreshold}), falling back to Gemini`
   );
 
@@ -115,7 +116,7 @@ export async function enhancedParse(
       confidenceDetails: geminiConfidence,
     };
   } catch (err) {
-    console.error("[AI Engine NLP] Gemini fallback failed, using deterministic:", err);
+    logger.error("[AI Engine NLP] Gemini fallback failed, using deterministic:", err);
     // Dégradation gracieuse: retourner le résultat déterministe même si faible confiance
     return {
       ...deterministicResult,

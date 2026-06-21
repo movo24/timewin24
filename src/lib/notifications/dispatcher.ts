@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
   NotificationEventType,
@@ -83,7 +84,7 @@ export async function dispatchNotification(
           },
         })
         .catch((err) => {
-          console.error("Failed to log notification:", err);
+          logger.error("Failed to log notification:", err);
         });
 
       if (result.success) totalSent++;
@@ -183,6 +184,6 @@ async function sendViaChannel(
  */
 export function dispatchNotificationAsync(params: DispatchParams): void {
   dispatchNotification(params).catch((err) => {
-    console.error("Notification dispatch error:", err);
+    logger.error("Notification dispatch error:", err);
   });
 }

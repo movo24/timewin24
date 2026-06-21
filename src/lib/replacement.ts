@@ -8,6 +8,7 @@
  * 4. Creates ReplacementOffer + ReplacementCandidate records
  */
 
+import { logger } from "@/lib/logger";
 import { prisma } from "./prisma";
 import { isAvailable } from "./solver/constraints";
 import { calculateShiftHours, doTimesOverlap } from "./shift-utils";
@@ -216,7 +217,7 @@ export async function createReplacementOffers(absence: AbsenceInfo): Promise<num
     offersCreated++;
   }
 
-  console.log(
+  logger.debug(
     `[Replacement] Created ${offersCreated} offers for absence ${absence.id} (${shifts.length} shifts affected)`
   );
 

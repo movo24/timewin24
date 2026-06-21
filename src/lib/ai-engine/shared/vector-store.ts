@@ -5,6 +5,7 @@
  * Utilise des requêtes SQL raw car Prisma ne supporte pas nativement pgvector.
  */
 
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { AI_CONFIG } from "../config";
 import type {
@@ -71,7 +72,7 @@ export async function upsertEmbeddings(
         await upsertEmbedding(result);
         count++;
       } catch (err) {
-        console.warn(`[AI Engine] Failed to upsert embedding ${result.entityType}:${result.entityId}: ${(err as Error).message}`);
+        logger.warn(`[AI Engine] Failed to upsert embedding ${result.entityType}:${result.entityId}: ${(err as Error).message}`);
       }
     }
   }
