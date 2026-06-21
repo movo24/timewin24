@@ -12,9 +12,9 @@ import {
 } from "@/lib/ai-engine/performance/embeddings";
 
 // POST /api/ai/embeddings — Sync tous les embeddings
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const { session, error } = await requireAdmin();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     if (!isAiAvailable()) {

@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { authOptions } from "./auth";
 import { hasPermission, isAdmin } from "./rbac";
-import type { AppRole, Permission } from "./rbac";
+import type { Permission } from "./rbac";
 
 type SessionUser = {
   id: string;

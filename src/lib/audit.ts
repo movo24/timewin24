@@ -6,7 +6,7 @@ export async function logAudit(
   entity: string,
   entityId: string,
   diff?: Record<string, unknown> | null,
-  newData?: unknown
+  _newData?: unknown
 ) {
   try {
     // Service API keys have userId like "service:xxx" — not a real User FK.

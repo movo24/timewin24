@@ -50,33 +50,6 @@ function getWeekDates(weekStart: string): Date[] {
 }
 
 /**
- * Compute employer cost per hour for an employee.
- * Uses the EmployeeCost + CountryConfig if available, or returns null.
- */
-async function computeCostPerHour(employeeId: string): Promise<number | null> {
-  const costConfig = await prisma.employeeCost.findUnique({
-    where: { employeeId },
-    include: { country: true },
-  });
-
-  if (!costConfig) return null;
-
-  const rules = costConfig.country
-    ? countryRulesFromConfig(costConfig.country)
-    : FRANCE_2026_DEFAULTS;
-
-  const breakdown = calculateEmployerCost({
-    hourlyRateGross: toNum(costConfig.hourlyRateGross),
-    hours: 1, // per-hour cost
-    rules,
-    employerRateOverride: toNumN(costConfig.employerRateOverride),
-    extraHourlyCostOverride: toNumN(costConfig.extraHourlyCostOverride),
-  });
-
-  return breakdown.costPerHour;
-}
-
-/**
  * Load all data needed by the solver for a specific store + week.
  *
  * @param storeId - The store to generate planning for

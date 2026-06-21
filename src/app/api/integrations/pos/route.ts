@@ -55,7 +55,7 @@ export async function GET() {
 
   // Strip sensitive fields from each provider before returning
   const safeProviders = providers.map((p: any) => {
-    const { apiKey, apiSecret, accessToken, refreshToken, ...safe } = p;
+    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safe } = p;
     return {
       ...safe,
       hasApiKey: !!apiKey,
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Strip sensitive fields before returning (BUG 2)
-  const { apiKey, apiSecret, accessToken, refreshToken, ...safeProvider } = provider as any;
+  const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeProvider } = provider as any;
   return successResponse({
     ...safeProvider,
     hasApiKey: !!apiKey,

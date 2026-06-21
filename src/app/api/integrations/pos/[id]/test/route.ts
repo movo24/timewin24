@@ -62,7 +62,7 @@ export async function POST(
       posStores,
       posEmployees,
     });
-    } catch (err) {
+    } catch {
       return successResponse({
         connected: false,
         error: "Erreur de connexion",

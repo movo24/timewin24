@@ -10,7 +10,7 @@ import {
 // GET /api/ai/anomaly — Liste anomalies détectées
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("manage_ai_anomalies");
+    const { error } = await requirePermission("manage_ai_anomalies");
     if (error) return error;
 
     const { searchParams } = new URL(req.url);

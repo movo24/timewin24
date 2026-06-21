@@ -188,7 +188,6 @@ export async function detectAlerts(
   // 5. Regle 5 : Drop de score > 30% vs periode precedente
   const periodLengthMs = dateTo.getTime() - dateFrom.getTime();
   const previousFrom = new Date(dateFrom.getTime() - periodLengthMs);
-  const previousTo = new Date(dateFrom.getTime() - 1); // Jour avant dateFrom
 
   const currentScores = await prisma.employeePerformanceScore.findMany({
     where: {

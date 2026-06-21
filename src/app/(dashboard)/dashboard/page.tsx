@@ -8,12 +8,8 @@ import {
   Calendar,
   ScanLine,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   CheckCircle,
   XCircle,
-  Clock,
   BarChart3,
   Bell,
   ChevronRight,
@@ -86,12 +82,6 @@ function getRateColor(rate: number) {
   if (rate >= 90) return "text-emerald-600";
   if (rate >= 70) return "text-amber-600";
   return "text-red-600";
-}
-
-function getRateBg(rate: number) {
-  if (rate >= 90) return "bg-emerald-50 border-emerald-200";
-  if (rate >= 70) return "bg-amber-50 border-amber-200";
-  return "bg-red-50 border-red-200";
 }
 
 function getSeverityDot(severity: string) {

@@ -18,7 +18,7 @@ const createBroadcastSchema = z.object({
 });
 
 // GET /api/broadcasts
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { session, error } = await requireAuthenticated();
     if (error) return error;

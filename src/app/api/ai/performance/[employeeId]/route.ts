@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ employeeId: string }> }
 ) {
   try {
-    const { session, error } = await requirePermission("view_ai_metrics");
+    const { error } = await requirePermission("view_ai_metrics");
     if (error) return error;
 
     const { employeeId } = await params;

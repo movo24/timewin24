@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
-import { isAdminOrManager, isEmployee as isEmployeeRole, getLoginPageForRole, ROLE_LABELS } from "@/lib/rbac";
+import { getLoginPageForRole, ROLE_LABELS } from "@/lib/rbac";
 
 // ── Types ────────────────────────────────────────────────────────────
 

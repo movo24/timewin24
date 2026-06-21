@@ -253,7 +253,7 @@ async function executeProposal(
           break;
         }
       }
-    } catch (err) {
+    } catch {
       errors.push(`Erreur lors de l'action ${action.type}`);
     }
   }

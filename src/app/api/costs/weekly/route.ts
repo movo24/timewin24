@@ -4,7 +4,7 @@ import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers"
 import { calculateShiftCost } from "@/lib/employer-cost";
 import { countryRulesFromConfig } from "@/lib/cost-mappers";
 import { toNum, toNumN } from "@/lib/decimal";
-import { getWeekBounds, toUTCDate } from "@/lib/utils";
+import { getWeekBounds } from "@/lib/utils";
 
 // GET /api/costs/weekly?storeId=xxx&weekStart=YYYY-MM-DD
 // Returns per-shift cost breakdown for a given week and store

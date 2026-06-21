@@ -19,16 +19,6 @@ export async function ensureUploadDir() {
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
 }
 
-// Magic bytes signatures for file type validation
-const MAGIC_BYTES: { mime: string; bytes: number[] }[] = [
-  { mime: "image/jpeg", bytes: [0xFF, 0xD8, 0xFF] },
-  { mime: "image/png", bytes: [0x89, 0x50, 0x4E, 0x47] },
-  { mime: "image/webp", bytes: [0x52, 0x49, 0x46, 0x46] }, // RIFF
-  { mime: "video/mp4", bytes: [] }, // ftyp at offset 4 — checked separately
-  { mime: "video/quicktime", bytes: [] }, // also ftyp
-  { mime: "application/pdf", bytes: [0x25, 0x50, 0x44, 0x46] }, // %PDF
-];
-
 function detectMimeFromBytes(buffer: Buffer): string | null {
   if (buffer.length < 8) return null;
 

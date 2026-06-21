@@ -19,7 +19,7 @@ const MAX_RADIUS_METERS = 50;
  */
 export async function POST(req: NextRequest) {
   try {
-    const { session, employeeId, error } = await requireEmployee();
+    const { employeeId, error } = await requireEmployee();
     if (error) return error;
 
     const formData = await req.formData();

@@ -10,10 +10,9 @@ import bcrypt from "bcryptjs";
 // RBAC: Manager sees only employees from their assigned stores
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));

@@ -9,7 +9,7 @@
 
 import { NextRequest } from "next/server";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
-import { AI_CONFIG, isAiAvailable, isFeatureEnabled } from "@/lib/ai-engine/config";
+import { AI_CONFIG, isAiAvailable } from "@/lib/ai-engine/config";
 
 // ─── Types ───────────────────────────────────────
 
@@ -23,9 +23,9 @@ interface TestResult {
 
 // ─── GET /api/ai/test ────────────────────────────
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const { session, error } = await requireAdmin();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     const results: TestResult[] = [];

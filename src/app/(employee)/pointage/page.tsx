@@ -44,7 +44,7 @@ interface TodayShift {
 type Step = "idle" | "locating" | "camera" | "uploading" | "done" | "error";
 
 export default function PointagePage() {
-  const { data: session } = useSession();
+  useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [stores, setStores] = useState<StoreOption[]>([]);

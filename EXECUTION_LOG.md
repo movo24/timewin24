@@ -87,3 +87,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 15) — M143 README
 - **M143 / DEBT-033** — README.md reecrit pour refleter le repo reel : 56 modeles (vs « 5 » dans l'ancien), 15 modules fonctionnels M001-M015, 118 tests (vs « 11 »), variables d'environnement reelles (auditees via grep process.env), posture securite reelle (rate-limit en memoire, passwordChangedAt, HMAC POS, CSPRNG), pointeurs vers les docs de gouvernance + runbook de rotation. Faits verifies avant ecriture (scripts package.json, count modeles, suites de test, env vars). Pure documentation, zero runtime.
+
+### Correctif execute (suite 16) — M142 lint (dette unused-vars)
+- **M142 / DEBT-032** — resorption `no-unused-vars` (81) + `prefer-const` (2) : imports/vars morts retires, params inutilises `_`-prefixes. **-75 lignes nettes** sur 58 fichiers. (Bulk delegue a un sous-agent sous regle stricte « ne jamais supprimer un appel de fonction » pour ne pas casser un side-effect d'auth ; diff relu + verifie par moi.)
+- **eslint.config.mjs durci** : `ignoreRestSiblings:true` (point CLE — les destructurations qui OMETTENT des champs sensibles d'un `...rest`, ex. strip de `refreshToken`/`apiSecret` avant reponse, ne sont plus signalees ; un "fix" naif aurait LEAK ces secrets), `argsIgnorePattern '^_'`, `varsIgnorePattern '^_'`, `caughtErrors 'none'`, ignore `src/generated/**`.
+- Verifie : **tsc 0, jest 118/118**, `no-unused-vars`+`prefer-const` = **0** restant. Total eslint 178 -> 94.
+- Reste (NON touche, runtime-sensible/cosmetique) : `no-explicit-any` (39), `set-state-in-effect` (30), `no-unescaped-entities` (9), `no-img-element` (8), hooks refs/deps (3).

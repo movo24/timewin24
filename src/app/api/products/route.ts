@@ -6,7 +6,7 @@ import { productCreateSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const url = new URL(req.url);

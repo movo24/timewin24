@@ -9,9 +9,9 @@ import { AI_CONFIG, isAiAvailable } from "@/lib/ai-engine/config";
 import { getEmbeddingStats } from "@/lib/ai-engine/shared/vector-store";
 
 // GET /api/ai/status — Statut moteur IA
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("view_ai_metrics");
+    const { error } = await requirePermission("view_ai_metrics");
     if (error) return error;
 
     // Stats de base

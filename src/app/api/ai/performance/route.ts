@@ -16,7 +16,7 @@ import { isAiAvailable } from "@/lib/ai-engine/config";
 // GET /api/ai/performance — Liste métriques IA employés
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("view_ai_metrics");
+    const { error } = await requirePermission("view_ai_metrics");
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
 // POST /api/ai/performance — Recalculer métriques (Admin only)
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requireAdmin();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     if (!isAiAvailable()) {

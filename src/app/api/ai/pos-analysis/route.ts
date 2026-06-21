@@ -7,7 +7,7 @@ import { analyzePosData } from "@/lib/ai-engine/pos-analysis/analyzer";
 // Génère une analyse business IA à partir des données POS réelles
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const body = await req.json();

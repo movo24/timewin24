@@ -6,7 +6,7 @@ import { productUpdateSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const { id } = await params;

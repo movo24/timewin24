@@ -9,7 +9,7 @@ import {
 
 // GET /api/dashboard
 // Retourne tous les KPIs opérationnels du jour pour le dashboard global
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { error } = await requireManagerOrAdmin();
     if (error) return error;

@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireAuthenticated,
-  requireManagerOrAdmin,
   errorResponse,
   successResponse,
 } from "@/lib/api-helpers";

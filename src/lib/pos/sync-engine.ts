@@ -145,7 +145,8 @@ async function syncEmployees(
   provider: { id: string; employeeLinks: { employeeId: string; posEmployeeId: string }[] }
 ): Promise<PosSyncResult> {
   const errors: PosSyncError[] = [];
-  let created = 0, updated = 0, skipped = 0, failed = 0;
+  const updated = 0;
+  let created = 0, skipped = 0, failed = 0;
 
   // Récupérer les employés TimeWin actifs assignés aux magasins liés
   const employees = await prisma.employee.findMany({
@@ -412,7 +413,7 @@ async function syncSales(
 
 async function syncStores(
   adapter: PosAdapter,
-  provider: { id: string }
+  _provider: { id: string }
 ): Promise<PosSyncResult> {
   const posStores = await adapter.fetchStores();
   return {

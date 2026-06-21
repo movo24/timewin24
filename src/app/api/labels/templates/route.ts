@@ -6,7 +6,7 @@ import { labelTemplateCreateSchema } from "@/lib/validations";
 
 export async function GET() {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const templates = await prisma.labelTemplate.findMany({

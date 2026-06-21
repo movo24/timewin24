@@ -7,7 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { AI_CONFIG } from "../config";
-import type { DetectedAnomaly, AnomalyType, AnomalySeverity } from "../types";
+import type { DetectedAnomaly, AnomalySeverity } from "../types";
 
 // ─── Types ───────────────────────────────────────
 

@@ -155,7 +155,7 @@ function SimulatorTab() {
   const [hourlyRate, setHourlyRate] = useState("12.02");
   const [hours, setHours] = useState("35");
   const [breakdown, setBreakdown] = useState<CostBreakdown | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   const simulate = useCallback(async () => {
     setLoading(true);

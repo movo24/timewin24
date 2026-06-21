@@ -75,7 +75,7 @@ export default function ProductCatalogue() {
       const data = await res.json();
       setProducts(data.products || []);
       setTotalPages(data.totalPages || 1);
-    } catch (err) {
+    } catch {
       setError("Impossible de charger les produits.");
     } finally {
       setLoading(false);

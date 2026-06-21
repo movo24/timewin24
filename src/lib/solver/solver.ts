@@ -916,7 +916,7 @@ function solveDayWithShiftConstruction(
   const storeMaxEmployees = schedule.maxEmployees ?? store.maxEmployees;
 
   // Start with full day uncovered (minus already existing shifts)
-  let uncoveredRanges = findUncoveredRanges(
+  const uncoveredRanges = findUncoveredRanges(
     openMin,
     closeMin,
     existingShifts.filter((s) => s.date === date && s.storeId === store.id),

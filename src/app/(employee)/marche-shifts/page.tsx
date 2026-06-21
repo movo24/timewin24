@@ -10,8 +10,6 @@ import {
   Timer,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
-  Upload,
 } from "lucide-react";
 
 interface ShiftInfo {

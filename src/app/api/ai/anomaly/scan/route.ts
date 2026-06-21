@@ -11,7 +11,7 @@ import { isFeatureEnabled } from "@/lib/ai-engine/config";
 // POST /api/ai/anomaly/scan — Lancer scan anomalies
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("manage_ai_anomalies");
+    const { error } = await requirePermission("manage_ai_anomalies");
     if (error) return error;
 
     if (!isFeatureEnabled("anomalyDetection")) {

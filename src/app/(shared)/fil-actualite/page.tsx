@@ -54,7 +54,7 @@ interface UploadedFile {
 }
 
 export default function FeedPage() {
-  const { data: session } = useSession();
+  useSession();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -71,8 +71,6 @@ export default function FeedPage() {
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [commentText, setCommentText] = useState<Record<string, string>>({});
   const [commentLoading, setCommentLoading] = useState<Record<string, boolean>>({});
-
-  const userId = (session?.user as any)?.id;
 
   const loadPosts = useCallback(async (cursor?: string) => {
     if (!cursor) setLoading(true);
