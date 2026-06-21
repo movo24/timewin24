@@ -196,8 +196,9 @@ Statut : ✅ Fait (boundaries) · Priorité : P2
 #### M116 — Tests chemins critiques
 Statut : 🔄 En cours · Priorité : P2
 - ✅ RBAC : `src/__tests__/rbac.test.ts` (16 tests — matrice par rôle, hiérarchie, helpers, routes par défaut).
-- ✅ Coût employeur : `src/__tests__/employer-cost.test.ts` (7 tests — Fillon à/au-dessus du SMIC, overrides, clamp, frontière Decimal). Suite : 95 → **118**.
-- ⬜ Reste : couverture solver étendue.
+- ✅ Coût employeur : `src/__tests__/employer-cost.test.ts` (7 tests).
+- ✅ Utilitaires purs : `src/__tests__/pure-utils.test.ts` (13 tests — geo/haversine + rayon pointage GPS, doTimesOverlap/calculateShiftHours, timeToMinutes/snapMinutes/clampMinutes). Suite : 95 → **131**.
+- ⬜ Reste : couverture solver interne étendue ; `deriveProfileCategory` à extraire de `reliability-score` (co-localisé Prisma) pour le tester.
 
 #### M121 — `notifications/clicked` non authentifié
 Statut : ✅ Fait · Priorité : P2 — endpoint public (SW sans cookie) durci par rate-limit IP (`RATE_LIMITS.api`, 429 si dépassé). Écriture `clickedAt` non destructive ; abus limité. tsc 0 / jest 118.

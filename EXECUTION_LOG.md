@@ -129,3 +129,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 22) — M142 cosmetique (no-unescaped-entities)
 - **M142 / DEBT-032** — react/no-unescaped-entities (9) corrige : apostrophes JSX (aujourd'hui, l'analyse, d'inventaire) echappees en &apos; et guillemets JSX ("{exchange.message}") en &quot;. Rendu identique, zero runtime. Categorie lint a 0 (total eslint 94 -> 85). tsc 0, jest 118. Reste lint runtime-sensible laisse delibere : any (39), set-state-in-effect (30), no-img-element (8), hooks (3).
+
+### Correctif execute (suite 23) — M116 tests utilitaires purs
+- **M116 / DEBT-023** — `src/__tests__/pure-utils.test.ts` (13 tests) : `geo` (haversineDistance + isWithinRadius = validation rayon pointage GPS, M005), `shift-utils` (doTimesOverlap : overlap/adjacent/dates/self-id ; calculateShiftHours), `timeline-utils` (timeToMinutes/minutesToTime roundtrip, snapMinutes, clampMinutes). Suite jest 118 -> 131. tsc 0. `deriveProfileCategory` (reliability-score) non teste : pur mais co-localise avec Prisma (import.meta incompatible jest) -> extraction necessaire (note dette).
