@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthenticated, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
       shiftCount: shifts.length,
     });
   } catch (err) {
-    console.error("GET /api/me/shifts error:", err);
+    logger.error("GET /api/me/shifts error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

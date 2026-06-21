@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(
+    logger.debug(
       `[POST /api/absences] Employee ${employeeId} declared ${type} absence from ${startDate} to ${endDate}`
     );
 
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(declaration, 201);
   } catch (err) {
-    console.error("[POST /api/absences] Error:", err);
+    logger.error("[POST /api/absences] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500
@@ -164,7 +165,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ declarations });
   } catch (err) {
-    console.error("[GET /api/absences] Error:", err);
+    logger.error("[GET /api/absences] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

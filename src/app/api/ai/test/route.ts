@@ -7,6 +7,7 @@
  * Admin only. Used for verification and demo purposes.
  */
 
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { AI_CONFIG, isAiAvailable } from "@/lib/ai-engine/config";
@@ -31,9 +32,9 @@ export async function GET(_req: NextRequest) {
     const results: TestResult[] = [];
     const startAll = Date.now();
 
-    console.log("\n╔══════════════════════════════════════════╗");
-    console.log("║  AI ENGINE — COMPREHENSIVE TEST SUITE    ║");
-    console.log("╚══════════════════════════════════════════╝\n");
+    logger.debug("\n╔══════════════════════════════════════════╗");
+    logger.debug("║  AI ENGINE — COMPREHENSIVE TEST SUITE    ║");
+    logger.debug("╚══════════════════════════════════════════╝\n");
 
     // ─── Test 1: Configuration ─────────────────
     results.push(await testConfiguration());
@@ -69,10 +70,10 @@ export async function GET(_req: NextRequest) {
     const skipped = results.filter((r) => r.status === "SKIP").length;
     const totalDuration = Date.now() - startAll;
 
-    console.log("\n╔══════════════════════════════════════════╗");
-    console.log(`║  RESULTS: ${passed} PASS / ${failed} FAIL / ${skipped} SKIP`);
-    console.log(`║  Total duration: ${totalDuration}ms`);
-    console.log("╚══════════════════════════════════════════╝\n");
+    logger.debug("\n╔══════════════════════════════════════════╗");
+    logger.debug(`║  RESULTS: ${passed} PASS / ${failed} FAIL / ${skipped} SKIP`);
+    logger.debug(`║  Total duration: ${totalDuration}ms`);
+    logger.debug("╚══════════════════════════════════════════╝\n");
 
     return successResponse({
       summary: {
@@ -96,7 +97,7 @@ export async function GET(_req: NextRequest) {
       results,
     });
   } catch (err) {
-    console.error("[AI Test] Fatal error:", err);
+    logger.error("[AI Test] Fatal error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -121,7 +122,7 @@ async function testConfiguration(): Promise<TestResult> {
     };
 
     const status = AI_CONFIG.gemini.apiKey ? "PASS" : "FAIL";
-    console.log(`[Test] ${name}: ${status} — API Key: ${status === "PASS" ? "configured" : "MISSING"}`);
+    logger.debug(`[Test] ${name}: ${status} — API Key: ${status === "PASS" ? "configured" : "MISSING"}`);
 
     return { name, status, durationMs: Date.now() - start, details, ...(status === "FAIL" ? { error: "GEMINI_API_KEY not set in .env" } : {}) };
   } catch (err) {
@@ -134,7 +135,7 @@ async function testGeminiConnection(): Promise<TestResult> {
   const name = "2. Gemini API Connection";
 
   if (!isAiAvailable()) {
-    console.log(`[Test] ${name}: SKIP — API not available`);
+    logger.debug(`[Test] ${name}: SKIP — API not available`);
     return { name, status: "SKIP", durationMs: Date.now() - start, details: { reason: "GEMINI_API_KEY not configured" } };
   }
 
@@ -147,7 +148,7 @@ async function testGeminiConnection(): Promise<TestResult> {
     );
 
     const isOk = text.includes("CONNEXION_OK");
-    console.log(`[Test] ${name}: ${isOk ? "PASS" : "FAIL"} — Response: "${text.trim()}", tokens: ${tokensUsed}`);
+    logger.debug(`[Test] ${name}: ${isOk ? "PASS" : "FAIL"} — Response: "${text.trim()}", tokens: ${tokensUsed}`);
 
     return {
       name,
@@ -156,7 +157,7 @@ async function testGeminiConnection(): Promise<TestResult> {
       details: { response: text.trim(), tokensUsed, model: AI_CONFIG.gemini.generationModel },
     };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }
@@ -166,7 +167,7 @@ async function testEmbeddingGeneration(): Promise<TestResult> {
   const name = "3. Embedding Generation";
 
   if (!isAiAvailable()) {
-    console.log(`[Test] ${name}: SKIP — API not available`);
+    logger.debug(`[Test] ${name}: SKIP — API not available`);
     return { name, status: "SKIP", durationMs: Date.now() - start, details: { reason: "GEMINI_API_KEY not configured" } };
   }
 
@@ -192,7 +193,7 @@ async function testEmbeddingGeneration(): Promise<TestResult> {
     const similarity = dot / (norm1 * norm2);
 
     const pass = singleOk && batchOk;
-    console.log(`[Test] ${name}: ${pass ? "PASS" : "FAIL"} — dim=${single.vector.length}, batch=${batch.vectors.length}, similarity=${similarity.toFixed(3)}`);
+    logger.debug(`[Test] ${name}: ${pass ? "PASS" : "FAIL"} — dim=${single.vector.length}, batch=${batch.vectors.length}, similarity=${similarity.toFixed(3)}`);
 
     return {
       name,
@@ -206,7 +207,7 @@ async function testEmbeddingGeneration(): Promise<TestResult> {
       },
     };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }
@@ -261,10 +262,10 @@ async function testNlpPipeline(): Promise<TestResult[]> {
         if (!cmd.expected.needsGemini) pass = false;
       }
 
-      console.log(`[Test] ${name}: ${pass ? "PASS" : "FAIL"} — action=${result.action}, source=${result.source}, confidence=${result.confidence?.toFixed(2)}`);
+      logger.debug(`[Test] ${name}: ${pass ? "PASS" : "FAIL"} — action=${result.action}, source=${result.source}, confidence=${result.confidence?.toFixed(2)}`);
       results.push({ name, status: pass ? "PASS" : "FAIL", durationMs: Date.now() - start, details });
     } catch (err) {
-      console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+      logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
       results.push({ name, status: "FAIL", durationMs: Date.now() - start, details: { input: cmd.input }, error: (err as Error).message });
     }
   }
@@ -293,7 +294,7 @@ async function testPerformanceModule(): Promise<TestResult> {
     };
 
     if (employeeCount === 0) {
-      console.log(`[Test] ${name}: SKIP — No employees in DB`);
+      logger.debug(`[Test] ${name}: SKIP — No employees in DB`);
       return { name, status: "SKIP", durationMs: Date.now() - start, details: { ...details, reason: "No employees in database" } };
     }
 
@@ -329,10 +330,10 @@ async function testPerformanceModule(): Promise<TestResult> {
       })),
     };
 
-    console.log(`[Test] ${name}: PASS — ${correlations.length} correlations, ${metrics.length} metrics calculated`);
+    logger.debug(`[Test] ${name}: PASS — ${correlations.length} correlations, ${metrics.length} metrics calculated`);
     return { name, status: "PASS", durationMs: Date.now() - start, details };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }
@@ -379,10 +380,10 @@ async function testAnomalyDetection(): Promise<TestResult> {
       })),
     };
 
-    console.log(`[Test] ${name}: PASS — ${anomalies.length} anomalies detected, ${fraudScores.length} fraud scores`);
+    logger.debug(`[Test] ${name}: PASS — ${anomalies.length} anomalies detected, ${fraudScores.length} fraud scores`);
     return { name, status: "PASS", durationMs: Date.now() - start, details };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }
@@ -402,7 +403,7 @@ async function testVectorStore(): Promise<TestResult> {
     const hasVectorExt = extensions.length > 0;
 
     if (!hasVectorExt) {
-      console.log(`[Test] ${name}: SKIP — pgvector extension not installed`);
+      logger.debug(`[Test] ${name}: SKIP — pgvector extension not installed`);
       return {
         name,
         status: "SKIP",
@@ -454,10 +455,10 @@ async function testVectorStore(): Promise<TestResult> {
       details.testDelete = "OK";
     }
 
-    console.log(`[Test] ${name}: PASS — pgvector OK, ${stats.reduce((s, e) => s + e.count, 0)} embeddings`);
+    logger.debug(`[Test] ${name}: PASS — pgvector OK, ${stats.reduce((s, e) => s + e.count, 0)} embeddings`);
     return { name, status: "PASS", durationMs: Date.now() - start, details };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }
@@ -467,7 +468,7 @@ async function testRagPipeline(): Promise<TestResult> {
   const name = "8. RAG Pipeline (Assistant)";
 
   if (!isAiAvailable()) {
-    console.log(`[Test] ${name}: SKIP — API not available`);
+    logger.debug(`[Test] ${name}: SKIP — API not available`);
     return { name, status: "SKIP", durationMs: Date.now() - start, details: { reason: "GEMINI_API_KEY not configured" } };
   }
 
@@ -479,7 +480,7 @@ async function testRagPipeline(): Promise<TestResult> {
       SELECT extname FROM pg_extension WHERE extname = 'vector'
     `;
     if (extensions.length === 0) {
-      console.log(`[Test] ${name}: SKIP — pgvector not available`);
+      logger.debug(`[Test] ${name}: SKIP — pgvector not available`);
       return { name, status: "SKIP", durationMs: Date.now() - start, details: { reason: "pgvector not available for RAG" } };
     }
 
@@ -507,10 +508,10 @@ async function testRagPipeline(): Promise<TestResult> {
     };
 
     const pass = response.message.length > 10;
-    console.log(`[Test] ${name}: ${pass ? "PASS" : "FAIL"} — ${response.message.length} chars, ${response.sources?.length ?? 0} sources`);
+    logger.debug(`[Test] ${name}: ${pass ? "PASS" : "FAIL"} — ${response.message.length} chars, ${response.sources?.length ?? 0} sources`);
     return { name, status: pass ? "PASS" : "FAIL", durationMs: Date.now() - start, details };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }
@@ -557,10 +558,10 @@ async function testApiUsageTracking(): Promise<TestResult> {
 
     details.recentCalls = recent;
 
-    console.log(`[Test] ${name}: PASS — ${totalRecords} total records, ${todayTokens._sum.totalTokens || 0} tokens today`);
+    logger.debug(`[Test] ${name}: PASS — ${totalRecords} total records, ${todayTokens._sum.totalTokens || 0} tokens today`);
     return { name, status: "PASS", durationMs: Date.now() - start, details };
   } catch (err) {
-    console.error(`[Test] ${name}: FAIL —`, (err as Error).message);
+    logger.error(`[Test] ${name}: FAIL —`, (err as Error).message);
     return { name, status: "FAIL", durationMs: Date.now() - start, details: {}, error: (err as Error).message };
   }
 }

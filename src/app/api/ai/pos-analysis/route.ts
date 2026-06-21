@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireManagerOrAdmin, errorResponse, successResponse, getAccessibleStoreIds } from "@/lib/api-helpers";
 import { collectPosData } from "@/lib/ai-engine/pos-analysis/data-collector";
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       generatedAt: result.generatedAt,
     });
   } catch (err) {
-    console.error("POST /api/ai/pos-analysis error:", err);
+    logger.error("POST /api/ai/pos-analysis error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 
@@ -39,13 +40,13 @@ export async function POST() {
       }),
     ]);
 
-    console.log(
+    logger.debug(
       `[POST /api/replacements/expired] Expired ${expiredOffers.length} offers`
     );
 
     return successResponse({ expired: expiredOffers.length });
   } catch (err) {
-    console.error("[POST /api/replacements/expired] Error:", err);
+    logger.error("[POST /api/replacements/expired] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

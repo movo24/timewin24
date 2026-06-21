@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNum } from "@/lib/decimal";
@@ -171,7 +172,7 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (err) {
-    console.error("[analytics/dashboard] Error:", err);
+    logger.error("[analytics/dashboard] Error:", err);
     return errorResponse("Erreur interne du serveur", 500);
   }
 }

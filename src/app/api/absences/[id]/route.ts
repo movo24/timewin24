@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -121,13 +122,13 @@ export async function PATCH(
           endDate: declaration.endDate,
         });
       } catch (offerErr) {
-        console.error(
+        logger.error(
           `[PATCH /api/absences/${id}] approbation committée mais génération des offres de remplacement échouée:`,
           offerErr
         );
       }
 
-      console.log(
+      logger.debug(
         `[PATCH /api/absences/${id}] APPROVED — Created unavailabilities + ${offersCreated} replacement offers`
       );
 
@@ -147,11 +148,11 @@ export async function PATCH(
         },
       });
 
-      console.log(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
+      logger.debug(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
       return successResponse(updated);
     }
   } catch (err) {
-    console.error("[PATCH /api/absences] Error:", err);
+    logger.error("[PATCH /api/absences] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

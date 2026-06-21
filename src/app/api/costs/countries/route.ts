@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireManagerOrAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -29,7 +30,7 @@ export async function GET() {
 
     return successResponse({ countries: countries.map(serializeCountryConfig) });
   } catch (err) {
-    console.error("GET /api/costs/countries error:", err);
+    logger.error("GET /api/costs/countries error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ country: serializeCountryConfig(country) }, 201);
   } catch (err) {
-    console.error("POST /api/costs/countries error:", err);
+    logger.error("POST /api/costs/countries error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

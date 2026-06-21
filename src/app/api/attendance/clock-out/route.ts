@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse, getSessionOrUnauthorized } from "@/lib/api-helpers";
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
       late_minutes: updated.lateMinutes,
     });
   } catch (err) {
-    console.error("POST /api/attendance/clock-out error:", err);
+    logger.error("POST /api/attendance/clock-out error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

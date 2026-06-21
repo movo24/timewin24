@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ id: subscription.id });
   } catch (err) {
-    console.error("POST /api/notifications/subscribe error:", err);
+    logger.error("POST /api/notifications/subscribe error:", err);
     return errorResponse(
       "Erreur serveur",
       500
@@ -88,7 +89,7 @@ export async function DELETE(req: NextRequest) {
 
     return successResponse({ deleted: true });
   } catch (err) {
-    console.error("DELETE /api/notifications/subscribe error:", err);
+    logger.error("DELETE /api/notifications/subscribe error:", err);
     return errorResponse(
       "Erreur serveur",
       500

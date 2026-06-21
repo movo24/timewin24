@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ proposal });
   } catch (err) {
-    console.error("POST /api/planning/manager-ia error:", err);
+    logger.error("POST /api/planning/manager-ia error:", err);
     return errorResponse(
       "Erreur serveur",
       500

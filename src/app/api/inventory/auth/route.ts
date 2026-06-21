@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -171,7 +172,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("POST /api/inventory/auth error:", err);
+    logger.error("POST /api/inventory/auth error:", err);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

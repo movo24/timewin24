@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyInventoryToken } from "@/lib/inventory-jwt";
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (abandonedSessions.count > 0) {
-      console.log(
+      logger.debug(
         `[CLEANUP] Abandoned ${abandonedSessions.count} stale sessions for store=${auth.storeId} (older than ${SESSION_ABANDON_HOURS}h)`
       );
     }
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[CLEANUP] Failed:", error);
+    logger.error("[CLEANUP] Failed:", error);
     return NextResponse.json(
       { error: "Erreur lors du nettoyage" },
       { status: 500 }

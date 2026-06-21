@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(serializeLabelJob(job), 201);
   } catch (e) {
-    console.error("[POST /api/labels/print]", e);
+    logger.error("[POST /api/labels/print]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -100,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ jobs, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (e) {
-    console.error("[GET /api/labels/print]", e);
+    logger.error("[GET /api/labels/print]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }

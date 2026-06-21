@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ listings: enriched });
   } catch (err) {
-    console.error("[GET /api/market-listings] Error:", err);
+    logger.error("[GET /api/market-listings] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500
@@ -176,10 +177,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`[POST /api/market-listings] Employee ${employeeId} posted shift ${shiftId} to marketplace`);
+    logger.debug(`[POST /api/market-listings] Employee ${employeeId} posted shift ${shiftId} to marketplace`);
     return successResponse(listing, 201);
   } catch (err) {
-    console.error("[POST /api/market-listings] Error:", err);
+    logger.error("[POST /api/market-listings] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -84,7 +85,7 @@ export default function PointagesPage() {
         setAbsences(data.absences || []);
       }
     } catch {
-      console.error("Erreur chargement pointages");
+      logger.error("Erreur chargement pointages");
     } finally {
       setLoading(false);
     }

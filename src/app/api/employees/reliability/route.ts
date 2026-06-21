@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ employees });
   } catch (err) {
-    console.error("GET /api/employees/reliability error:", err);
+    logger.error("GET /api/employees/reliability error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (err) {
-    console.error("POST /api/employees/reliability error:", err);
+    logger.error("POST /api/employees/reliability error:", err);
     return errorResponse(
       "Erreur serveur",
       500

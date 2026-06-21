@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import {
   requireManagerOrAdmin,
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(result);
   } catch (err) {
-    console.error("POST /api/alerts/generate error:", err);
+    logger.error("POST /api/alerts/generate error:", err);
     return errorResponse(
       "Erreur serveur",
       500

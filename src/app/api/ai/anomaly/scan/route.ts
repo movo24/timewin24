@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import {
   requirePermission,
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     const MAX_DAYS_BACK = 90;
     const daysBack = Math.min(rawDaysBack || 30, MAX_DAYS_BACK);
 
-    console.log(
+    logger.debug(
       `[POST /api/ai/anomaly/scan] Starting scan (${daysBack} days, store: ${storeId || "all"})...`
     );
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       fraudScores: result.fraudScores.slice(0, 10), // Top 10
     });
   } catch (err) {
-    console.error("[POST /api/ai/anomaly/scan] Error:", err);
+    logger.error("[POST /api/ai/anomaly/scan] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

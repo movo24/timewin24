@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -66,7 +67,7 @@ export async function GET() {
 
   return successResponse({ providers: safeProviders });
   } catch (err) {
-    console.error("GET /api/integrations/pos error:", err);
+    logger.error("GET /api/integrations/pos error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
     hasAccessToken: !!accessToken,
   }, 201);
   } catch (err) {
-    console.error("POST /api/integrations/pos error:", err);
+    logger.error("POST /api/integrations/pos error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

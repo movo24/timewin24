@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import {
   requirePermission,
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(response);
   } catch (err) {
-    console.error("[POST /api/ai/assistant] Error:", err);
+    logger.error("[POST /api/ai/assistant] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

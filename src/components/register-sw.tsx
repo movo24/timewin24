@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useEffect, useCallback } from "react";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
@@ -29,7 +30,7 @@ export async function subscribeToPush(): Promise<boolean> {
     }
 
     if (!VAPID_PUBLIC_KEY) {
-      console.warn("VAPID public key not configured");
+      logger.warn("VAPID public key not configured");
       return false;
     }
 
@@ -51,7 +52,7 @@ export async function subscribeToPush(): Promise<boolean> {
     await sendSubscriptionToServer(subscription);
     return true;
   } catch (err) {
-    console.error("Push subscription failed:", err);
+    logger.error("Push subscription failed:", err);
     return false;
   }
 }
@@ -78,7 +79,7 @@ export async function unsubscribeFromPush(): Promise<boolean> {
 
     return true;
   } catch (err) {
-    console.error("Push unsubscribe failed:", err);
+    logger.error("Push unsubscribe failed:", err);
     return false;
   }
 }

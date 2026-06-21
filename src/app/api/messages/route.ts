@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("GET /api/messages error:", err);
+    logger.error("GET /api/messages error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -286,7 +287,7 @@ export async function POST(req: NextRequest) {
 
     return errorResponse("Les administrateurs répondent aux messages existants via parentId");
   } catch (err) {
-    console.error("POST /api/messages error:", err);
+    logger.error("POST /api/messages error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

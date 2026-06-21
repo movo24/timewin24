@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import {
   requireAdmin,
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     const durationMs = Date.now() - startTime;
 
-    console.log(
+    logger.debug(
       `[analytics/calculate] Agrégé: ${aggregated}, Scoré: ${scored}, Alertes: ${alerts.length}, Durée: ${durationMs}ms (par ${(session!.user as { email: string }).email})`
     );
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       durationMs,
     });
   } catch (err) {
-    console.error("[analytics/calculate] Error:", err);
+    logger.error("[analytics/calculate] Error:", err);
     return errorResponse("Erreur interne du serveur", 500);
   }
 }

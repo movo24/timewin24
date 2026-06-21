@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -204,7 +205,7 @@ export async function PATCH(
       return errorResponse("Action non reconnue.");
   }
   } catch (err) {
-    console.error("PATCH /api/shift-exchanges/[id] error:", err);
+    logger.error("PATCH /api/shift-exchanges/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ absences, totalShifts: shifts.length });
   } catch (err) {
-    console.error("GET /api/clock-in/absences error:", err);
+    logger.error("GET /api/clock-in/absences error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

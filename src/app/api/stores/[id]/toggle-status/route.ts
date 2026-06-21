@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -120,7 +121,7 @@ export async function POST(
           : `Le magasin "${store.name}" a été désactivé${cancelledShifts > 0 ? ` — ${cancelledShifts} shift(s) futur(s) annulé(s)` : ""}`,
     });
   } catch (err) {
-    console.error("POST /api/stores/[id]/toggle-status error:", err);
+    logger.error("POST /api/stores/[id]/toggle-status error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

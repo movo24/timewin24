@@ -1,6 +1,7 @@
 "use client";
 
 // M115 — frontière d'erreur du groupe (employee).
+import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 
 export default function EmployeeError({
@@ -11,7 +12,7 @@ export default function EmployeeError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[employee] render error:", error);
+    logger.error("[employee] render error:", error);
   }, [error]);
 
   return (

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNum } from "@/lib/decimal";
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ received: true, eventId: event.id }, 201);
   } catch (err) {
-    console.error("POST /api/pos-events/webhook error:", err);
+    logger.error("POST /api/pos-events/webhook error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

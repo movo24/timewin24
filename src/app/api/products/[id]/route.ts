@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return successResponse(serializeProduct(product));
   } catch (e) {
-    console.error("[GET /api/products/:id]", e);
+    logger.error("[GET /api/products/:id]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -53,7 +54,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return successResponse(serializeProduct(product));
   } catch (e) {
-    console.error("[PUT /api/products/:id]", e);
+    logger.error("[PUT /api/products/:id]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -72,7 +73,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     return successResponse({ deleted: true });
   } catch (e) {
-    console.error("[DELETE /api/products/:id]", e);
+    logger.error("[DELETE /api/products/:id]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }

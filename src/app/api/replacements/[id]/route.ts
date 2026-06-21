@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -75,7 +76,7 @@ export async function PATCH(
           where: { id },
           data: { status: "EXPIRED" },
         });
-        console.log(
+        logger.debug(
           `[PATCH /api/replacements/${id}] All candidates declined — offer EXPIRED`
         );
       }
@@ -146,13 +147,13 @@ export async function PATCH(
       throw txErr;
     }
 
-    console.log(
+    logger.debug(
       `[PATCH /api/replacements/${id}] ACCEPTED by employee ${employeeId} — shift ${shift.id} reassigned`
     );
 
     return successResponse({ status: "accepted", shiftId: shift.id });
   } catch (err) {
-    console.error("[PATCH /api/replacements] Error:", err);
+    logger.error("[PATCH /api/replacements] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

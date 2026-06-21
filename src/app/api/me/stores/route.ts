@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireEmployee, errorResponse, successResponse } from "@/lib/api-helpers";
 
@@ -22,7 +23,7 @@ export async function GET() {
 
     return successResponse({ stores });
   } catch (err) {
-    console.error("GET /api/me/stores error:", err);
+    logger.error("GET /api/me/stores error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

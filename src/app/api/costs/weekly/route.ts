@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -139,7 +140,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("GET /api/costs/weekly error:", err);
+    logger.error("GET /api/costs/weekly error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

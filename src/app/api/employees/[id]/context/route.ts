@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse, getSessionOrUnauthorized } from "@/lib/api-helpers";
@@ -68,7 +69,7 @@ export async function GET(
       // posQrCode: NEVER expose — auth credential
     });
   } catch (err) {
-    console.error("GET /api/employees/[id]/context error:", err);
+    logger.error("GET /api/employees/[id]/context error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

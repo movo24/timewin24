@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         return errorResponse(`Action inconnue: ${action}`, 400);
     }
   } catch (err) {
-    console.error("POST /api/employees/[id]/access error:", err);
+    logger.error("POST /api/employees/[id]/access error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

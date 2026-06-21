@@ -232,10 +232,9 @@ Statut : ✅ Fait · Priorité : P1 · Fichier : `prisma/seed.ts`
 Statut : 🔄 En cours · P1/P3
 - ✅ `next` 16.1.6 → **16.2.9** (CVE smuggling/DoS/CSRF du paquet `next` éliminées) + `eslint-config-next` aligné. tsc/jest OK ; **build Vercel vérifié vert sur les 3 projets** (timewin24, -el97, -saas-appstore) pour `f26deac` → bump validé build.
 - ⚠️ `nodemailer` : fix = `9.0.1` (**bump majeur 7→9, breaking**) → **non forcé** (risque sur l'envoi d'emails). À planifier + tester.
-#### M141 — `console.*` → logger conditionné · 🔄 P3
-- ✅ Foundation `src/lib/logger.ts` : `error`/`warn` toujours émis (observabilité prod), `info`/`debug` hors-prod uniquement (ou `LOG_LEVEL=debug`).
-- ✅ Phase 1 — `src/lib/**` migré (16 fichiers, 37 sites : `console.log`→`logger.debug` supprime le bruit prod ; `console.error/warn` conservés). tsc 0, jest 131.
-- ⬜ Phase 2 — `src/app/api/**` (207) + composants/pages (24).
+#### M141 — `console.*` → logger conditionné · ✅ Fait · P3
+- ✅ `src/lib/logger.ts` : `error`/`warn` toujours émis (observabilité prod), `info`/`debug` hors-prod uniquement (ou `LOG_LEVEL=debug`).
+- ✅ **Tout le codebase migré** : `src/lib` (16 fichiers) + `src/app`/`src/components` (118 fichiers). `console.log`→`logger.debug` (bruit prod supprimé), `console.error/warn` conservés. **0 `console.*` restant** hors `logger.ts`. tsc 0, jest 131, eslint inchangé (85).
 #### M142 — Dette lint · 🔄 En cours · P3
 - ✅ `no-unused-vars` (81) + `prefer-const` (2) résorbés (imports/vars morts retirés, params `_`-préfixés). **−75 lignes nettes**, tsc 0 / jest 118.
 - ✅ `eslint.config.mjs` durci : `ignoreRestSiblings` (les destructurations « omettre » qui **strip des secrets** ne sont plus signalées — évite un "fix" qui aurait **leak** `refreshToken`/`apiSecret`), `argsIgnorePattern '^_'`, `caughtErrors none`, ignore `src/generated/**`.

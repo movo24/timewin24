@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAuthenticated, errorResponse, successResponse } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
       size: saved.size,
     });
   } catch (err) {
-    console.error("POST /api/uploads error:", err);
+    logger.error("POST /api/uploads error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

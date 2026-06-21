@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -169,7 +170,7 @@ export async function POST(req: NextRequest) {
       conflicts,
     });
   } catch (err) {
-    console.error("POST /api/shifts/duplicate error:", err);
+    logger.error("POST /api/shifts/duplicate error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

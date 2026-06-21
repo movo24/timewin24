@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 import { calculateEmployerCost, FRANCE_2026_DEFAULTS, type CountryRules } from "@/lib/employer-cost";
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ breakdown, rules });
   } catch (err) {
-    console.error("POST /api/costs/simulate error:", err);
+    logger.error("POST /api/costs/simulate error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

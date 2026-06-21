@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,7 @@ export default function PointagePage() {
         }
       }
     } catch {
-      console.error("Erreur chargement magasins");
+      logger.error("Erreur chargement magasins");
     }
   }, []);
 

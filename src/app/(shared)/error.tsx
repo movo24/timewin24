@@ -1,6 +1,7 @@
 "use client";
 
 // M115 — frontière d'erreur du groupe (shared) (fil d'actualité, annonces).
+import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 
 export default function SharedError({
@@ -11,7 +12,7 @@ export default function SharedError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[shared] render error:", error);
+    logger.error("[shared] render error:", error);
   }, [error]);
 
   return (

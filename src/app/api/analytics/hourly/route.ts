@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNum } from "@/lib/decimal";
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ heatmap });
   } catch (err) {
-    console.error("[analytics/hourly] Error:", err);
+    logger.error("[analytics/hourly] Error:", err);
     return errorResponse("Erreur interne du serveur", 500);
   }
 }

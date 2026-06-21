@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse(schedules);
   } catch (err) {
-    console.error("GET /api/pos-feed/store-schedules error:", err);
+    logger.error("GET /api/pos-feed/store-schedules error:", err);
     return errorResponse("Erreur chargement horaires", 500);
   }
 }
@@ -100,7 +101,7 @@ export async function PUT(req: NextRequest) {
 
     return successResponse(result);
   } catch (err) {
-    console.error("PUT /api/pos-feed/store-schedules error:", err);
+    logger.error("PUT /api/pos-feed/store-schedules error:", err);
     return errorResponse("Erreur sauvegarde horaires", 500);
   }
 }

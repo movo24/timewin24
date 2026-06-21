@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireAuthenticated, errorResponse, successResponse } from "@/lib/api-helpers";
 
@@ -46,7 +47,7 @@ export async function GET() {
 
     return successResponse({ user: dbUser });
   } catch (err) {
-    console.error("GET /api/me error:", err);
+    logger.error("GET /api/me error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

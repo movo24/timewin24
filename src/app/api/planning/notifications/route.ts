@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -291,7 +292,7 @@ export async function GET(req: NextRequest) {
     };
     return successResponse(response);
   } catch (err) {
-    console.error("Planning notifications GET error:", err);
+    logger.error("Planning notifications GET error:", err);
     return errorResponse("Erreur interne lors de la lecture des statuts", 500);
   }
 }

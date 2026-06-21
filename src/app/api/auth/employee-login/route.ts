@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("POST /api/auth/employee-login error:", err);
+    logger.error("POST /api/auth/employee-login error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

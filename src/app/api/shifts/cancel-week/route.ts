@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
       message: `${result.count} shift(s) supprimé(s)`,
     });
   } catch (err) {
-    console.error("POST /api/shifts/cancel-week error:", err);
+    logger.error("POST /api/shifts/cancel-week error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

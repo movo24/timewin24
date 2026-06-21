@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ metrics });
   } catch (err) {
-    console.error("[GET /api/ai/performance] Error:", err);
+    logger.error("[GET /api/ai/performance] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     const start = new Date();
     start.setDate(end.getDate() - daysBack);
 
-    console.log(
+    logger.debug(
       `[POST /api/ai/performance] Calculating metrics for ${daysBack} days...`
     );
 
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       period: { start: start.toISOString(), end: end.toISOString() },
     });
   } catch (err) {
-    console.error("[POST /api/ai/performance] Error:", err);
+    logger.error("[POST /api/ai/performance] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

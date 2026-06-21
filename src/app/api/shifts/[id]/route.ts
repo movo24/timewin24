@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -159,7 +160,7 @@ export async function PUT(
 
     return successResponse({ shift, weeklyHoursWarning });
   } catch (err) {
-    console.error("PUT /api/shifts/[id] error:", err);
+    logger.error("PUT /api/shifts/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -199,7 +200,7 @@ export async function DELETE(
 
     return successResponse({ success: true });
   } catch (err) {
-    console.error("DELETE /api/shifts/[id] error:", err);
+    logger.error("DELETE /api/shifts/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

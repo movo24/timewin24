@@ -44,7 +44,7 @@
 ## 5. P3 — Nettoyage
 
 - **DEBT-030 (🔄)** — `next` bumpé 16.1.6→16.2.9 (CVE next éliminées). `nodemailer` : fix=9.0.1 **majeur breaking** → flag, non forcé. → M140.
-- **DEBT-031 (🔄)** — logger conditionné `lib/logger.ts` créé ; `src/lib/**` migré (37 sites — bruit `console.log` supprimé en prod, `error`/`warn` conservés). Reste : API (207) + composants (24). → M141.
+- **DEBT-031 (✅ corrigé)** — logger conditionné `lib/logger.ts` ; **tout le codebase migré** (134 fichiers, ~273 `console.*` → `logger.*`) : `log`→`debug` (dev-only), `error`/`warn` conservés en prod. 0 `console.*` restant. → M141.
 - **DEBT-032 (🔄 en cours)** — lint : `no-unused-vars` (81) + `prefer-const` (2) **résorbés** (−75 lignes), config eslint durcie (`ignoreRestSiblings` pour ne pas casser les strips de secrets, `argsIgnorePattern '^_'`). Reste : `any` (39), `set-state-in-effect` (30), `no-unescaped-entities` (9), `no-img-element` (8), hooks (3) — runtime-sensible/cosmétique, à traiter prudemment. Note : `(prisma as any)` dans `pos-feed/store-schedules` suggère un drift de typage Prisma à investiguer. → M142.
 - **DEBT-033 (✅ corrigé)** — README périmé réécrit (56 modèles, modules M001–M015, 118 tests, variables d'env réelles, posture sécurité réelle, pointeurs docs de gouvernance + runbook rotation). → M143.
 - **DEBT-034 (✅ corrigé)** — `firebase-debug.log`, `ai-engine-test-report.json`, 4 PNG racine retirés du suivi + `.gitignore`. → M144.

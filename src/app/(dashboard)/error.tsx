@@ -3,6 +3,7 @@
 // M115 — frontière d'erreur du groupe (dashboard).
 // Capture les erreurs de rendu/serveur des pages admin et offre un retry,
 // au lieu d'un écran blanc ou d'un état vide trompeur.
+import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 
 export default function DashboardError({
@@ -13,7 +14,7 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[dashboard] render error:", error);
+    logger.error("[dashboard] render error:", error);
   }, [error]);
 
   return (

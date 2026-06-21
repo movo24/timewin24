@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyInventoryToken } from "@/lib/inventory-jwt";
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   const idempotencyKey = req.headers.get("x-idempotency-key")?.trim();
 
   if (!idempotencyKey || idempotencyKey.length === 0) {
-    console.warn(
+    logger.warn(
       `[SCAN] Requête REJETÉE — X-Idempotency-Key absent | store=${auth.storeId} employee=${auth.employeeId}`
     );
     return NextResponse.json(
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (cached) {
-      console.log(
+      logger.debug(
         `[IDEMPOTENCY] Key "${idempotencyKey}" already processed → replay`
       );
       return NextResponse.json(cached.response, {
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (lookupError) {
     // Fail-open : si le lookup échoue, on continue normalement
-    console.error(
+    logger.error(
       `[IDEMPOTENCY] Lookup error for "${idempotencyKey}":`,
       lookupError
     );
@@ -171,7 +172,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (result.replay) {
-      console.log(
+      logger.debug(
         `[IDEMPOTENCY] Key "${idempotencyKey}" resolved in transaction (race caught)`
       );
       return NextResponse.json(result.response, {
@@ -206,7 +207,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (existing) {
-        console.log(
+        logger.debug(
           `[IDEMPOTENCY-DB] Unique constraint caught duplicate for key="${idempotencyKey}"`
         );
 
@@ -228,7 +229,7 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      console.error(
+      logger.error(
         "[SCAN] P2002 but no matching record found:",
         error
       );
@@ -238,7 +239,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.error("[SCAN] Create failed:", error);
+    logger.error("[SCAN] Create failed:", error);
     return NextResponse.json(
       { error: "Erreur lors de l'enregistrement du scan" },
       { status: 500 }
@@ -297,6 +298,6 @@ async function safeStoreIdempotency(
       update: {},
     });
   } catch (e) {
-    console.error(`[IDEMPOTENCY] Failed to store key "${key}":`, e);
+    logger.error(`[IDEMPOTENCY] Failed to store key "${key}":`, e);
   }
 }

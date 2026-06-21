@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,7 +135,7 @@ export default function JournalPage() {
         setStoreId((prev) => prev || list[0]?.id || "");
       }
     } catch {
-      console.error("Erreur chargement magasins");
+      logger.error("Erreur chargement magasins");
     }
   }, []);
 

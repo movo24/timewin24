@@ -1,6 +1,7 @@
 "use client";
 
 // M115 — frontière d'erreur de l'app mobile inventaire.
+import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 
 export default function InventoryError({
@@ -11,7 +12,7 @@ export default function InventoryError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[inventory] render error:", error);
+    logger.error("[inventory] render error:", error);
   }, [error]);
 
   return (

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ products: products.map(serializeProduct), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (e) {
-    console.error("[GET /api/products]", e);
+    logger.error("[GET /api/products]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(serializeProduct(product), 201);
   } catch (e) {
-    console.error("[POST /api/products]", e);
+    logger.error("[POST /api/products]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
