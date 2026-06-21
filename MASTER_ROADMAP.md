@@ -73,6 +73,7 @@ Validation : ✅ login durci (C1/H1, cette session).
 ### M010 — Étiquettes / Labels
 Statut : ⚠️ À vérifier · Priorité : P3
 Fichiers : `src/lib/labels/*` · Pages : `etiquettes` · API : `labels/*` · Base : `LabelTemplate`, `LabelPrintJob`, `LabelPrintItem`
+Validation : ✅ `generateLabelsZpl` testé (12 tests — dimensions, prix/ancien prix, EAN13/8/CODE128, échappement ZPL, troncature, qty).
 
 ### M011 — Messagerie & Communication RH
 Statut : ⚠️ À vérifier · Priorité : P2
@@ -202,7 +203,7 @@ Statut : 🔄 En cours · Priorité : P2
 - ✅ Coût employeur : `src/__tests__/employer-cost.test.ts` (7 tests).
 - ✅ Utilitaires purs : `src/__tests__/pure-utils.test.ts` (13 tests — geo/haversine + rayon pointage GPS, doTimesOverlap/calculateShiftHours, timeToMinutes/snapMinutes/clampMinutes). Suite : 95 → **131**.
 - ✅ Contraintes dures solveur : `solver-constraints.test.ts` (38 — overlap, dispo FIXED/VARIABLE, max jour/semaine, repos 11h FR, préférence MATIN/AM, relais inter-magasins, max distinct/simultané sweep-line, profil C Manager Brain). **constraints.ts entièrement couvert.**
-- ✅ Scoring solveur : `solver-scoring.test.ts` (18 — priorité, magasin préféré, coût, objectif contractuel, équité, Manager Brain fiabilité/importance). Suite **131→187**.
+- ✅ Scoring solveur : `solver-scoring.test.ts` (18 — priorité, magasin préféré, coût, objectif contractuel, équité, Manager Brain fiabilité/importance). Suite **131→199**.
 - ⬜ Reste (optionnel) : scénarios/suggestions solveur ; `deriveProfileCategory` à extraire de `reliability-score` (co-localisé Prisma).
 
 #### M121 — `notifications/clicked` non authentifié

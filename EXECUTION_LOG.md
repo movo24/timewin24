@@ -154,3 +154,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 29) — M116 contraintes solveur (complet)
 - **M116 / DEBT-023** — Ajout des 5 contraintes restantes a `solver-constraints.test.ts` (+19 tests) : `isShiftPreferenceCompatible` (MATIN/AM vs milieu magasin), `isStoreOverlapCompliant` (relais/tolerance overlap, ignore self), `isUnderMaxDistinctEmployees`, `isUnderMaxSimultaneous` (sweep-line, relais exact = 1), `isProfileSafeForSlot` (Manager Brain : profil C jamais seul ouverture/fermeture/critique/entre-C). **constraints.ts = 100% des fonctions exportees couvertes.** Suite jest 168 -> 187. tsc 0.
+
+### Correctif execute (suite 30) — M116/M010 tests generateur ZPL
+- **M116 / M010** — `src/__tests__/labels-zpl.test.ts` (12 tests) sur `zpl-generator.ts` (pur) : 1 etiquette/quantite, conversion mm->dots (x8 @203DPI), defauts 58x40, prix `.toFixed(2) EUR` + ancien prix, code-barres EAN13(^BEN)/EAN8(^B8N)/CODE128(^BCN), echappement ZPL (^ et ~ strippes), troncature nom a 30 char, nom magasin, bloc ^XA..^XZ. Suite jest 187 -> 199. tsc 0. M010 (etiquettes) avait zero test.
