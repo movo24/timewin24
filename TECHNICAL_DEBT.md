@@ -34,7 +34,7 @@
 ## 4. P2 — Robustesse / features
 
 - **DEBT-020 (✅ corrigé)** — N+1 `replacement.ts` : overlap + heures hebdo calculés en mémoire sur `emp.shifts` (eager-loaded), 2N requêtes supprimées. → M113.
-- **DEBT-021 (⬜)** — « FK » `String` sans relation : `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`. → M114.
+- **DEBT-021 (🔄 préparé, ops-gated)** — « FK » `String` sans relation. **Finding** : `PosTimeClock` EXCLU (résilience POS — FK casserait l'ingestion d'entités non synchronisées). Les 3 modèles internes (`ShiftExchange`, `ReplacementOffer`, `ShiftMarketListing`) : plan complet (schéma + onDelete + détection orphelins + migration auto-réparatrice) dans `docs/M114-FK-RELATIONS-PLAN.md`. Non appliqué : `db push` casserait le déploiement si orphelins → pré-vol DB requis (ops). → M114.
 - **DEBT-022 (✅ boundaries / ⬜ RSC)** — `error.tsx`/`loading.tsx` sur les 4 groupes ((dashboard), (employee), (shared), inventory). Reste optionnel : conversion pages read-only en RSC (refactor séparé). → M115.
 - **DEBT-023 (✅ largement traité)** — tests ajoutés : RBAC (16), coût employeur+Decimal (7), utilitaires purs geo/shift/timeline (13). Suite 95→131. Reste : couverture solver interne. → M116.
 - **DEBT-024 (✅ corrigé)** — index ajoutés (`@@index` + migration `20260620180000`). → M122.

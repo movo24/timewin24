@@ -186,7 +186,10 @@ Note : ~20 fichiers consommateurs (POS sync, analytics, labels, AI engine, dashb
 **Audit statique livré (sans code)** : `docs/M101b-AUDIT.md` — 4 lots priorisés : LOT A (taux/% : `Store.vatRate`, `Product.vatRate`, `Employee.maxDiscountPct`) **risque faible, faisable sans données** ; LOT B (catalogue/étiquettes : `Product.price/oldPrice`, `LabelPrintItem.priceAtPrint`) **moyen** ; LOT C (`PosSalesData` ventes) **élevé, gaté jeu de données** ; LOT D (`EmployeePerformanceDaily/Hourly`) **moyen-élevé, après C**. En attente d'arbitrage A/B vs C/D.
 
 #### M114 — « FK » String sans relation
-Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`.
+Statut : 🔄 **Préparé (plan), application ops-gated** · Priorité : P2 · Plan : `docs/M114-FK-RELATIONS-PLAN.md`
+- **Finding** : `PosTimeClock` **exclu** délibérément — données importées du POS pouvant référencer un employé/magasin non encore synchronisé ; une FK stricte casserait l'ingestion (le webhook ne bloque pas sur entité inconnue). La relation-absence y est intentionnelle.
+- 3 modèles internes à relier (`ShiftExchange`, `ReplacementOffer`, `ShiftMarketListing`) : schéma cible + politiques `onDelete` (alignées M111) + SQL de détection d'orphelins + migration auto-réparatrice documentés dans le plan.
+- **Non appliqué** : repo déploie via `db push` → ajouter une FK avec orphelins casserait le déploiement. Requiert pré-vol DB (ops) avant application.
 
 #### M115 — Frontières error/loading (front)
 Statut : ✅ Fait (boundaries) · Priorité : P2
