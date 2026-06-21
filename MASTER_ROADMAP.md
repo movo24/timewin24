@@ -172,7 +172,8 @@ Remplacé `findOverlappingShift` + `calculateWeeklyHours` (2 requêtes DB/candid
 #### M101b — `Float` → `Decimal` (champs € hors paie)
 Statut : ⬜ À faire · Priorité : P2 · Module : M008/M009/M013
 Scope : `PosSalesData` (revenue, cardAmount, cashAmount, otherAmount), `Product.price/oldPrice/vatRate`, `Store.vatRate`, `EmployeePerformanceDaily/Hourly` (totalSales, avgBasket, montants).
-Note : ~35 fichiers consommateurs (POS sync, analytics, labels, AI engine, dashboards) dont plusieurs sérialisent ces champs en réponse API. Même méthode que M101 (frontière `decimal.ts`/serializers, forme JSON préservée), mais non vérifiable en runtime sans données → à exécuter avec données de test ou en fenêtre contrôlée.
+Note : ~20 fichiers consommateurs (POS sync, analytics, labels, AI engine, dashboards) dont plusieurs sérialisent ces champs en réponse API. Même méthode que M101 (frontière `decimal.ts`/serializers, forme JSON préservée), mais non vérifiable en runtime sans données → à exécuter avec données de test ou en fenêtre contrôlée.
+**Audit statique livré (sans code)** : `docs/M101b-AUDIT.md` — 4 lots priorisés : LOT A (taux/% : `Store.vatRate`, `Product.vatRate`, `Employee.maxDiscountPct`) **risque faible, faisable sans données** ; LOT B (catalogue/étiquettes : `Product.price/oldPrice`, `LabelPrintItem.priceAtPrint`) **moyen** ; LOT C (`PosSalesData` ventes) **élevé, gaté jeu de données** ; LOT D (`EmployeePerformanceDaily/Hourly`) **moyen-élevé, après C**. En attente d'arbitrage A/B vs C/D.
 
 #### M114 — « FK » String sans relation
 Statut : ⬜ À faire · Priorité : P2 — `PosTimeClock`, `ShiftExchange`, `ShiftMarketListing`, `ReplacementOffer`.
