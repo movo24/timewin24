@@ -238,3 +238,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
   - `absences/route.ts:144` : `VALID_STATUSES.includes(status as any)` -> `(... as readonly string[]).includes(status)`.
   - `integrations/pos/[id]/route.ts` (2) + `integrations/pos/route.ts` (1) : strip des champs sensibles `const {apiKey,apiSecret,accessToken,refreshToken,...safe} = provider as any` -> `as Record<string, unknown>`. Plus honnete (pas de propagation d'acces `any`), runtime identique, le spread `...safe` typecheck toujours (ignoreRestSiblings sur les secrets extraits). Securite inchangee (memes champs retires).
   - Laisses : `dashboard/route.ts:136` (`where ... as any` — pattern prisma-where dynamique documente), `costs/page.tsx` useState<any[]> (etat UI, typage churny). `any` 20 -> 16. tsc 0, jest 361.
+
+### Correctif execute (suite 51) — DEBT-032 (fin) cast role-access
+- **DEBT-032 / type-safety** — `annonces/page.tsx:52` : `(session?.user as any)?.role` -> `(session?.user as { role?: string } | undefined)?.role` (meme patron type-honnete que api-helpers). `any` 16 -> 15. tsc 0, jest 361.
+- **Cloture du chantier `no-explicit-any` (DEBT-032)** : 39 -> 15 sur la reprise. Les 15 restants sont intentionnels/hors-scope-sur : casts SDK Gemini (`embedContent({...outputDimensionality} as any)` — champ absent du type SDK), `where ... as any` (filtres Prisma dynamiques documentes), assignations string->enum Prisma (churny, faible valeur), `useState<any[]>` d'etat UI (typage downstream lourd), et scripts de dev (hash-pins, setup-pos-integration).
