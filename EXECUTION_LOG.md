@@ -226,3 +226,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 48) — hygiene lint : directives eslint-disable orphelines
 - **DEBT / hygiene** — retrait de 2 directives `eslint-disable-next-line` mortes (signalees par eslint comme « Unused eslint-disable directive », ne supprimant plus aucun warning) : `api/employees/[id]/route.ts:56` (`no-unused-vars` ; `storeIds` est utilise L80+, `_password`/`_role` ignores par underscore) et `components/planning/shift-modal.tsx:351` (`react-hooks/exhaustive-deps` ; la regle ne se declenche plus sur ce useEffect). eslint 0 sur les 2 fichiers, tsc 0, jest 361. Reduit le bruit lint sans changer le comportement.
+
+### Correctif execute (suite 49) — DEBT-032 retrait de casts `as any` type-honnetes
+- **DEBT-032 / type-safety** — 6 casts `as any` remplaces par des types precis (tsc 0) :
+  - `notifications/logs/route.ts` (3) + `messages/route.ts` (2) : `X.includes(v as any)` -> `(X as readonly string[]).includes(v)`. Le `as any` masquait le rejet d'un `string` par le type tuple littéral (`as const`) ; le widening en `readonly string[]` est honnête (test d'appartenance runtime) et conserve le type-checking sur `v`.
+  - `api-helpers.ts:29` : `(session.user as any).mustChangePassword` -> `(session.user as { mustChangePassword?: boolean })`. Acces de propriete type precis.
+  - Laisse : `api-helpers.ts:69` `serviceSession as any` (cast structurel de Session construite — plus risque, hors scope sur). `any` 26 -> 20. tsc 0, jest 361.

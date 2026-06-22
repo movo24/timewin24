@@ -26,7 +26,7 @@ export async function getSessionOrUnauthorized(options?: { skipMustChange?: bool
   // 1. Try NextAuth session (browser cookie)
   const session = await getServerSession(authOptions);
   if (session?.user) {
-    if (!options?.skipMustChange && (session.user as any).mustChangePassword) {
+    if (!options?.skipMustChange && (session.user as { mustChangePassword?: boolean }).mustChangePassword) {
       return {
         session: null,
         error: NextResponse.json(

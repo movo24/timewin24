@@ -57,10 +57,10 @@ export async function GET(req: NextRequest) {
       // Admin/Manager: filtres
       const VALID_STATUSES = ["NEW", "IN_PROGRESS", "RESOLVED", "CLOSED"] as const;
       const VALID_CATEGORIES = ["GENERAL", "PLANNING", "CONGE", "ABSENCE", "ADMINISTRATIF", "RECLAMATION", "AUTRE"] as const;
-      if (status && VALID_STATUSES.includes(status as any)) where.status = status;
+      if (status && (VALID_STATUSES as readonly string[]).includes(status)) where.status = status;
       if (storeId) where.storeId = storeId;
       if (employeeId) where.employeeId = employeeId;
-      if (category && VALID_CATEGORIES.includes(category as any)) where.category = category;
+      if (category && (VALID_CATEGORIES as readonly string[]).includes(category)) where.category = category;
     }
 
     const [rawMessages, total] = await Promise.all([
