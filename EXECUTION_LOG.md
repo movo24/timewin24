@@ -249,3 +249,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 53) — M116 tests detecteur d'alertes analytics (DB-bound)
 - **M116 / analytics** — `alerts-detector.test.ts` (6 tests) sur `detectAlerts` via mock Prisma (3 requetes : daily + 2x scores). Couvre les 5 regles de seuil : vide->[], regle 1 CA/h < 50% moyenne magasin -> low_revenue critical (isolation low vs high), regle 3 upsell < 1.2 -> no_upsell (employe seul pour neutraliser les auto-comparaisons 1/2), regle 4 part especes > 70% -> cash_anomaly, regle 5 chute de score > 30% vs periode precedente -> performance_drop, propagation du filtre storeId. Frontiere money via toNum. Suite 369 -> 375 (+6). tsc 0.
+
+### Correctif execute (suite 54) — M116 tests fabrique d'adaptateur POS
+- **M116 / POS** — `pos-factory.test.ts` (3 tests) sur `createPosAdapter` : type CUSTOM_API -> MockPosAdapter initialise (config renseignee -> testConnection true, aucun warning), type inconnu (LIGHTSPEED) -> fallback Mock + 1 warning logger contenant le type, nouvelle instance a chaque appel. Verrouille la resilience dev de la fabrique POS et le contrat d'initialisation. Suite 375 -> 378 (+3). tsc 0.
