@@ -188,3 +188,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 38) — M116 tests securite upload (magic bytes)
 - **M116 / M011 / securite** — `detectMimeFromBytes` + `mimeToExt` exportes (etaient prives) pour verrouiller le controle anti-fichier-deguise (le type reel vient des magic bytes, pas du Content-Type declare). `uploads.test.ts` (10 tests) : JPEG/PNG/PDF/MP4(ftyp@4)/WebP reconnus, buffer trop court -> null, en-tete EXE/PE -> null (rejet), mimeToExt connus/inconnus. Suite 251 -> 261. tsc 0. Export = changement sur, reversible.
+
+### Correctif execute (suite 39) — M116 tests JWT inventaire (anti-forge)
+- **M116 / M009 / M103** — `inventory-jwt.test.ts` (5 tests, jose charge OK dans jest) : sign->verify round-trip (payload restitue), rejet sans en-tete Authorization, rejet schema non-Bearer, rejet token falsifie, **rejet token signe avec un autre secret (anti-forge)**. Verrouille la correction M103 (suppression du fallback secret en dur). Suite 261 -> 266. tsc 0.
+- **Bilan couverture (reprise)** : suite 95 -> 266 (+171). Frontiere money (decimal, cost-mappers, employer-cost), securite (hmac POS, upload magic-bytes, JWT inventaire), solveur (constraints+scoring), validations Zod, utils dates, RBAC, labels ZPL.
