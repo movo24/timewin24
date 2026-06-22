@@ -255,3 +255,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 55) — M116 tests journal d'audit (resilience)
 - **M116 / audit** — `audit.test.ts` (4 tests) sur `logAudit` (mock Prisma + logger) : ecriture avec diff serialise (JSON.stringify), diff null si absent, **saut de l'ecriture DB pour les cles de service** (`service:*` -> evite la violation FK User, log debug), **avalement des erreurs DB sans jamais throw** (resilience : l'audit ne doit jamais casser l'operation principale, log error). Suite 378 -> 382 (+4). tsc 0.
+
+### Correctif execute (suite 56) — M116 tests catalogue d'evenements de notification
+- **M116 / notifications** — `notification-events.test.ts` (21 tests, parametres sur les 9 evenements) sur `EVENT_CONFIG` : invariants par evenement (priorite valide, titre non vide, bodyTemplate/urlBuilder sont des fonctions, au moins un canal actif), robustesse des templates avec contexte vide (jamais de throw, url commence par "/"), injection des valeurs de contexte dans le corps, et **les evenements CRITICAL activent le SMS**. La completude vis-a-vis de l'enum Prisma NotificationEventType est deja garantie par tsc (type Record). Suite 382 -> 403 (+21). tsc 0.
+- **Bilan reprise (tests)** : suite 275 -> 403 (+128) ; pures (timeline, money-serialize, rate-limit, parser NLP, fraud-scorer, nlp-confidence, scenario-scoring, suggestions, profil) + DB-bound via mock Prisma (replacement, alerts-detector, pos-factory, audit, events).
