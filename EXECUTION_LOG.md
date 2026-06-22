@@ -220,3 +220,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 46) — M116 tests suggestions inter-magasins
 - **M116 / M002 (solveur)** — `cross-store-suggestions.test.ts` (7 tests) sur `generateCrossStoreSuggestions` : pour chaque shift non assigne, proposer un employe d'un AUTRE magasin capable de couvrir le creneau. Couvre <2 magasins->[], aucun shift non assigne->[], proposition valide (MOVE_EMPLOYEE from B to A), rejet employe non autorise sur le magasin cible, rejet plafond hebdomadaire (maxHoursPerWeek), rejet indisponibilite FIXE chevauchante, rejet conflit avec son propre shift le meme jour. S'appuie sur les contraintes pures deja testees (overlap/simultaneite/distinct). Suite 350 -> 357 (+7). tsc 0.
+
+### Correctif execute (suite 47) — M116 patron mock Prisma + deriveProfileCategory
+- **M116 / Manager Brain** — `reliability-profile.test.ts` (4 tests) sur `deriveProfileCategory` (logique pure co-localisee avec un module DB-bound) : seuils A>=75 / B 50-74 / C<50, bornes exactes. Pilote le placement des profils (A ouvre seul / magasins difficiles, C jamais seul sur creneau sensible). Etablit le **patron `jest.mock("@/lib/prisma")`** qui permet de charger un module important le singleton Prisma sans connexion DB — reutilisable pour etendre la couverture aux modules DB-bound. Suite 357 -> 361 (+4). tsc 0.
