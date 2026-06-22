@@ -275,3 +275,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 61) — M116 tests alerte "retard significatif"
 - **M116 / alertes manager** — `detectSignificantLateness` exporte ; `alerts-lateness.test.ts` (5 tests, mock clockIn.findMany) : aucun retard -> [], retard <=30min -> WARNING, retard >30min -> CRITICAL (seuil de severite), mapping titre/heure (derivee de clockInAt)/contextKey/details, filtre de requete (status LATE, lateMinutes>15). Suite 424 -> 429 (+5). tsc 0, eslint 0.
+
+### Correctif execute (suite 62) — M116 tests contraintes de reclamation marketplace
+- **M116 / marketplace** — `marketplace-claim.test.ts` (7 tests) sur `checkClaimConstraints` (mock prisma.employee.findUnique + ./shifts findOverlappingShift/calculateWeeklyHours). Verifie chaque contrainte dure de reclamation d'un shift : employe introuvable -> tout en echec, toutes contraintes OK -> eligible (+ details), plafond hebdo depasse, chevauchement, indispo FIXE, plafond journalier, repos insuffisant (< 11h). Chaque cas isole une seule contrainte en echec. Suite 429 -> 436 (+7). tsc 0.
