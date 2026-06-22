@@ -337,7 +337,7 @@ export async function syncTimeClocks(
 
 // ── Sync Ventes (POS → TimeWin) ──
 
-async function syncSales(
+export async function syncSales(
   adapter: PosAdapter,
   provider: {
     id: string;
