@@ -53,7 +53,6 @@ export async function PUT(
     });
     if (!existing) return errorResponse("Employé non trouvé", 404);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { storeIds, password: _password, role: _role, ...data } = parsed.data;
 
     // Email is required - refuse empty/null

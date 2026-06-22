@@ -223,3 +223,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 47) — M116 patron mock Prisma + deriveProfileCategory
 - **M116 / Manager Brain** — `reliability-profile.test.ts` (4 tests) sur `deriveProfileCategory` (logique pure co-localisee avec un module DB-bound) : seuils A>=75 / B 50-74 / C<50, bornes exactes. Pilote le placement des profils (A ouvre seul / magasins difficiles, C jamais seul sur creneau sensible). Etablit le **patron `jest.mock("@/lib/prisma")`** qui permet de charger un module important le singleton Prisma sans connexion DB — reutilisable pour etendre la couverture aux modules DB-bound. Suite 357 -> 361 (+4). tsc 0.
+
+### Correctif execute (suite 48) — hygiene lint : directives eslint-disable orphelines
+- **DEBT / hygiene** — retrait de 2 directives `eslint-disable-next-line` mortes (signalees par eslint comme « Unused eslint-disable directive », ne supprimant plus aucun warning) : `api/employees/[id]/route.ts:56` (`no-unused-vars` ; `storeIds` est utilise L80+, `_password`/`_role` ignores par underscore) et `components/planning/shift-modal.tsx:351` (`react-hooks/exhaustive-deps` ; la regle ne se declenche plus sur ce useEffect). eslint 0 sur les 2 fichiers, tsc 0, jest 361. Reduit le bruit lint sans changer le comportement.
