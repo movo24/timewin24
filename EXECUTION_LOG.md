@@ -269,3 +269,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 59) — M116 tests routage de canaux (dispatcher)
 - **M116 / notifications** — `resolveChannels` exporte (patron de test, precedent uploads.detectMimeFromBytes) ; `dispatcher-channels.test.ts` (7 tests) sur le routage des canaux : NORMAL+defauts -> PUSH+EMAIL, LOW -> pas d'email (reserve NORMAL+), CRITICAL force PUSH+EMAIL+SMS meme defauts off, les preferences utilisateur ecrasent les defauts, IMPORTANT+opt-in SMS -> EMAIL+SMS (push non force), email/sms non configures -> canal supprime meme en CRITICAL. I/O isolees (prisma/push/email/sms/logger mockes ; isEmailConfigured/isSmsConfigured pilotables). Suite 412 -> 419 (+7). tsc 0, eslint 0.
+
+### Correctif execute (suite 60) — M116 tests alerte "magasin non ouvert"
+- **M116 / alertes manager** — `parseTime` + `detectStoreNotOpened` exportes (patron de test) ; `alerts-store-not-opened.test.ts` (5 tests). `parseTime` (HH:mm -> minutes). `detectStoreNotOpened` via mock Prisma (storeSchedule.findMany + clockIn.findFirst) et **horloge figee (fake timers a 12:00 UTC)** pour deterministe : magasin ouvert sans pointage -> alerte CRITICAL, magasin avec pointage -> rien, ouverture encore a venir (< openTime+15) -> ignore sans requete pointage, aucun horaire -> []. Suite 419 -> 424 (+5). tsc 0, eslint 0.

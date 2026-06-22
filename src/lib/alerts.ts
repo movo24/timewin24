@@ -21,7 +21,7 @@ interface AlertInput {
 /* ─── Helpers ────────────────────────────────── */
 
 /** Parse "HH:mm" into minutes since midnight */
-function parseTime(hhmm: string): number {
+export function parseTime(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
@@ -34,7 +34,7 @@ function nowMinutes(): number {
 
 /* ─── 1. Store Not Opened ────────────────────── */
 
-async function detectStoreNotOpened(dateStr: string): Promise<AlertInput[]> {
+export async function detectStoreNotOpened(dateStr: string): Promise<AlertInput[]> {
   const dayDate = new Date(dateStr + "T00:00:00Z");
   const dayEnd = new Date(dateStr + "T23:59:59Z");
   const dayOfWeek = dayDate.getUTCDay();
