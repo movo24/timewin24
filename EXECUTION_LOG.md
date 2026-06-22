@@ -195,3 +195,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 40) — M116 tests timeline (lanes/couverture)
 - **M116 / M004** — `timeline-lanes.test.ts` (9 tests) sur les fns pures restantes de `timeline-utils` : `assignLanes` (packing d'intervalles : vide, non-chevauchants meme lane, chevauchants lanes 0/1, reutilisation de lane liberee), `calculateCoverage` (heures couvertes bornes exclusives, shifts simultanes additionnes), `getEmployeeColor` (non-assigne fixe, deterministe par id, palette de classes). Suite 266 -> 275. tsc 0.
+
+### Correctif execute (suite 41) — M116 tests detection violations timeline
+- **M116 / M004** — `timeline-violations.test.ts` (10 tests) sur `detectShiftViolations`, derniere fn pure non couverte de `timeline-utils` : pas d'horaire -> [], magasin ferme -> `store_closed` (court-circuite les autres regles), shift dans/hors horaires (debut avant ouverture, fin apres fermeture -> `outside_hours`), `max_employees` avec ratio `n/max` (et exclusion des shifts non assignes), `max_simultaneous` via sweep-line (pic de chevauchement > seuil, vs enchainement sans chevauchement), cumul de violations. Suite 275 -> 285. tsc 0.
+- **Bilan couverture** : la surface pure testable de `timeline-utils` est desormais entierement couverte (lanes + couverture + couleur + violations). Suite 95 -> 285 (+190) sur la reprise.
