@@ -212,7 +212,7 @@ async function syncEmployees(
 
 // ── Sync Pointages (POS → TimeWin) ──
 
-async function syncTimeClocks(
+export async function syncTimeClocks(
   adapter: PosAdapter,
   provider: {
     id: string;
