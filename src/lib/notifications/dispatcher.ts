@@ -97,8 +97,9 @@ export async function dispatchNotification(
 
 /**
  * Determine which channels to use based on priority, defaults, and user preferences.
+ * Exporté pour les tests unitaires (routage de canaux).
  */
-function resolveChannels(
+export function resolveChannels(
   priority: NotificationPriority,
   defaults: { push: boolean; email: boolean; sms: boolean },
   pref?: { push: boolean; email: boolean; sms: boolean } | null
