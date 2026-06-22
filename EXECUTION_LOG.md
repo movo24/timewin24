@@ -192,3 +192,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Correctif execute (suite 39) — M116 tests JWT inventaire (anti-forge)
 - **M116 / M009 / M103** — `inventory-jwt.test.ts` (5 tests, jose charge OK dans jest) : sign->verify round-trip (payload restitue), rejet sans en-tete Authorization, rejet schema non-Bearer, rejet token falsifie, **rejet token signe avec un autre secret (anti-forge)**. Verrouille la correction M103 (suppression du fallback secret en dur). Suite 261 -> 266. tsc 0.
 - **Bilan couverture (reprise)** : suite 95 -> 266 (+171). Frontiere money (decimal, cost-mappers, employer-cost), securite (hmac POS, upload magic-bytes, JWT inventaire), solveur (constraints+scoring), validations Zod, utils dates, RBAC, labels ZPL.
+
+### Correctif execute (suite 40) — M116 tests timeline (lanes/couverture)
+- **M116 / M004** — `timeline-lanes.test.ts` (9 tests) sur les fns pures restantes de `timeline-utils` : `assignLanes` (packing d'intervalles : vide, non-chevauchants meme lane, chevauchants lanes 0/1, reutilisation de lane liberee), `calculateCoverage` (heures couvertes bornes exclusives, shifts simultanes additionnes), `getEmployeeColor` (non-assigne fixe, deterministe par id, palette de classes). Suite 266 -> 275. tsc 0.
