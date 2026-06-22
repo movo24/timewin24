@@ -278,3 +278,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 62) — M116 tests contraintes de reclamation marketplace
 - **M116 / marketplace** — `marketplace-claim.test.ts` (7 tests) sur `checkClaimConstraints` (mock prisma.employee.findUnique + ./shifts findOverlappingShift/calculateWeeklyHours). Verifie chaque contrainte dure de reclamation d'un shift : employe introuvable -> tout en echec, toutes contraintes OK -> eligible (+ details), plafond hebdo depasse, chevauchement, indispo FIXE, plafond journalier, repos insuffisant (< 11h). Chaque cas isole une seule contrainte en echec. Suite 429 -> 436 (+7). tsc 0.
+
+### Correctif execute (suite 63) — M116 tests helpers shifts (chevauchement / heures hebdo)
+- **M116 / shifts** — `shifts-helpers.test.ts` (6 tests, mock shift.findMany) sur les helpers fondamentaux reutilises partout (replacement, marketplace, solveur) : `findOverlappingShift` (employe non assigne -> null sans requete, retourne le shift chevauchant, aucun chevauchement -> null) et `calculateWeeklyHours` (non assigne -> 0 sans requete, somme des heures de la semaine, vide -> 0). Suite 436 -> 442 (+6). tsc 0.
