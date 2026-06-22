@@ -48,7 +48,7 @@ export async function GET(
     if (!provider) return errorResponse("Provider introuvable", 404);
 
     // Strip sensitive fields before returning
-    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeProvider } = provider as any;
+    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeProvider } = provider as Record<string, unknown>;
     return successResponse({
       provider: {
         ...safeProvider,
@@ -97,7 +97,7 @@ export async function PUT(
     });
 
     // Strip sensitive fields before returning (BUG 1)
-    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeUpdated } = updated as any;
+    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeUpdated } = updated as Record<string, unknown>;
     return successResponse({
       ...safeUpdated,
       hasApiKey: !!apiKey,

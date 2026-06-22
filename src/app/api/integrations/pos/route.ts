@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Strip sensitive fields before returning (BUG 2)
-  const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeProvider } = provider as any;
+  const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeProvider } = provider as Record<string, unknown>;
   return successResponse({
     ...safeProvider,
     hasApiKey: !!apiKey,

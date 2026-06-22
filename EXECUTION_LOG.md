@@ -232,3 +232,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
   - `notifications/logs/route.ts` (3) + `messages/route.ts` (2) : `X.includes(v as any)` -> `(X as readonly string[]).includes(v)`. Le `as any` masquait le rejet d'un `string` par le type tuple littéral (`as const`) ; le widening en `readonly string[]` est honnête (test d'appartenance runtime) et conserve le type-checking sur `v`.
   - `api-helpers.ts:29` : `(session.user as any).mustChangePassword` -> `(session.user as { mustChangePassword?: boolean })`. Acces de propriete type precis.
   - Laisse : `api-helpers.ts:69` `serviceSession as any` (cast structurel de Session construite — plus risque, hors scope sur). `any` 26 -> 20. tsc 0, jest 361.
+
+### Correctif execute (suite 50) — DEBT-032 (suite) retrait casts `as any`
+- **DEBT-032 / type-safety** — 4 casts `as any` supplementaires remplaces (tsc 0, eslint 0) :
+  - `absences/route.ts:144` : `VALID_STATUSES.includes(status as any)` -> `(... as readonly string[]).includes(status)`.
+  - `integrations/pos/[id]/route.ts` (2) + `integrations/pos/route.ts` (1) : strip des champs sensibles `const {apiKey,apiSecret,accessToken,refreshToken,...safe} = provider as any` -> `as Record<string, unknown>`. Plus honnete (pas de propagation d'acces `any`), runtime identique, le spread `...safe` typecheck toujours (ignoreRestSiblings sur les secrets extraits). Securite inchangee (memes champs retires).
+  - Laisses : `dashboard/route.ts:136` (`where ... as any` — pattern prisma-where dynamique documente), `costs/page.tsx` useState<any[]> (etat UI, typage churny). `any` 20 -> 16. tsc 0, jest 361.

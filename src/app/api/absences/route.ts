@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
     }
 
     const VALID_STATUSES = ["PENDING", "APPROVED", "REJECTED"] as const;
-    if (status && VALID_STATUSES.includes(status as any)) {
+    if (status && (VALID_STATUSES as readonly string[]).includes(status)) {
       where.status = status;
     }
 
