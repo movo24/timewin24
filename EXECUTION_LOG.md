@@ -178,3 +178,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 35) — hygiene build Next 16 (viewport metadata)
 - **Build hygiene** — `src/app/inventory/layout.tsx` : `viewport` deplace de l'export `metadata` (deprecie Next 16) vers l'export dedie `export const viewport: Viewport`. Emet le MEME `<meta name="viewport">` (rendu identique) -> resout les 5 warnings build « Unsupported metadata viewport » (/inventory/counts,history,home,login,scan, qui heritent de ce layout). Root layout deja conforme (themeColor dans viewport export). tsc 0, jest 230. Verifiable : warnings absents au prochain build Vercel.
+
+### Correctif execute (suite 36) — M116 tests frontiere Decimal + HMAC POS
+- **M116 / M101 / M008** — `decimal.test.ts` (6 tests) : `toNum`/`toNumN` (passthrough number, conversion Decimal-like via .toNumber(), pieges falsy 0, null/undefined->null). C'est la frontiere qui sous-tend tout le travail money M101/M101b. `hmac.test.ts` (8 tests) : `computeHmac` (deterministe, SHA-256 hex, sensible a chaque composant) + `validateHmac` (en-tetes manquants, timestamp NaN, drift >5min, signature valide, anti-rejeu nonce, mauvaise signature, mauvais secret) = auth du webhook POS. Suite 230 -> 244. tsc 0.
+- Amelioration au passage : `hmac.ts` setInterval de cleanup des nonces passe en `.unref()` -> ne bloque plus la sortie du process (tests/CLI). Comportement runtime inchange.

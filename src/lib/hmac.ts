@@ -6,13 +6,15 @@ const NONCE_EXPIRY_MS = 10 * 60_000;       // Keep nonces for 10min (> drift win
 // In-memory nonce store (single-instance safe; for multi-instance use Redis)
 const usedNonces = new Map<string, number>();
 
-// Cleanup expired nonces every 2 minutes
-setInterval(() => {
+// Cleanup expired nonces every 2 minutes.
+// .unref() : ce timer ne doit pas empêcher le process de se terminer (tests/CLI).
+const nonceCleanup = setInterval(() => {
   const now = Date.now();
   for (const [nonce, ts] of usedNonces) {
     if (now - ts > NONCE_EXPIRY_MS) usedNonces.delete(nonce);
   }
 }, 2 * 60 * 1000);
+nonceCleanup.unref?.();
 
 /**
  * Compute HMAC-SHA256 signature.
