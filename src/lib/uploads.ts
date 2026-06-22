@@ -19,7 +19,7 @@ export async function ensureUploadDir() {
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
 }
 
-function detectMimeFromBytes(buffer: Buffer): string | null {
+export function detectMimeFromBytes(buffer: Buffer): string | null {
   if (buffer.length < 8) return null;
 
   // JPEG
@@ -78,7 +78,7 @@ export async function deleteFile(storedPath: string) {
   }
 }
 
-function mimeToExt(mimeType: string): string {
+export function mimeToExt(mimeType: string): string {
   const map: Record<string, string> = {
     "image/jpeg": ".jpg",
     "image/png": ".png",

@@ -185,3 +185,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 37) — M116 tests cost-mappers (serialisation money)
 - **M116 / M101** — `cost-mappers.test.ts` (7 tests) : `countryRulesFromConfig` (Decimal->number + passthrough number + champs non-money preserves), `serializeCountryConfig` (coerce les Decimal presents, ignore les cles absentes [select partiel], preserve null), `serializeEmployeeCost` (hourlyRateGross/overrides nullable + recursion dans `country`). Frontiere de serialisation API du module cout. Suite 244 -> 251. tsc 0.
+
+### Correctif execute (suite 38) — M116 tests securite upload (magic bytes)
+- **M116 / M011 / securite** — `detectMimeFromBytes` + `mimeToExt` exportes (etaient prives) pour verrouiller le controle anti-fichier-deguise (le type reel vient des magic bytes, pas du Content-Type declare). `uploads.test.ts` (10 tests) : JPEG/PNG/PDF/MP4(ftyp@4)/WebP reconnus, buffer trop court -> null, en-tete EXE/PE -> null (rejet), mimeToExt connus/inconnus. Suite 251 -> 261. tsc 0. Export = changement sur, reversible.
