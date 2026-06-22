@@ -182,3 +182,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Correctif execute (suite 36) — M116 tests frontiere Decimal + HMAC POS
 - **M116 / M101 / M008** — `decimal.test.ts` (6 tests) : `toNum`/`toNumN` (passthrough number, conversion Decimal-like via .toNumber(), pieges falsy 0, null/undefined->null). C'est la frontiere qui sous-tend tout le travail money M101/M101b. `hmac.test.ts` (8 tests) : `computeHmac` (deterministe, SHA-256 hex, sensible a chaque composant) + `validateHmac` (en-tetes manquants, timestamp NaN, drift >5min, signature valide, anti-rejeu nonce, mauvaise signature, mauvais secret) = auth du webhook POS. Suite 230 -> 244. tsc 0.
 - Amelioration au passage : `hmac.ts` setInterval de cleanup des nonces passe en `.unref()` -> ne bloque plus la sortie du process (tests/CLI). Comportement runtime inchange.
+
+### Correctif execute (suite 37) — M116 tests cost-mappers (serialisation money)
+- **M116 / M101** — `cost-mappers.test.ts` (7 tests) : `countryRulesFromConfig` (Decimal->number + passthrough number + champs non-money preserves), `serializeCountryConfig` (coerce les Decimal presents, ignore les cles absentes [select partiel], preserve null), `serializeEmployeeCost` (hourlyRateGross/overrides nullable + recursion dans `country`). Frontiere de serialisation API du module cout. Suite 244 -> 251. tsc 0.
