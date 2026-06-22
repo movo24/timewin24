@@ -281,3 +281,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 63) — M116 tests helpers shifts (chevauchement / heures hebdo)
 - **M116 / shifts** — `shifts-helpers.test.ts` (6 tests, mock shift.findMany) sur les helpers fondamentaux reutilises partout (replacement, marketplace, solveur) : `findOverlappingShift` (employe non assigne -> null sans requete, retourne le shift chevauchant, aucun chevauchement -> null) et `calculateWeeklyHours` (non assigne -> 0 sans requete, somme des heures de la semaine, vide -> 0). Suite 436 -> 442 (+6). tsc 0.
+
+### Correctif execute (suite 64) — correctness : le test de hash garde le vrai code
+- **M116 / notifications** — `planning-snapshot-hash.test.ts` importait une RE-IMPLEMENTATION locale de `computeShiftSnapshotHash` (commentaire « mirrored from notify/route.ts ») : le test ne gardait donc pas le code de production -> une divergence ne serait pas detectee. Corrige : import de la VRAIE fonction depuis `@/lib/notifications/planning-hash`. Verifie : `notify/route.ts` importe deja la fonction canonique (pas de duplication). 7 tests toujours verts, ils garantissent desormais reellement l'invariant « meme planning -> meme hash » (anti-faux-positif « planning modifie apres envoi »). tsc 0.
