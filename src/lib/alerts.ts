@@ -208,7 +208,7 @@ async function detectAbsenceNotReplaced(
 
 /* ─── 3. Significant Lateness ────────────────── */
 
-async function detectSignificantLateness(
+export async function detectSignificantLateness(
   dateStr: string
 ): Promise<AlertInput[]> {
   const dayDate = new Date(dateStr + "T00:00:00Z");

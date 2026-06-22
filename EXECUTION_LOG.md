@@ -272,3 +272,6 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 
 ### Correctif execute (suite 60) — M116 tests alerte "magasin non ouvert"
 - **M116 / alertes manager** — `parseTime` + `detectStoreNotOpened` exportes (patron de test) ; `alerts-store-not-opened.test.ts` (5 tests). `parseTime` (HH:mm -> minutes). `detectStoreNotOpened` via mock Prisma (storeSchedule.findMany + clockIn.findFirst) et **horloge figee (fake timers a 12:00 UTC)** pour deterministe : magasin ouvert sans pointage -> alerte CRITICAL, magasin avec pointage -> rien, ouverture encore a venir (< openTime+15) -> ignore sans requete pointage, aucun horaire -> []. Suite 419 -> 424 (+5). tsc 0, eslint 0.
+
+### Correctif execute (suite 61) — M116 tests alerte "retard significatif"
+- **M116 / alertes manager** — `detectSignificantLateness` exporte ; `alerts-lateness.test.ts` (5 tests, mock clockIn.findMany) : aucun retard -> [], retard <=30min -> WARNING, retard >30min -> CRITICAL (seuil de severite), mapping titre/heure (derivee de clockInAt)/contextKey/details, filtre de requete (status LATE, lateMinutes>15). Suite 424 -> 429 (+5). tsc 0, eslint 0.
