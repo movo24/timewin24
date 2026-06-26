@@ -37,3 +37,8 @@
 - ✅ Docs de pilotage créés (ce fichier + MASTER_ROADMAP, MODULE_SPECS, TECHNICAL_DEBT, EXECUTION_LOG).
 
 Détail des priorités et du backlog : voir `MASTER_ROADMAP.md`.
+
+## Module Paie / DSN / Bulletins
+- **Étage 2 Payroll Inputs** : moteur de qualification pur LIVRÉ (`src/lib/payroll/`, 23 tests, sans €). Frontière respectée : quantités, jamais de montants.
+- **Schéma DB** : proposé (`docs/PAYROLL-MODULE.md`), exécution en attente GO Tier-2.
+- **Étages 3/4/5 (Export / Payslip Vault / DSN)** : non démarrés ; squelette uniquement, dépôt DSN réel = Tier-3 (jamais l'agent).

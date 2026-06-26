@@ -292,3 +292,15 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Correctif execute (suite 66) — M116 tests sync ventes POS (idempotence)
 - **M116 / POS / regle TimeWin24 "no duplicate events"** — `syncSales` exporte ; `pos-sync-sales.test.ts` (4 tests, mock adapter.fetchSales + prisma.posSalesData.upsert) : magasin non mappe -> skip sans upsert, **upsert idempotent sur `providerId_storeId_date_hourSlot`** (anti-doublon de vente horaire), renseignement CA/transactions/articles, comptage + success. Complete la couverture d'idempotence du sync-engine (pointages en suite 65). Suite 449 -> 453 (+4). tsc 0.
 - **Note infra** : Vercel free-tier a atteint la limite de 100 deploiements/jour (3 projets x nombreux pushes). Non bloquant pour le code (git push OK, tests locaux via jest). Les previews se debloquent sous 24h ou via upgrade Pro. Pushes desormais regroupes pour limiter la conso de quota.
+
+### Lot 1 — Module Paie / Payroll Inputs (Étage 2, Tier-1, pur sans DB)
+- **Diagnostic** : audit du modèle RH/planning existant (Shift/ClockIn/AbsenceDeclaration/Employee/Store/Organization). Manques identifiés : SIRET établissement, entité contrat explicite, qualification dimanche/férié, seuils heures sup/complémentaires, entité période. Documenté dans `docs/PAYROLL-MODULE.md`.
+- **Moteur de qualification (LIVRÉ)** : `src/lib/payroll/` pur, testé, **sans euro** :
+  - `holidays.ts` — jours fériés FR (Meeus/Pâques + 8 fixes), `frenchHolidays`/`isFrenchHoliday`.
+  - `hours.ts` — `intervalHours` (gère minuit), `isSunday`, `dayOfWeek`.
+  - `qualify.ts` — `qualifyWeeklyHours` (seuil légal 35h : normal/sup temps plein, complémentaires temps partiel), `weekStart`.
+  - `aggregate.ts` — `aggregatePayrollInputs` → `PayrollInputVariables` (quantités) par contrat×période : heures normales/sup/complémentaires, dimanche, férié, absences par type (congés/arrêts/autres), retards.
+- **Audit frontière** : grep euro/montant/taux/cotisation/net/brut → uniquement dans des commentaires « aucune valorisation ». 0 ligne de valorisation.
+- **Schéma DB proposé** (NON exécuté — Tier-2) : `Establishment` (SIRET), `EmploymentContract` (clé paie), `PayrollInput` (`@@unique([contractId, period])` anti-doublon, statut draft/validated/locked). Cf. `docs/PAYROLL-MODULE.md` §3.
+- **Validations** : jest 453 -> 476 (+23 payroll), tsc 0, eslint 0 sur `src/lib/payroll/`.
+- **Stop Tier-2** : migration, verrouillage mensuel, DSN>squelette, mapping concret, données salariés réelles — en attente GO.

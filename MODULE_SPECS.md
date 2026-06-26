@@ -53,3 +53,9 @@ Non présents dans le repo ; spécifiés au besoin. Hors périmètre TimeWin24 a
 
 ---
 Pour les autres modules (M002/M003/M005/M010/M011/M013/M015), voir MASTER_ROADMAP (fichiers/API/modèles). Spécifier ici à mesure qu'on les retravaille.
+
+## M-PAIE — Paie / DSN / Bulletins (en cours)
+- Voir `docs/PAYROLL-MODULE.md` (diagnostic + schéma proposé + frontière).
+- **Étage 2 Payroll Inputs (LIVRÉ, Tier-1, pur)** : `src/lib/payroll/` — `holidays`, `hours`, `qualify`, `aggregate`, `types`. Quantités qualifiées (heures normales/sup/complémentaires, dimanche, férié, absences, retards) **sans aucune valorisation €**. Tests : payroll-holidays/qualify/aggregate (23).
+- **Frontière** : TimeWin24 produit des faits horaires qualifiés, jamais des montants. Valorisation = moteur de paie externe.
+- **En attente GO Tier-2** : migration du schéma proposé, verrouillage mensuel, DSN au-delà du squelette, format de mapping paie concret, écritures de données salariés réelles.
