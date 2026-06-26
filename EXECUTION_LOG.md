@@ -318,3 +318,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `src/lib/payroll/dsn.ts` : **squelette uniquement**. Type `DSNDeclaration`, machine a etats (`canTransitionDsn` : draft->validated->exported->submitted->accepted/rejected, rejected->draft), **feature flag obligatoire `DSN_SUBMISSION_ENABLED` (false par defaut)** + garde-fou `assertDsnSubmissionAllowed()` (leve une erreur tant que non active). AUCUN appel reseau, AUCUN depot reel (Tier-3).
 - `src/lib/payroll/payslip-acl.ts` : controle d'acces PUR aux bulletins (donnee sensible, moindre privilege). GROUP_ADMIN/HR_MANAGER -> acces ; STORE_MANAGER -> refus contenu (confidentialite) ; EMPLOYEE -> son bulletin uniquement, refus si `paper_required`, acces conserve apres depart.
 - Tests `payroll-dsn` (5) + `payroll-payslip-acl` (7). jest 489 -> 501, tsc 0, eslint 0. Audit frontiere : 0 valorisation dans le code.
+
+### Lot 1e — Service d'orchestration + endpoint lecture seule (Tier-1)
+- `src/lib/payroll/service.ts` : `buildPayrollPreview` (pur) — assemble source + aggregate + export depuis des lignes brutes. Tests `payroll-service` (2).
+- `src/app/api/payroll/preview/route.ts` : **GET lecture seule**, `requireAdmin` (moindre privilege), calcule a la volee les variables de paie depuis ClockIn/AbsenceDeclaration EXISTANTS pour un magasin+periode. **Aucune ecriture, aucune persistance, aucune nouvelle table, aucun euro.** Formats JSON / CSV (+ checksum en en-tete). Audit via logger sans donnee sensible en clair (acteur/magasin/periode/nb).
+  - Limites assumees avant migration Tier-2 : « contrat » ≈ employe (pas d'EmploymentContract), SIRET etablissement = null (pas d'Establishment) ; SIREN derive Store->Unit->Organization.
+- jest 501 -> 503, tsc 0, eslint 0.

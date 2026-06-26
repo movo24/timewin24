@@ -11,3 +11,4 @@ export * from "./export";
 export * from "./source";
 export * from "./dsn";
 export * from "./payslip-acl";
+export * from "./service";
