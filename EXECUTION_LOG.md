@@ -308,3 +308,8 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 ### Lot 1b — Payroll Export abstrait (Étage 3, Tier-1)
 - `src/lib/payroll/export.ts` : export **abstrait** (CSV/JSON) des variables de paie + `exportChecksum` (SHA-256, audit). Colonnes stables `PAYROLL_EXPORT_COLUMNS`. Échappement CSV RFC 4180. **Aucun format éditeur concret** (Silae/Sage/… = Tier-2), aucun montant.
 - Tests `payroll-export` (6) : ligne abstraite, CSV en-tête+échappement, JSON clés ordonnées, checksum déterministe/sensible. jest 476 -> 482, tsc 0, eslint 0.
+
+### Lot 1c — Adaptateur source Étage 1 -> Étage 2 (Tier-1, pur)
+- `src/lib/payroll/source.ts` : conversion pure des faits bruts existants en faits qualifies. `workedFactsFromClockIns` (pointages complets -> creneaux, exclut les incomplets), `latenessFromClockIns` (status LATE + minutes>0), `absenceFactsFromDeclarations` (APPROVED uniquement, expansion par jour calendaire, type inconnu -> AUTRE, intervalle inverse -> vide). Conventions UTC documentees (normalisation Europe/Paris = amont).
+- Pipeline pur desormais bout-en-bout : rows ClockIn/Absence -> facts -> aggregate -> variables -> export.
+- Tests `payroll-source` (7). jest 482 -> 489, tsc 0, eslint 0.
