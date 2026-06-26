@@ -304,3 +304,7 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - **Schéma DB proposé** (NON exécuté — Tier-2) : `Establishment` (SIRET), `EmploymentContract` (clé paie), `PayrollInput` (`@@unique([contractId, period])` anti-doublon, statut draft/validated/locked). Cf. `docs/PAYROLL-MODULE.md` §3.
 - **Validations** : jest 453 -> 476 (+23 payroll), tsc 0, eslint 0 sur `src/lib/payroll/`.
 - **Stop Tier-2** : migration, verrouillage mensuel, DSN>squelette, mapping concret, données salariés réelles — en attente GO.
+
+### Lot 1b — Payroll Export abstrait (Étage 3, Tier-1)
+- `src/lib/payroll/export.ts` : export **abstrait** (CSV/JSON) des variables de paie + `exportChecksum` (SHA-256, audit). Colonnes stables `PAYROLL_EXPORT_COLUMNS`. Échappement CSV RFC 4180. **Aucun format éditeur concret** (Silae/Sage/… = Tier-2), aucun montant.
+- Tests `payroll-export` (6) : ligne abstraite, CSV en-tête+échappement, JSON clés ordonnées, checksum déterministe/sensible. jest 476 -> 482, tsc 0, eslint 0.
