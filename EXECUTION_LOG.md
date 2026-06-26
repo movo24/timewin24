@@ -313,3 +313,8 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `src/lib/payroll/source.ts` : conversion pure des faits bruts existants en faits qualifies. `workedFactsFromClockIns` (pointages complets -> creneaux, exclut les incomplets), `latenessFromClockIns` (status LATE + minutes>0), `absenceFactsFromDeclarations` (APPROVED uniquement, expansion par jour calendaire, type inconnu -> AUTRE, intervalle inverse -> vide). Conventions UTC documentees (normalisation Europe/Paris = amont).
 - Pipeline pur desormais bout-en-bout : rows ClockIn/Absence -> facts -> aggregate -> variables -> export.
 - Tests `payroll-source` (7). jest 482 -> 489, tsc 0, eslint 0.
+
+### Lot 1d — Socle DSN (Étage 5) + ACL bulletins (Étage 4) — Tier-1 squelette/pur
+- `src/lib/payroll/dsn.ts` : **squelette uniquement**. Type `DSNDeclaration`, machine a etats (`canTransitionDsn` : draft->validated->exported->submitted->accepted/rejected, rejected->draft), **feature flag obligatoire `DSN_SUBMISSION_ENABLED` (false par defaut)** + garde-fou `assertDsnSubmissionAllowed()` (leve une erreur tant que non active). AUCUN appel reseau, AUCUN depot reel (Tier-3).
+- `src/lib/payroll/payslip-acl.ts` : controle d'acces PUR aux bulletins (donnee sensible, moindre privilege). GROUP_ADMIN/HR_MANAGER -> acces ; STORE_MANAGER -> refus contenu (confidentialite) ; EMPLOYEE -> son bulletin uniquement, refus si `paper_required`, acces conserve apres depart.
+- Tests `payroll-dsn` (5) + `payroll-payslip-acl` (7). jest 489 -> 501, tsc 0, eslint 0. Audit frontiere : 0 valorisation dans le code.
