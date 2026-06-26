@@ -28,6 +28,7 @@ import {
   BellRing,
   Tag,
   BarChart3,
+  FileSpreadsheet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,7 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { href: "/performance", label: "Performance", icon: BarChart3 },
       { href: "/costs", label: "Coûts", icon: Euro },
+      { href: "/paie", label: "Variables de paie", icon: FileSpreadsheet },
       { href: "/alertes", label: "Alertes", icon: Bell },
     ],
   },

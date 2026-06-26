@@ -324,3 +324,8 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `src/app/api/payroll/preview/route.ts` : **GET lecture seule**, `requireAdmin` (moindre privilege), calcule a la volee les variables de paie depuis ClockIn/AbsenceDeclaration EXISTANTS pour un magasin+periode. **Aucune ecriture, aucune persistance, aucune nouvelle table, aucun euro.** Formats JSON / CSV (+ checksum en en-tete). Audit via logger sans donnee sensible en clair (acteur/magasin/periode/nb).
   - Limites assumees avant migration Tier-2 : « contrat » ≈ employe (pas d'EmploymentContract), SIRET etablissement = null (pas d'Establishment) ; SIREN derive Store->Unit->Organization.
 - jest 501 -> 503, tsc 0, eslint 0.
+
+### Lot 1f — Écran RH « Variables de paie » (UI, lecture seule, Tier-1)
+- `src/app/(dashboard)/paie/page.tsx` : ecran admin **lecture seule** consommant `GET /api/payroll/preview`. Selecteur magasin + navigation mensuelle. Affiche **uniquement des quantites** (heures travaillees/normales/sup/complementaires, dimanche, feriees, jours CP/arret/autres, retards) + totaux periode + export CSV. **Aucune ecriture, aucun euro** ; bandeau rappelant la frontiere (valorisation = moteur de paie externe). Noms employes via `/api/employees` (lecture, admin) pour lisibilite.
+- `src/components/sidebar.tsx` : entree « Variables de paie » (groupe Analyse, **admin uniquement** — coherent avec `requireAdmin` de l'endpoint).
+- Validations : tsc 0, eslint 0, jest 503/503 (aucune regression), `next build` OK (route `/paie` compilee).
