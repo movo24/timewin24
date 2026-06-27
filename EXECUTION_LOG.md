@@ -363,3 +363,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - Endpoints admin : `GET /api/payroll/establishment?storeId=` (provisionne idempotent si absent), `PATCH /api/payroll/establishment/[id]` (valide le SIRET avant ecriture, 409 si SIRET deja rattache a un autre etablissement).
 - UI : onglet « Établissement » dans `/paie` (edition SIRET/raison sociale/APE + liste des contrats provisionnes).
 - Tests `payroll-siret` (11, fixtures INSEE). jest 524 -> 535, tsc 0, eslint 0, `next build` OK (2 routes compilees).
+
+### Lot 2e — Edition des contrats (Tier-2)
+- `src/lib/payroll/contract.ts` (PUR) : `validateContractPatch` (type parmi `CONTRACT_TYPES`, base horaire 1–48, dates AAAA-MM-JJ reelles, fin >= debut), bornes exportees. La base horaire est une QUANTITE contractuelle (aucune valorisation).
+- `repository.updateContract` + `PATCH /api/payroll/contracts/[id]` (validation pure prealable, 404 si introuvable). Admin only, audit sans donnee sensible.
+- UI : lignes de contrat EDITABLES dans l'onglet « Établissement » (type/heures/dates, bouton Enregistrer actif seulement si modifie).
+- Tests `payroll-contract` (9). jest 535 -> 544, tsc 0, eslint 0, `next build` OK (route compilee).

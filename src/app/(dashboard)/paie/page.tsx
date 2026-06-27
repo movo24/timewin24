@@ -5,6 +5,7 @@ import { StoreSearch } from "@/components/store-search";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CONTRACT_TYPES } from "@/lib/payroll/contract";
 import {
   FileSpreadsheet,
   Download,
@@ -493,16 +494,15 @@ function EstablishmentTab({ storeId }: { storeId: string }) {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-4 py-2.5 font-medium text-gray-500">Salarié</th>
                   <th className="text-left px-3 py-2.5 font-medium text-gray-500">Type</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-gray-500">Heures/sem.</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-gray-500">Heures/sem.</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-gray-500">Début</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-gray-500">Fin</th>
+                  <th className="text-right px-4 py-2.5 font-medium text-gray-500"></th>
                 </tr>
               </thead>
               <tbody>
                 {est.contracts.map((c) => (
-                  <tr key={c.id} className="border-b border-gray-100">
-                    <td className="px-4 py-2 font-medium text-gray-900">{c.employee.firstName} {c.employee.lastName}</td>
-                    <td className="px-3 py-2 text-gray-600">{c.contractType}</td>
-                    <td className="px-4 py-2 text-right">{c.weeklyHours}h</td>
-                  </tr>
+                  <ContractRowEditor key={c.id} contract={c} onSaved={load} />
                 ))}
               </tbody>
             </table>
@@ -510,6 +510,76 @@ function EstablishmentTab({ storeId }: { storeId: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+function toDateInput(d: string | null): string {
+  return d ? String(d).slice(0, 10) : "";
+}
+
+function ContractRowEditor({ contract, onSaved }: { contract: ContractRow; onSaved: () => void | Promise<void> }) {
+  const [type, setType] = useState(contract.contractType);
+  const [hours, setHours] = useState(String(contract.weeklyHours));
+  const [start, setStart] = useState(toDateInput(contract.startDate));
+  const [end, setEnd] = useState(toDateInput(contract.endDate));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const dirty =
+    type !== contract.contractType ||
+    hours !== String(contract.weeklyHours) ||
+    start !== toDateInput(contract.startDate) ||
+    end !== toDateInput(contract.endDate);
+
+  async function save() {
+    setSaving(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/payroll/contracts/${contract.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractType: type, weeklyHours: Number(hours), startDate: start, endDate: end || null }),
+      });
+      const json = await res.json();
+      if (!res.ok) setErr(json.error || "Erreur");
+      else await onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <tr className="border-b border-gray-100">
+      <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">
+        {contract.employee.firstName} {contract.employee.lastName}
+        {err && <span className="block text-[11px] text-red-600">{err}</span>}
+      </td>
+      <td className="px-3 py-2">
+        <select
+          className="h-8 rounded-md border border-gray-300 bg-white px-2 text-sm"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+        >
+          {CONTRACT_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      </td>
+      <td className="px-3 py-2">
+        <Input type="number" min="1" max="48" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)} className="h-8 w-20" />
+      </td>
+      <td className="px-3 py-2">
+        <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="h-8 w-36" />
+      </td>
+      <td className="px-3 py-2">
+        <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-8 w-36" />
+      </td>
+      <td className="px-4 py-2 text-right">
+        <Button size="sm" variant="outline" className="h-8" onClick={save} disabled={saving || !dirty}>
+          {saving ? "..." : "Enregistrer"}
+        </Button>
+      </td>
+    </tr>
   );
 }
 

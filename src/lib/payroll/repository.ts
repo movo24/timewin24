@@ -110,6 +110,18 @@ export async function updateEstablishment(
   });
 }
 
+/** Met à jour un contrat (type / base horaire / dates). */
+export async function updateContract(
+  id: string,
+  data: { contractType?: ContractType; weeklyHours?: number; startDate?: Date; endDate?: Date | null }
+) {
+  return prisma.employmentContract.update({
+    where: { id },
+    data,
+    select: { id: true, contractType: true, weeklyHours: true, startDate: true, endDate: true },
+  });
+}
+
 export interface PersistResult {
   contractId: string;
   period: string;
