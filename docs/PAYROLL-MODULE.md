@@ -39,11 +39,13 @@ Faits horaires qualifiés déjà disponibles :
 
 Tests : `payroll-holidays` (8), `payroll-qualify` (11+), `payroll-aggregate` (8). Tous verts, tsc 0.
 
-## 3. Schéma DB **proposé** (Tier-1 = proposition ; exécution = Tier-2)
+## 3. Schéma DB (Tier-2 — **EXÉCUTÉ** après GO migration)
 
-> ⚠️ **Non exécuté.** L'ajout de ces modèles à `schema.prisma` puis la migration
-> (`prisma db push` au déploiement) est **Tier-2** : nécessite un GO explicite,
-> avec plan + rollback. Ci-dessous la proposition à arbitrer.
+> ✅ **Exécuté** (GO migration reçu). Les trois modèles ci-dessous ont été ajoutés
+> à `schema.prisma` (additif, 100 % nouvelles tables, aucune table existante
+> modifiée). Application en base via `prisma db push` au déploiement.
+> Rollback : revert du commit schéma + `prisma generate` ; les tables additives
+> vides sont inoffensives.
 
 ```prisma
 // Établissement : SIRET propre (NIC) rattaché au Store existant.
@@ -112,10 +114,10 @@ model PayrollInput {
 - **Étage 4 — Payslip Vault** : entités + ACL + chiffrement + audit. Stockage de PDF salariés = données sensibles ; squelette Tier-1, écritures de données réelles = Tier-2.
 - **Étage 5 — DSN Layer** : **squelette d'entités uniquement** (Tier-1) ; tout dépassement = Tier-2. Feature flag **`dsn_submission_enabled = false`** obligatoire. Dépôt réel = **Tier-3 (jamais l'agent)**.
 
-## 5. Points en attente de GO (Tier-2)
+## 5. Statut Tier-2
 
-1. Exécution de la migration du schéma proposé (§3).
-2. Logique de **verrouillage mensuel définitif** des `PayrollInput`.
-3. DSN Layer au-delà du squelette d'entités.
-4. Choix d'un **format de mapping paie concret**.
-5. Toute écriture touchant des **données salariés réelles**.
+1. ✅ **Migration du schéma (§3) exécutée** (GO reçu) — tables additives `Establishment` / `EmploymentContract` / `PayrollInput`.
+2. ✅ **Persistance + cycle de statut** `draft → validated → locked` avec garde anti-doublon (`@@unique([contractId, period])`) et provisioning idempotent (pas d'établissement/contrat en double). Le verrou `locked` bloque toute réécriture mais ne détruit aucune donnée (réversible côté admin).
+3. ⏳ **DSN Layer au-delà du squelette d'entités** — toujours Tier-2 (non entamé).
+4. ⏳ Choix d'un **format de mapping paie concret** (Silae/Sage/…) — toujours Tier-2.
+5. ⛔ Dépôt réel DSN / envoi Urssaf-Agirc-Arrco — **Tier-3 (jamais l'agent)**.

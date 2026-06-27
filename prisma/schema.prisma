@@ -165,6 +165,7 @@ model Store {
   inventorySessions     InventorySession[]
   products              Product[]
   planningNotifications PlanningNotification[]
+  establishment         Establishment?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 
@@ -243,7 +244,7 @@ model Employee {
   // ─── Profil Caissier POS (synchro vers la caisse) ───
   posPin         String? // PIN caisse (4-6 chiffres) — hashé bcrypt
   posRole        String? // Rôle POS: "cashier", "manager", "admin"
-  maxDiscountPct Decimal?  @default(0) @db.Decimal(5, 2) // Remise max autorisée en % — M101b
+  maxDiscountPct Decimal? @default(0) @db.Decimal(5, 2) // Remise max autorisée en % — M101b
   posQrCode      String? // QR code employé pour login rapide POS
 
   // ─── Accès terrain ───────────────────────────────────
@@ -277,6 +278,9 @@ model Employee {
 
   // Planning email notifications received
   planningNotifications PlanningNotification[]
+
+  // Contrats de travail (granularité paie — Étage 2)
+  employmentContracts EmploymentContract[]
 
   @@index([email])
   @@index([employeeCode])
@@ -323,7 +327,7 @@ model StoreEmployee {
 
 model Shift {
   id               String            @id @default(cuid())
-  store            Store             @relation(fields: [storeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Restrict) // M111: protège preuve RH/légale
   storeId          String
   employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   employeeId       String?
@@ -346,10 +350,10 @@ model Shift {
 // Country-level rules for employer cost calculation
 
 model CountryConfig {
-  id              String @id @default(cuid())
-  code            String @unique // "FR", "BE", "ES", etc.
+  id              String  @id @default(cuid())
+  code            String  @unique // "FR", "BE", "ES", etc.
   name            String // "France", "Belgique", etc.
-  currency        String @default("EUR")
+  currency        String  @default("EUR")
   minimumWageHour Decimal @db.Decimal(12, 2) // SMIC horaire brut (ex: 12.02 for FR 2026) — montant € (M101)
   employerRate    Decimal @db.Decimal(6, 4) // Taux charges patronales global "plein pot" (ex: 0.45) — coefficient (M101)
 
@@ -374,12 +378,12 @@ model CountryConfig {
 // Per-employee cost parameters (overrides country defaults if needed)
 model EmployeeCost {
   id               String        @id @default(cuid())
-  employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
+  employee         Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict) // M111: protège preuve RH/légale
   employeeId       String        @unique
   country          CountryConfig @relation(fields: [countryCode], references: [code])
   countryCode      String
-  hourlyRateGross  Decimal  @db.Decimal(12, 2) // Taux horaire brut de l'employé — montant € (M101)
-  fixedMissionCost Decimal? @db.Decimal(12, 2) // Coût fixe par mission (€) — optionnel
+  hourlyRateGross  Decimal       @db.Decimal(12, 2) // Taux horaire brut de l'employé — montant € (M101)
+  fixedMissionCost Decimal?      @db.Decimal(12, 2) // Coût fixe par mission (€) — optionnel
 
   // Optional overrides (null = use country defaults)
   employerRateOverride    Decimal? @db.Decimal(6, 4) // coefficient
@@ -550,7 +554,7 @@ model PosSalesData {
 
   date         DateTime @db.Date
   hourSlot     Int // 0-23 : créneau horaire (ex: 14 = 14h00-14h59)
-  revenue      Decimal @db.Decimal(12, 2) // CA en € pour ce créneau — M101b LOT C
+  revenue      Decimal  @db.Decimal(12, 2) // CA en € pour ce créneau — M101b LOT C
   transactions Int      @default(0) // Nombre de transactions
   itemsSold    Int      @default(0) // Nombre d'articles vendus
 
@@ -867,7 +871,7 @@ model AbsenceDeclaration {
   id String @id @default(cuid())
 
   // Employé déclarant
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict) // M111: protège preuve RH/légale
   employeeId String
 
   // Type et motif
@@ -909,9 +913,9 @@ enum ClockInStatus {
 
 model ClockIn {
   id         String   @id @default(cuid())
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict) // M111: protège preuve RH/légale
   employeeId String
-  store      Store    @relation(fields: [storeId], references: [id], onDelete: Restrict)  // M111: protège preuve RH/légale
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Restrict) // M111: protège preuve RH/légale
   storeId    String
   shift      Shift?   @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   shiftId    String?  @unique // Un shift ne peut avoir qu'un seul pointage
@@ -1506,19 +1510,19 @@ model IdempotencyKey {
 // ─── Product Catalogue ─────────────────────────────────
 
 model Product {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   barcode     String?
   sku         String?
   price       Decimal? @db.Decimal(12, 2) // M101b (€)
   oldPrice    Decimal? @db.Decimal(12, 2) // M101b (€)
-  currency    String  @default("EUR")
+  currency    String   @default("EUR")
   vatRate     Decimal? @db.Decimal(6, 4) // M101b (%)
   category    String?
   variantName String?
   imageUrl    String?
-  active      Boolean @default(true)
-  source      String  @default("manual")
+  active      Boolean  @default(true)
+  source      String   @default("manual")
   sourceRef   String?
 
   store   Store?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
@@ -1688,4 +1692,86 @@ model EmployeePerformanceScore {
   @@index([employeeId])
   @@index([storeId])
   @@index([overallScore(sort: Desc)])
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAIE — Étage 2 (Payroll Inputs)
+//
+// FRONTIÈRE NON NÉGOCIABLE : ces modèles stockent des QUANTITÉS qualifiées
+// (heures, jours, minutes), JAMAIS des montants. Aucun euro, aucun taux de
+// majoration, aucune cotisation, aucun net/brut. La valorisation reste au
+// moteur de paie externe / expert-comptable.
+//
+// Granularité paie = société × établissement × contrat × période, dérivée de :
+//   PayrollInput → EmploymentContract → Establishment → Store → Unit → Organization
+// ═══════════════════════════════════════════════════════════════════
+
+// Établissement : SIRET propre (NIC) rattaché 1-1 au Store existant.
+// La DSN raisonne par établissement (SIRET = SIREN + NIC).
+model Establishment {
+  id        String   @id @default(cuid())
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  storeId   String   @unique
+  siret     String   @unique // SIREN(9) + NIC(5)
+  legalName String?
+  apeCode   String? // code APE/NAF
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts EmploymentContract[]
+}
+
+// Contrat de travail : la vraie clé du raisonnement paie (un salarié peut
+// avoir plusieurs contrats / établissements).
+model EmploymentContract {
+  id              String        @id @default(cuid())
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  employeeId      String
+  establishment   Establishment @relation(fields: [establishmentId], references: [id], onDelete: Restrict)
+  establishmentId String
+  contractType    ContractType // réutilise l'enum existant
+  weeklyHours     Float // base contractuelle hebdomadaire
+  startDate       DateTime      @db.Date
+  endDate         DateTime?     @db.Date
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  payrollInputs PayrollInput[]
+
+  @@index([employeeId])
+  @@index([establishmentId])
+}
+
+// Étage 2 — variables de paie mensuelles validées (QUANTITÉS, jamais d'euros).
+model PayrollInput {
+  id         String             @id @default(cuid())
+  contract   EmploymentContract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  contractId String
+  period     String // "YYYY-MM"
+
+  // ─── Quantités qualifiées (heures / jours / minutes) ───
+  totalWorkedHours   Float @default(0)
+  normalHours        Float @default(0)
+  overtimeHours      Float @default(0)
+  complementaryHours Float @default(0)
+  sundayHours        Float @default(0)
+  holidayHours       Float @default(0)
+  paidLeaveDays      Float @default(0)
+  sickOrAccidentDays Float @default(0)
+  otherAbsenceDays   Float @default(0)
+  latenessMinutes    Int   @default(0)
+
+  // Saisies manuelles NON valorisées (libellé + référence) — valorisées côté paie.
+  manualEntries Json?
+
+  // ─── Statut & verrouillage ───
+  status      String    @default("draft") // draft | validated | locked
+  validatedAt DateTime?
+  lockedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([contractId, period]) // anti-doublon : une ligne par contrat × période
+  @@index([period])
+  @@index([status])
 }
