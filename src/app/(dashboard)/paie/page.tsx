@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { StoreSearch } from "@/components/store-search";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   FileSpreadsheet,
   Download,
@@ -17,6 +19,7 @@ import {
   RotateCcw,
   Eye,
   Database,
+  Building2,
 } from "lucide-react";
 
 /**
@@ -64,7 +67,7 @@ function periodLabel(period: string): string {
 export default function PaiePage() {
   const [storeId, setStoreId] = useState("");
   const [period, setPeriod] = useState(currentPeriod());
-  const [tab, setTab] = useState<"preview" | "persisted">("preview");
+  const [tab, setTab] = useState<"preview" | "persisted" | "establishment">("preview");
 
   return (
     <div>
@@ -111,6 +114,7 @@ export default function PaiePage() {
       <div className="flex items-center gap-0.5 sm:gap-1 bg-gray-100 rounded-lg p-0.5 mb-4 sm:mb-6 w-full sm:w-fit">
         <TabButton active={tab === "preview"} onClick={() => setTab("preview")} icon={Eye} label="Aperçu (live)" />
         <TabButton active={tab === "persisted"} onClick={() => setTab("persisted")} icon={Database} label="Enregistré" />
+        <TabButton active={tab === "establishment"} onClick={() => setTab("establishment")} icon={Building2} label="Établissement" />
       </div>
 
       {!storeId ? (
@@ -120,8 +124,10 @@ export default function PaiePage() {
         </div>
       ) : tab === "preview" ? (
         <PreviewTab storeId={storeId} period={period} />
-      ) : (
+      ) : tab === "persisted" ? (
         <PersistedTab storeId={storeId} period={period} />
+      ) : (
+        <EstablishmentTab storeId={storeId} />
       )}
     </div>
   );
@@ -358,6 +364,152 @@ function PersistedTab({ storeId, period }: { storeId: string; period: string }) 
         </div>
       )}
     </>
+  );
+}
+
+// ─── Onglet Établissement (métadonnées SIRET / contrats) ───────────
+
+interface ContractRow {
+  id: string;
+  contractType: string;
+  weeklyHours: number;
+  startDate: string;
+  endDate: string | null;
+  employee: { id: string; firstName: string; lastName: string };
+}
+interface Establishment {
+  id: string;
+  storeId: string;
+  siret: string | null;
+  legalName: string | null;
+  apeCode: string | null;
+  contracts: ContractRow[];
+}
+
+function EstablishmentTab({ storeId }: { storeId: string }) {
+  const [est, setEst] = useState<Establishment | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+  const [form, setForm] = useState({ siret: "", legalName: "", apeCode: "" });
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/payroll/establishment?storeId=${encodeURIComponent(storeId)}`);
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || "Erreur lors du chargement");
+        setEst(null);
+      } else {
+        const e: Establishment = (json.data ?? json).establishment;
+        setEst(e);
+        setForm({ siret: e.siret ?? "", legalName: e.legalName ?? "", apeCode: e.apeCode ?? "" });
+      }
+    } catch {
+      setError("Erreur réseau");
+    } finally {
+      setLoading(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function save() {
+    if (!est) return;
+    setSaving(true);
+    setError(null);
+    setOk(false);
+    try {
+      const res = await fetch(`/api/payroll/establishment/${est.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || "Erreur lors de l'enregistrement");
+      } else {
+        setOk(true);
+        await load();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <Loading />;
+  if (error && !est) return <ErrorBox message={error} />;
+  if (!est) return <Empty label="Aucun établissement" />;
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">Identité de l&apos;établissement</h3>
+        <p className="text-xs text-gray-500 mb-4">
+          Le SIRET est requis pour la déclaration sociale (DSN). Identifiants administratifs uniquement.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <Label className="text-xs">SIRET (14 chiffres)</Label>
+            <Input
+              value={form.siret}
+              onChange={(e) => setForm({ ...form, siret: e.target.value })}
+              placeholder="ex : 732 829 320 00074"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Raison sociale</Label>
+            <Input value={form.legalName} onChange={(e) => setForm({ ...form, legalName: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">Code APE / NAF</Label>
+            <Input value={form.apeCode} onChange={(e) => setForm({ ...form, apeCode: e.target.value })} placeholder="ex : 4711D" className="mt-1" />
+          </div>
+        </div>
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {ok && !error && <p className="mt-3 text-sm text-green-600">Enregistré.</p>}
+        <Button className="mt-4" size="sm" onClick={save} disabled={saving}>
+          <Save className="h-4 w-4 mr-1.5" />
+          {saving ? "..." : "Enregistrer"}
+        </Button>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Contrats provisionnés ({est.contracts.length})</h3>
+        {est.contracts.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center text-gray-400 text-sm">
+            Aucun contrat. Les contrats sont provisionnés lors de l&apos;enregistrement des variables (onglet « Enregistré »).
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Salarié</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-gray-500">Type</th>
+                  <th className="text-right px-4 py-2.5 font-medium text-gray-500">Heures/sem.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {est.contracts.map((c) => (
+                  <tr key={c.id} className="border-b border-gray-100">
+                    <td className="px-4 py-2 font-medium text-gray-900">{c.employee.firstName} {c.employee.lastName}</td>
+                    <td className="px-3 py-2 text-gray-600">{c.contractType}</td>
+                    <td className="px-4 py-2 text-right">{c.weeklyHours}h</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

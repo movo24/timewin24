@@ -73,6 +73,43 @@ export async function ensureContract(employeeId: string, establishmentId: string
   });
 }
 
+/** Lit l'établissement d'un magasin (ou null) avec ses contrats + salariés. */
+export async function getEstablishmentByStore(storeId: string) {
+  return prisma.establishment.findUnique({
+    where: { storeId },
+    select: {
+      id: true,
+      storeId: true,
+      siret: true,
+      legalName: true,
+      apeCode: true,
+      contracts: {
+        select: {
+          id: true,
+          contractType: true,
+          weeklyHours: true,
+          startDate: true,
+          endDate: true,
+          employee: { select: { id: true, firstName: true, lastName: true } },
+        },
+        orderBy: { employee: { lastName: "asc" } },
+      },
+    },
+  });
+}
+
+/** Met à jour les métadonnées administratives d'un établissement. */
+export async function updateEstablishment(
+  id: string,
+  data: { siret?: string | null; legalName?: string | null; apeCode?: string | null }
+) {
+  return prisma.establishment.update({
+    where: { id },
+    data,
+    select: { id: true, storeId: true, siret: true, legalName: true, apeCode: true },
+  });
+}
+
 export interface PersistResult {
   contractId: string;
   period: string;

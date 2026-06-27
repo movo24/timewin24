@@ -356,3 +356,10 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
   - **Aperçu (live)** : calcul a la volee (preview) + export CSV, lecture seule.
   - **Enregistré** : bouton « Calculer & enregistrer (brouillon) » (POST persist), tableau des lignes persistees avec badge de statut et actions par ligne — Valider (draft->validated), Verrouiller (validated->locked), Rouvrir (validated->draft) via PATCH. `locked` affiche « verrouillé » sans action (verrou mensuel).
 - Toujours **aucun euro** affiche ; quantites uniquement. tsc 0, eslint 0, jest 524/524, `next build` OK.
+
+### Lot 2d — Identite etablissement (SIRET) + validation (Tier-2)
+- `src/lib/payroll/siret.ts` (PUR) : `isValidSiren` (9 chiffres + Luhn), `isValidSiret` (14 chiffres + Luhn), `sirenFromSiret`, `normalizeDigits`. Identifiants administratifs requis pour la DSN — aucune valorisation.
+- `repository.ts` : `getEstablishmentByStore` (etablissement + contrats + salaries), `updateEstablishment` (maj siret/raison sociale/APE).
+- Endpoints admin : `GET /api/payroll/establishment?storeId=` (provisionne idempotent si absent), `PATCH /api/payroll/establishment/[id]` (valide le SIRET avant ecriture, 409 si SIRET deja rattache a un autre etablissement).
+- UI : onglet « Établissement » dans `/paie` (edition SIRET/raison sociale/APE + liste des contrats provisionnes).
+- Tests `payroll-siret` (11, fixtures INSEE). jest 524 -> 535, tsc 0, eslint 0, `next build` OK (2 routes compilees).
