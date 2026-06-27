@@ -3,7 +3,7 @@ import { prisma } from "./prisma";
 
 export async function logAudit(
   userId: string,
-  action: "CREATE" | "UPDATE" | "DELETE" | "IMPORT",
+  action: "CREATE" | "UPDATE" | "DELETE" | "IMPORT" | "EXPORT",
   entity: string,
   entityId: string,
   diff?: Record<string, unknown> | null,

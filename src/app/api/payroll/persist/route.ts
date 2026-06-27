@@ -2,6 +2,7 @@ import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import {
   ensureEstablishment,
   ensureContract,
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
     logger.info(
       `[PAYROLL][persist] actor=${actorId} store=${storeId} period=${period} written=${written} skipped=${skipped}`
     );
+    await logAudit(actorId, "UPDATE", "PayrollInput", `${storeId}:${period}`, { written, skipped });
 
     return successResponse({ storeId, period, establishmentId: establishment.id, written, skipped, results });
   } catch (e) {

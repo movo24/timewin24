@@ -369,3 +369,13 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `repository.updateContract` + `PATCH /api/payroll/contracts/[id]` (validation pure prealable, 404 si introuvable). Admin only, audit sans donnee sensible.
 - UI : lignes de contrat EDITABLES dans l'onglet « Établissement » (type/heures/dates, bouton Enregistrer actif seulement si modifie).
 - Tests `payroll-contract` (9). jest 535 -> 544, tsc 0, eslint 0, `next build` OK (route compilee).
+
+### Lot 2f — Journalisation d'audit persistante (RGPD, Tier-2)
+- Exigence mission : « audit obligatoire sur modification / verrouillage / export ». Branchement des MUTATIONS paie sur la table `AuditLog` via `logAudit` (resilient — n'interrompt jamais l'operation) :
+  - `persist` -> UPDATE `PayrollInput` (`storeId:period`, diff {written, skipped}) ;
+  - changement de statut -> UPDATE `PayrollInput` (id, diff {status}) ;
+  - maj etablissement -> UPDATE `Establishment` (id, diff {fields}) ;
+  - maj contrat -> UPDATE `EmploymentContract` (id, diff {fields}) ;
+  - export CSV -> EXPORT `PayrollInput` (diff {format, contracts}).
+- `src/lib/audit.ts` : action union etendue avec `EXPORT` (additif).
+- **Sans donnee sensible en clair** : on journalise des metadonnees (champs modifies, statut, compteurs), jamais les valeurs d'heures ni les noms. Les consultations (preview/me GET) restent en log ephemere (`logger.info`) pour ne pas saturer la table. tsc 0, eslint 0, jest 544/544, `next build` OK.

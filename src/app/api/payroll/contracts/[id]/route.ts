@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import { updateContract } from "@/lib/payroll/repository";
 import { validateContractPatch } from "@/lib/payroll/contract";
 import type { ContractType } from "@/generated/prisma/client";
@@ -36,6 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const actorId = (session!.user as { id?: string }).id ?? "unknown";
     logger.info(`[PAYROLL][contract][PATCH] actor=${actorId} contract=${id} fields=${Object.keys(data).join(",")}`);
+    await logAudit(actorId, "UPDATE", "EmploymentContract", id, { fields: Object.keys(data) });
 
     return successResponse({ contract: updated });
   } catch (e) {

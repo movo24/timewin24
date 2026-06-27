@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import { changePayrollInputStatus } from "@/lib/payroll/repository";
 import type { PayrollInputStatus } from "@/lib/payroll/persistence";
 
@@ -35,6 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const actorId = (session!.user as { id?: string }).id ?? "unknown";
     logger.info(`[PAYROLL][status] actor=${actorId} input=${id} -> ${result.status}`);
+    await logAudit(actorId, "UPDATE", "PayrollInput", id, { status: result.status });
 
     return successResponse({ id, status: result.status });
   } catch (e) {

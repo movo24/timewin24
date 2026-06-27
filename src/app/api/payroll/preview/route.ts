@@ -2,6 +2,7 @@ import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import { buildPayrollPreview } from "@/lib/payroll/service";
 import { toCsv, exportChecksum } from "@/lib/payroll/export";
 import type { PayrollKey } from "@/lib/payroll/types";
@@ -106,6 +107,7 @@ export async function GET(req: NextRequest) {
 
     if (format === "csv") {
       const csv = toCsv(previews.map((p) => p.exportRow));
+      await logAudit(actorId, "EXPORT", "PayrollInput", `${storeId}:${period}`, { format: "csv", contracts: previews.length });
       return new Response(csv, {
         status: 200,
         headers: {

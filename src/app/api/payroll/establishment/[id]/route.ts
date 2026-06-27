@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import { updateEstablishment } from "@/lib/payroll/repository";
 import { isValidSiret, normalizeDigits } from "@/lib/payroll/siret";
 
@@ -41,6 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const actorId = (session!.user as { id?: string }).id ?? "unknown";
     logger.info(`[PAYROLL][establishment][PATCH] actor=${actorId} establishment=${id} fields=${Object.keys(data).join(",")}`);
+    await logAudit(actorId, "UPDATE", "Establishment", id, { fields: Object.keys(data) });
 
     return successResponse({ establishment: updated });
   } catch (e) {
