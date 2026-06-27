@@ -350,3 +350,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `src/lib/payroll/repository.ts` (DB) : `ensureEstablishment` / `ensureContract` **idempotents** (pas de doublon), `persistPayrollInputForContract` (calcul via buildPayrollPreview + upsert sur cle unique, garde anti-reecriture si validated/locked), `changePayrollInputStatus` (sous garde de transition). Repository volontairement HORS barrel (pas de fuite prisma cote client).
 - Endpoints admin : `POST /api/payroll/persist` (provisioning + calcul + upsert drafts d'un magasin x periode), `GET /api/payroll/inputs` (liste persistee jointe salarie), `PATCH /api/payroll/inputs/[id]` (validate/lock/reopen sous garde). Tous `requireAdmin`, audit sans donnee sensible, **aucun euro**.
 - Tests `payroll-persistence` (7) + `payroll-repository` (9, prisma mocke) : idempotence provisioning, garde anti-doublon, gardes de transition. jest 508 -> 524, tsc 0, eslint 0, `next build` OK (3 routes compilees).
+
+### Lot 2c — Écran admin : persistance + cycle de statut (UI)
+- `src/app/(dashboard)/paie/page.tsx` : restructure en 2 onglets partageant magasin+periode.
+  - **Aperçu (live)** : calcul a la volee (preview) + export CSV, lecture seule.
+  - **Enregistré** : bouton « Calculer & enregistrer (brouillon) » (POST persist), tableau des lignes persistees avec badge de statut et actions par ligne — Valider (draft->validated), Verrouiller (validated->locked), Rouvrir (validated->draft) via PATCH. `locked` affiche « verrouillé » sans action (verrou mensuel).
+- Toujours **aucun euro** affiche ; quantites uniquement. tsc 0, eslint 0, jest 524/524, `next build` OK.
