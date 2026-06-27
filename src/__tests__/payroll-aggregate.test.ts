@@ -91,3 +91,59 @@ describe("aggregatePayrollInputs", () => {
     expect(r.overtimeHours).toBe(10);
   });
 });
+
+describe("aggregatePayrollInputs — cas limites", () => {
+  it("rattache un creneau franchissant minuit a la date (et a la semaine) de debut", () => {
+    // Semaine du lundi 22 juin : lun-jeu 4x8h = 32h + vendredi 22:00->06:00 = 8h.
+    // Le creneau de nuit (qui deborde sur samedi) est compte sur le vendredi,
+    // donc la semaine totalise 40h -> 35 normal + 5 sup (une seule semaine).
+    const worked = [
+      { date: "2026-06-22", startTime: "09:00", endTime: "17:00" },
+      { date: "2026-06-23", startTime: "09:00", endTime: "17:00" },
+      { date: "2026-06-24", startTime: "09:00", endTime: "17:00" },
+      { date: "2026-06-25", startTime: "09:00", endTime: "17:00" },
+      { date: "2026-06-26", startTime: "22:00", endTime: "06:00" }, // nuit -> 8h sur le 26
+    ];
+    const r = aggregatePayrollInputs({ ...base, worked });
+    expect(r.totalWorkedHours).toBe(40);
+    expect(r.normalHours).toBe(35);
+    expect(r.overtimeHours).toBe(5);
+  });
+
+  it("compte un jour a la fois dimanche ET ferie dans les deux sous-ensembles (sans double comptage du total)", () => {
+    // 2026-11-01 (Toussaint) tombe un dimanche : les heures sont a la fois
+    // dominicales et feriees, mais ne sont comptees qu'une fois dans le total.
+    const worked = [{ date: "2026-11-01", startTime: "09:00", endTime: "14:00" }]; // 5h
+    const r = aggregatePayrollInputs({ ...base, worked });
+    expect(r.totalWorkedHours).toBe(5);
+    expect(r.sundayHours).toBe(5);
+    expect(r.holidayHours).toBe(5);
+  });
+
+  it("somme correctement des creneaux a la demi-heure / au quart d'heure (arrondi 2 decimales)", () => {
+    const worked = [
+      { date: "2026-06-22", startTime: "09:00", endTime: "17:30" }, // 8.5h
+      { date: "2026-06-23", startTime: "09:00", endTime: "17:15" }, // 8.25h
+      { date: "2026-06-24", startTime: "09:00", endTime: "12:45" }, // 3.75h
+    ];
+    const r = aggregatePayrollInputs({ ...base, worked });
+    expect(r.totalWorkedHours).toBe(20.5);
+    expect(r.normalHours).toBe(20.5);
+    expect(r.overtimeHours).toBe(0);
+  });
+
+  it("temps partiel : creneaux mixtes qualifies en normal + complementaires + sup", () => {
+    // Contrat 24h, semaine de 39h -> 24 normal + 11 complementaires + 4 sup.
+    const worked = [
+      { date: "2026-06-22", startTime: "08:00", endTime: "18:00" }, // 10h
+      { date: "2026-06-23", startTime: "08:00", endTime: "18:00" }, // 10h
+      { date: "2026-06-24", startTime: "08:00", endTime: "18:00" }, // 10h
+      { date: "2026-06-25", startTime: "09:00", endTime: "18:00" }, // 9h
+    ];
+    const r = aggregatePayrollInputs({ contractWeeklyHours: 24, worked, absences: [], lateness: [] });
+    expect(r.totalWorkedHours).toBe(39);
+    expect(r.normalHours).toBe(24);
+    expect(r.complementaryHours).toBe(11);
+    expect(r.overtimeHours).toBe(4);
+  });
+});

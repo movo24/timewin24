@@ -329,3 +329,8 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `src/app/(dashboard)/paie/page.tsx` : ecran admin **lecture seule** consommant `GET /api/payroll/preview`. Selecteur magasin + navigation mensuelle. Affiche **uniquement des quantites** (heures travaillees/normales/sup/complementaires, dimanche, feriees, jours CP/arret/autres, retards) + totaux periode + export CSV. **Aucune ecriture, aucun euro** ; bandeau rappelant la frontiere (valorisation = moteur de paie externe). Noms employes via `/api/employees` (lecture, admin) pour lisibilite.
 - `src/components/sidebar.tsx` : entree « Variables de paie » (groupe Analyse, **admin uniquement** — coherent avec `requireAdmin` de l'endpoint).
 - Validations : tsc 0, eslint 0, jest 503/503 (aucune regression), `next build` OK (route `/paie` compilee).
+
+### Lot 1g — Durcissement moteur (cas limites, tests, Tier-1)
+- `payroll-aggregate.test.ts` (+4) : creneau franchissant minuit rattache a la date/semaine de DEBUT (nuit vendredi -> 40h sur la semaine -> 35+5 sup) ; jour a la fois dimanche ET ferie (2026-11-01 Toussaint dominicale) compte dans les deux sous-ensembles sans double-compter le total ; sommation demi/quart d'heure (arrondi 2 decimales) ; temps partiel mixte normal+complementaires+sup.
+- `payroll-qualify.test.ts` (+1) : `weekStart` au passage d'annee (2027-01-01 vendredi -> lundi 2026-12-28).
+- Aucune anomalie revelee : le moteur respecte deja ces comportements (tests de non-regression). jest 503 -> 508, tsc 0, eslint 0.

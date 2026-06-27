@@ -28,6 +28,10 @@ describe("weekStart", () => {
     expect(weekStart("2026-06-22")).toBe("2026-06-22"); // lundi -> lui-meme
     expect(weekStart("2026-06-21")).toBe("2026-06-15"); // dimanche -> lundi precedent
   });
+  it("gere le passage d'annee (lundi sur l'annee precedente)", () => {
+    expect(weekStart("2027-01-01")).toBe("2026-12-28"); // vendredi -> lundi 28 dec 2026
+    expect(weekStart("2027-01-03")).toBe("2026-12-28"); // dimanche -> meme lundi
+  });
 });
 
 describe("qualifyWeeklyHours — temps plein (35h)", () => {
