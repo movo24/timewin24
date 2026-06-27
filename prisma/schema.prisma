@@ -1712,7 +1712,7 @@ model Establishment {
   id        String   @id @default(cuid())
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Restrict)
   storeId   String   @unique
-  siret     String   @unique // SIREN(9) + NIC(5)
+  siret     String?  @unique // SIREN(9) + NIC(5) — renseigné par l'admin (null à la création)
   legalName String?
   apeCode   String? // code APE/NAF
   createdAt DateTime @default(now())

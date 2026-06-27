@@ -340,3 +340,13 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `src/app/(employee)/mes-heures/page.tsx` : ecran salarie, navigation mensuelle, affichage des quantites (heures travaillees/normales/sup/complementaires, dimanche, feriees, jours absence, retards). Bandeau rappelant que ce n'est **pas un bulletin de paie** (valorisation = employeur).
 - `src/components/sidebar.tsx` : entree « Mes Heures » dans la navigation salarie.
 - Validations : tsc 0, eslint 0, jest 508/508, `next build` OK (routes `/api/payroll/me` + `/mes-heures` compilees).
+
+### Lot 2a — Migration schema Étage 2 (Tier-2, GO recu)
+- `prisma/schema.prisma` : 3 tables **additives** `Establishment` (SIRET nullable, rattache 1-1 au Store), `EmploymentContract` (salarie x etablissement, cle paie), `PayrollInput` (`@@unique([contractId, period])` anti-doublon, statut draft/validated/locked, quantites uniquement). Back-relations sur Store/Employee. `prisma validate` OK, `prisma generate` OK. Application base = `prisma db push` au deploiement.
+- `docs/PAYROLL-MODULE.md` : §3/§5 mis a jour (schema EXECUTE, statut Tier-2).
+
+### Lot 2b — Persistance + cycle de statut (Tier-2)
+- `src/lib/payroll/persistence.ts` (PUR) : machine a etats `draft -> validated -> locked` (+ reouverture validated -> draft), `isPayrollInputWritable` (seul draft reecrasable). `locked` = verrou mensuel **non destructif**, terminal cote appli.
+- `src/lib/payroll/repository.ts` (DB) : `ensureEstablishment` / `ensureContract` **idempotents** (pas de doublon), `persistPayrollInputForContract` (calcul via buildPayrollPreview + upsert sur cle unique, garde anti-reecriture si validated/locked), `changePayrollInputStatus` (sous garde de transition). Repository volontairement HORS barrel (pas de fuite prisma cote client).
+- Endpoints admin : `POST /api/payroll/persist` (provisioning + calcul + upsert drafts d'un magasin x periode), `GET /api/payroll/inputs` (liste persistee jointe salarie), `PATCH /api/payroll/inputs/[id]` (validate/lock/reopen sous garde). Tous `requireAdmin`, audit sans donnee sensible, **aucun euro**.
+- Tests `payroll-persistence` (7) + `payroll-repository` (9, prisma mocke) : idempotence provisioning, garde anti-doublon, gardes de transition. jest 508 -> 524, tsc 0, eslint 0, `next build` OK (3 routes compilees).

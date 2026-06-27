@@ -12,3 +12,6 @@ export * from "./source";
 export * from "./dsn";
 export * from "./payslip-acl";
 export * from "./service";
+export * from "./persistence";
+// Note : `repository.ts` (accès DB) n'est volontairement PAS ré-exporté ici
+// pour éviter toute fuite de code serveur (prisma) dans un bundle client.
