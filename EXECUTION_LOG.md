@@ -334,3 +334,9 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
 - `payroll-aggregate.test.ts` (+4) : creneau franchissant minuit rattache a la date/semaine de DEBUT (nuit vendredi -> 40h sur la semaine -> 35+5 sup) ; jour a la fois dimanche ET ferie (2026-11-01 Toussaint dominicale) compte dans les deux sous-ensembles sans double-compter le total ; sommation demi/quart d'heure (arrondi 2 decimales) ; temps partiel mixte normal+complementaires+sup.
 - `payroll-qualify.test.ts` (+1) : `weekStart` au passage d'annee (2027-01-01 vendredi -> lundi 2026-12-28).
 - Aucune anomalie revelee : le moteur respecte deja ces comportements (tests de non-regression). jest 503 -> 508, tsc 0, eslint 0.
+
+### Lot 1h — Self-service salarie « Mes heures » (lecture seule, Tier-1)
+- `src/app/api/payroll/me/route.ts` : **GET lecture seule**, `requireEmployee` — un salarie consulte SES PROPRES quantites d'heures qualifiees pour un mois (pointages + absences valides, tous magasins confondus). **Strictement limite au salarie connecte** (droit d'acces RGPD a ses donnees), aucune ecriture, aucun euro. Audit logger sans donnee sensible.
+- `src/app/(employee)/mes-heures/page.tsx` : ecran salarie, navigation mensuelle, affichage des quantites (heures travaillees/normales/sup/complementaires, dimanche, feriees, jours absence, retards). Bandeau rappelant que ce n'est **pas un bulletin de paie** (valorisation = employeur).
+- `src/components/sidebar.tsx` : entree « Mes Heures » dans la navigation salarie.
+- Validations : tsc 0, eslint 0, jest 508/508, `next build` OK (routes `/api/payroll/me` + `/mes-heures` compilees).

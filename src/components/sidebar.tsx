@@ -29,6 +29,7 @@ import {
   Tag,
   BarChart3,
   FileSpreadsheet,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -158,6 +159,7 @@ const managerNavGroups: NavGroup[] = [
 const employeeLinks: NavItem[] = [
   { href: "/mon-planning", label: "Mon Planning", icon: Calendar },
   { href: "/pointage", label: "Pointage", icon: ScanLine },
+  { href: "/mes-heures", label: "Mes Heures", icon: Clock },
   { href: "/mes-absences", label: "Mes Absences", icon: AlertTriangle },
   { href: "/mes-remplacements", label: "Remplacements", icon: UserCheck },
   { href: "/marche-shifts", label: "Marché Shifts", icon: ShoppingBag },
