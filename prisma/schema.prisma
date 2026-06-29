@@ -1060,6 +1060,8 @@ enum ManagerAlertType {
   SIGNIFICANT_LATENESS
   INCOMPLETE_TEAM
   AI_ANOMALY_DETECTED
+  UNSCHEDULED_POS_ACCESS // Accès caisse accordé hors planning (exception)
+  FORBIDDEN_POS_ACCESS // Accès caisse refusé (inactif / non autorisé / radié)
 }
 
 enum ManagerAlertStatus {
@@ -1072,6 +1074,7 @@ enum ManagerAlertStatus {
 enum ManagerAlertSeverity {
   INFO
   WARNING
+  URGENT // entre WARNING et CRITICAL — exception nécessitant une revue immédiate
   CRITICAL
 }
 

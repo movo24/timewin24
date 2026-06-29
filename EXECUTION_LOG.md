@@ -379,3 +379,14 @@ Non exécuté : modifier `schema.prisma` sans pouvoir générer la migration (`p
   - export CSV -> EXPORT `PayrollInput` (diff {format, contracts}).
 - `src/lib/audit.ts` : action union etendue avec `EXPORT` (additif).
 - **Sans donnee sensible en clair** : on journalise des metadonnees (champs modifies, statut, compteurs), jamais les valeurs d'heures ni les noms. Les consultations (preview/me GET) restent en log ephemere (`logger.info`) pour ne pas saturer la table. tsc 0, eslint 0, jest 544/544, `next build` OK.
+
+## 2026-06-29 — Acces caisse hors planning (continuite magasin + controle central)
+
+Principe : **TimeWin24 = referentiel planning/droits theoriques ; POS Caisse = execution reelle.** TimeWin24 ne doit PAS etre une dependance bloquante temps reel pour l'ouverture de caisse. En cas d'ecart planning/presence, on n'empeche pas l'encaissement si l'employe est actif+autorise, mais on remonte une alerte d'exception au siege. Refus uniquement si inactif/radie/sans droit caisse/mauvais magasin.
+
+### Lot POS-1 — Logique de decision (pure) + ingestion + UI
+- `src/lib/pos/access-decision.ts` (PUR) : `evaluatePosAccess` — regle des 5 points (existe / actif / droit caisse / affecte magasin / prevu planning). 1→4 valides + 5 faux -> ACCORDE + exception urgente (`UNSCHEDULED`). Un point 1→4 faux -> REFUSE critique (`FORBIDDEN`). La securite (1→4) prime sur la continuite ; le planning (5) n'est jamais bloquant. Tests `pos-access-decision` (8).
+- Schema (additif) : `ManagerAlertType` += `UNSCHEDULED_POS_ACCESS`, `FORBIDDEN_POS_ACCESS` ; `ManagerAlertSeverity` += `URGENT` (entre WARNING et CRITICAL). `prisma validate`/`generate` OK ; application = db push au deploiement.
+- Ingestion `POST /api/pos-events/webhook` : nouveaux events `employee.unscheduled_pos_access_granted` (-> alerte URGENT) et `employee.pos_access_denied` (-> alerte CRITICAL). **Idempotent** (`@@unique([type, storeId, date, contextKey])`, contextKey = session POS sinon employe+terminal+heure) -> pas de doublon d'evenement. Motif/justification (Remplacement/Erreur planning/...) repris dans les details.
+- UI `/alertes` : libelles + icones pour les 2 nouveaux types, badge severite `URGENT`.
+- Validations : tsc 0, jest 544 -> 552 (+8), `next build` OK. Aucune valorisation (hors perimetre paie).
