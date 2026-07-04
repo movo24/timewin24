@@ -234,6 +234,25 @@ export async function getAccessibleStoreIds(): Promise<{ storeIds: string[] | nu
   return { storeIds: links.map((l) => l.storeId), error: null };
 }
 
+/**
+ * Vrai si l'employé cible partage au moins un magasin avec le périmètre autorisé.
+ * `accessible === null` (admin) → toujours vrai ; `[]` → toujours faux.
+ * Sert à scoper les routes qui prennent un `employeeId` (indispos, contexte, fiabilité).
+ */
+export async function canAccessEmployee(
+  employeeId: string,
+  accessible: string[] | null
+): Promise<boolean> {
+  if (accessible === null) return true;
+  if (accessible.length === 0) return false;
+  const { prisma } = await import("./prisma");
+  const link = await prisma.storeEmployee.findFirst({
+    where: { employeeId, storeId: { in: accessible } },
+    select: { storeId: true },
+  });
+  return !!link;
+}
+
 export function errorResponse(message: string, status: number = 400) {
   return NextResponse.json({ error: message }, { status });
 }

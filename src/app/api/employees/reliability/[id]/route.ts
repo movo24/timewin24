@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireManagerOrAdmin,
+  getAccessibleStoreIds,
+  canAccessEmployee,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
@@ -20,7 +22,15 @@ export async function GET(
     const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const { id } = await params;
+
+    // Périmètre : le manager ne consulte que les employés de ses magasins.
+    if (!(await canAccessEmployee(id, storeIds))) {
+      return errorResponse("Employé hors de votre périmètre", 403);
+    }
 
     // Verify employee exists
     const employee = await prisma.employee.findUnique({

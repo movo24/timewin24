@@ -1,7 +1,8 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
+import { resolveStoreWhere } from "@/lib/store-scope";
 import { duplicateWeekSchema } from "@/lib/validations";
 import { findOverlappingShift } from "@/lib/shifts";
 import { logAudit } from "@/lib/audit";
@@ -22,6 +23,13 @@ export async function POST(req: NextRequest) {
 
     const { storeId, sourceWeekStart, targetWeekStart } = parsed.data;
 
+    // Périmètre : un manager ne duplique QUE ses magasins ; storeId omis ne doit
+    // jamais dupliquer tout le réseau pour un non-admin.
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+    const scoped = resolveStoreWhere(storeIds, storeId);
+    if (!scoped.ok) return errorResponse("Magasin hors de votre périmètre", 403);
+
     // Reject duplication if target store is inactive
     if (storeId) {
       const store = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
@@ -41,7 +49,7 @@ export async function POST(req: NextRequest) {
     const where: Record<string, unknown> = {
       date: { gte: srcStart, lte: srcEnd },
     };
-    if (storeId) where.storeId = storeId;
+    if (scoped.where !== undefined) where.storeId = scoped.where;
 
     const sourceShifts = await prisma.shift.findMany({
       where,

@@ -1,7 +1,8 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
+import { resolveStoreWhere } from "@/lib/store-scope";
 
 /**
  * GET /api/clock-in/absences — Détecter les absences
@@ -13,9 +14,15 @@ export async function GET(req: NextRequest) {
     const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const { searchParams } = new URL(req.url);
     const dateStr = searchParams.get("date") || new Date().toISOString().split("T")[0];
     const storeId = searchParams.get("storeId");
+
+    const scoped = resolveStoreWhere(storeIds, storeId);
+    if (!scoped.ok) return errorResponse("Magasin hors de votre périmètre", 403);
 
     const dayStart = new Date(dateStr + "T00:00:00Z");
     const dayEnd = new Date(dateStr + "T23:59:59.999Z");
@@ -25,7 +32,7 @@ export async function GET(req: NextRequest) {
       where: {
         date: { gte: dayStart, lte: dayEnd },
         employeeId: { not: { equals: null } },
-        ...(storeId ? { storeId } : {}),
+        ...(scoped.where !== undefined ? { storeId: scoped.where } : {}),
       },
       include: {
         employee: { select: { id: true, firstName: true, lastName: true } },

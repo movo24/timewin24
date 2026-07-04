@@ -3,9 +3,11 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireManagerOrAdmin,
+  getAccessibleStoreIds,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
+import { isStoreAccessible } from "@/lib/store-scope";
 
 interface TimelineEvent {
   time: string;
@@ -29,6 +31,13 @@ export async function GET(req: NextRequest) {
     const storeId = searchParams.get("storeId");
 
     if (!storeId) return errorResponse("storeId est requis");
+
+    // Périmètre : lecture du journal réservée aux magasins accessibles.
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+    if (!isStoreAccessible(storeIds, storeId)) {
+      return errorResponse("Magasin hors de votre périmètre", 403);
+    }
 
     const dayDate = new Date(dateStr + "T00:00:00Z");
     const dayEnd = new Date(dateStr + "T23:59:59Z");
@@ -348,6 +357,13 @@ export async function POST(req: NextRequest) {
 
     if (!storeId || !date || !title) {
       return errorResponse("storeId, date et title sont requis");
+    }
+
+    // Périmètre : écriture réservée aux magasins accessibles.
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+    if (!isStoreAccessible(storeIds, storeId)) {
+      return errorResponse("Magasin hors de votre périmètre", 403);
     }
 
     if (title.length > 500) {

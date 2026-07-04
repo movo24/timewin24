@@ -3,9 +3,11 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireManagerOrAdmin,
+  getAccessibleStoreIds,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
+import { resolveStoreWhere } from "@/lib/store-scope";
 
 /**
  * GET /api/alerts?type=&status=&storeId=&date=
@@ -16,16 +18,23 @@ export async function GET(req: NextRequest) {
     const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    // Périmètre magasin : un manager ne voit que les alertes de ses magasins.
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
     const status = searchParams.get("status");
     const storeId = searchParams.get("storeId");
     const dateStr = searchParams.get("date");
 
+    const scoped = resolveStoreWhere(storeIds, storeId);
+    if (!scoped.ok) return errorResponse("Magasin hors de votre périmètre", 403);
+
     const where: Record<string, unknown> = {};
     if (type && type !== "ALL") where.type = type;
     if (status && status !== "ALL") where.status = status;
-    if (storeId && storeId !== "all") where.storeId = storeId;
+    if (scoped.where !== undefined) where.storeId = scoped.where;
     if (dateStr) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         return errorResponse("Format de date invalide (YYYY-MM-DD attendu)");

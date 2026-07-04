@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
 import { toNumN } from "@/lib/decimal";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
-import { validatePosAuth } from "@/lib/pos-auth";
+import { validatePosAuth, assertPosStoreAccess } from "@/lib/pos-auth";
 
 // GET /api/pos-feed/employees?storeId=xxx
 // Feed endpoint : le POS interroge TimeWin24 pour obtenir la liste des caissiers
@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
 
   const storeId = new URL(req.url).searchParams.get("storeId");
   if (!storeId) return errorResponse("storeId requis");
+
+  const scopeErr = await assertPosStoreAccess(req, storeId);
+  if (scopeErr) return scopeErr;
 
   // Get employees assigned to this store with POS-relevant fields
   const storeEmployees = await prisma.storeEmployee.findMany({
