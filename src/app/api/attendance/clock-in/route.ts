@@ -1,7 +1,9 @@
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { errorResponse, successResponse, getSessionOrUnauthorized } from "@/lib/api-helpers";
+import { errorResponse, successResponse, getSessionOrUnauthorized, getAccessibleStoreIds, canAccessEmployee } from "@/lib/api-helpers";
+import { isAdmin } from "@/lib/rbac";
+import { isStoreAccessible } from "@/lib/store-scope";
 import { z } from "zod";
 
 // ─── POST /api/attendance/clock-in ───────────────────
@@ -28,7 +30,7 @@ const clockInSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await getSessionOrUnauthorized();
+    const { session, error } = await getSessionOrUnauthorized();
     if (error) return error;
 
     const body = await req.json();
@@ -38,6 +40,20 @@ export async function POST(req: NextRequest) {
     }
 
     const { employeeId, storeId, latitude, longitude, accuracy, photoPath, source } = parsed.data;
+
+    // ─── Anti-spoofing : on ne pointe pas pour n'importe qui ───
+    // service-key (POS) ou admin → OK. Sinon : le magasin doit être dans le
+    // périmètre, et pointer pour AUTRUI exige que l'employé y soit rattaché.
+    const actor = session!.user as { id: string; role: string; employeeId: string | null };
+    if (!actor.id.startsWith("service:") && !isAdmin(actor.role)) {
+      const { storeIds } = await getAccessibleStoreIds();
+      if (!isStoreAccessible(storeIds, storeId)) {
+        return errorResponse("Magasin hors de votre périmètre", 403);
+      }
+      if (actor.employeeId !== employeeId && !(await canAccessEmployee(employeeId, storeIds))) {
+        return errorResponse("Vous ne pouvez pas pointer pour cet employé", 403);
+      }
+    }
 
     // Verify employee exists, is active, and has terrain access
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
