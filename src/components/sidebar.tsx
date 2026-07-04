@@ -30,6 +30,7 @@ import {
   BarChart3,
   FileSpreadsheet,
   Clock,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,7 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Système",
     items: [
+      { href: "/organisation", label: "Société & unités", icon: Building2 },
       { href: "/etiquettes", label: "Étiquettes", icon: Tag },
       { href: "/accounts", label: "Comptes", icon: Shield },
       { href: "/integrations", label: "Intégrations", icon: Plug },
