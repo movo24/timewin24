@@ -62,6 +62,22 @@ export async function GET(req: NextRequest) {
     });
     const weeklyHoursById = new Map(employees.map((e) => [e.id, e.weeklyHours ?? 35]));
 
+    // M6 — alignement d'identité avec la persistance : si un EmploymentContract
+    // existe déjà pour l'établissement du magasin, on l'expose (LECTURE SEULE,
+    // aucune création ici — le provisioning reste au endpoint persist).
+    const establishment = await prisma.establishment.findUnique({
+      where: { storeId },
+      select: { id: true, siret: true },
+    });
+    const contractIdByEmp = new Map<string, string>();
+    if (establishment) {
+      const contracts = await prisma.employmentContract.findMany({
+        where: { establishmentId: establishment.id, employeeId: { in: employeeIds }, endDate: null },
+        select: { id: true, employeeId: true },
+      });
+      for (const c of contracts) contractIdByEmp.set(c.employeeId, c.id);
+    }
+
     // Absences APPROUVÉES chevauchant la période, pour ces employés
     const absences = await prisma.absenceDeclaration.findMany({
       where: {
@@ -85,18 +101,22 @@ export async function GET(req: NextRequest) {
           startDate: clamp(a.startDate, periodStart, periodEnd),
           endDate: clamp(a.endDate, periodStart, periodEnd),
         }));
+      const realContractId = contractIdByEmp.get(empId) ?? null;
       const key: PayrollKey = {
         companySiren,
-        establishmentSiret: null, // entité Establishment = migration Tier-2
-        contractId: empId, // contrat ≈ employé avant EmploymentContract (Tier-2)
+        establishmentSiret: establishment?.siret ?? null,
+        // Même langage que la persistance : vrai contractId s'il existe, sinon
+        // fallback sur l'employé (estimation live non encore persistée).
+        contractId: realContractId ?? empId,
         period,
       };
-      return buildPayrollPreview({
+      const preview = buildPayrollPreview({
         key,
         contractWeeklyHours: weeklyHoursById.get(empId) ?? 35,
         clockIns: empClockIns,
         absences: empAbsences,
       });
+      return { ...preview, employeeId: empId, contractId: realContractId };
     });
 
     // Audit consultation — sans donnée sensible en clair (ni noms ni heures)
@@ -122,7 +142,9 @@ export async function GET(req: NextRequest) {
       storeId,
       period,
       companySiren,
-      rows: previews.map((p) => ({ contractId: p.key.contractId, variables: p.variables })),
+      // employeeId = clé commune avec la persistance ; contractId = vrai contrat
+      // s'il est déjà provisionné, sinon null (estimation live).
+      rows: previews.map((p) => ({ employeeId: p.employeeId, contractId: p.contractId, variables: p.variables })),
     });
   } catch (e) {
     logger.error("[PAYROLL][preview] error", e);

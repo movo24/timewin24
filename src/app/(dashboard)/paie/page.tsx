@@ -151,7 +151,8 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; on
 // ─── Onglet Aperçu (live, lecture seule) ───────────────────────────
 
 interface PreviewRow {
-  contractId: string;
+  employeeId: string;
+  contractId: string | null;
   variables: PayrollVariables;
 }
 
@@ -209,7 +210,7 @@ function PreviewTab({ storeId, period }: { storeId: string; period: string }) {
         </Button>
       </div>
       <VariablesTable
-        rows={rows.map((r) => ({ key: r.contractId, name: names.get(r.contractId) || r.contractId, v: r.variables }))}
+        rows={rows.map((r) => ({ key: r.employeeId, name: names.get(r.employeeId) || r.employeeId, v: r.variables }))}
       />
     </>
   );

@@ -121,3 +121,28 @@ model PayrollInput {
 3. ⏳ **DSN Layer au-delà du squelette d'entités** — toujours Tier-2 (non entamé).
 4. ⏳ Choix d'un **format de mapping paie concret** (Silae/Sage/…) — toujours Tier-2.
 5. ⛔ Dépôt réel DSN / envoi Urssaf-Agirc-Arrco — **Tier-3 (jamais l'agent)**.
+
+## 6. Sources de temps — clarification (M5)
+
+Deux enregistrements de temps coexistent dans TimeWin24 :
+
+| Source | Modèle | Alimentation | Rôle |
+|---|---|---|---|
+| **Pointage app** | `ClockIn` | app employé / backoffice / attendance API | **SOURCE AUTORITAIRE POUR LA PAIE** (Étage 2). `source.ts` → `workedFactsFromClockIns` lit `ClockIn`. |
+| Pointage POS | `PosTimeClock` | sync POS (`pos-events/webhook`, `sync-engine`) | Présence côté caisse ; analytics/contrôle POS. **N'alimente PAS la paie.** |
+
+**Décision figée** : la paie ne lit QUE `ClockIn`. `PosTimeClock` est une source parallèle
+d'observation POS ; l'analytics les lit séparément (aucune écriture de l'une vers l'autre).
+
+⚠️ **Non réconciliées** : il n'existe pas de fusion `PosTimeClock → ClockIn`. Si un
+pointage effectué à la caisse doit compter dans la paie, il faut décider d'un pont
+explicite (POS `session.opened` → `ClockIn`). C'est une **décision produit (Tier-2)** :
+elle change ce qui est payé. Non implémentée volontairement.
+
+## 7. Identité contrat preview ↔ persistance (M6)
+
+`GET /api/payroll/preview` (live, lecture seule) et la persistance (`EmploymentContract`)
+parlent désormais le **même langage** : les deux exposent `employeeId` (clé commune) et
+`contractId`. La preview résout le vrai `contractId` **en lecture seule** s'il est déjà
+provisionné (sinon `null` = estimation live non persistée) ; elle ne crée jamais de
+contrat (le provisioning reste au endpoint `persist`).
