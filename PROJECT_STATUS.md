@@ -30,6 +30,14 @@
 
 3 credentials committés (commit `6332a54`, toujours en historique) : mot de passe admin, rôle Postgres `caisse`, `POS_SECRET`. **Rotation = action ops** (hors session). Runbook prêt : `docs/SECURITY-ROTATION-RUNBOOK.md`. Séquence : rotation → purge historique → rebase #6 → re-CI → merge.
 
+## Finalisation pilote interne (2026-07-04)
+
+> Décision produit : **logiciel interne mono-groupe multi-magasins** (pas de SaaS
+> multi-client pour l'instant). Guide de mise en pilote, checklists d'installation
+> et de test, modules dormants et limites : **`docs/PILOT-READINESS.md`**.
+> Cœur pilote complet ; ajout page `/organisation` (SIREN paie) ; audit renforcé
+> (clés API, accès employé, absences). Modules dormants documentés (IA, solde CP).
+
 ## Audit complet + reprise sécurité (2026-07-04)
 
 Audit lecture-seule complet réalisé, puis **6 blocs de correction** :
