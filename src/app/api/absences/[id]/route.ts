@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-helpers";
 import { AbsenceStatus } from "@/generated/prisma/client";
 import { createReplacementOffers } from "@/lib/replacement";
+import { logAudit } from "@/lib/audit";
 
 // PATCH /api/absences/[id] — Manager approves or rejects
 // RBAC: Manager can only manage absences for employees in their assigned stores
@@ -132,6 +133,7 @@ export async function PATCH(
         `[PATCH /api/absences/${id}] APPROVED — Created unavailabilities + ${offersCreated} replacement offers`
       );
 
+      await logAudit(user.id, "UPDATE", "AbsenceDeclaration", id, { status: "APPROVED", employeeId: declaration.employeeId });
       return successResponse(updated);
     } else {
       // Rejection: simple update, no transaction needed
@@ -149,6 +151,7 @@ export async function PATCH(
       });
 
       logger.debug(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
+      await logAudit(user.id, "UPDATE", "AbsenceDeclaration", id, { status: "REJECTED", employeeId: declaration.employeeId });
       return successResponse(updated);
     }
   } catch (err) {
