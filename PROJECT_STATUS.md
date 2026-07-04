@@ -1,14 +1,14 @@
 # PROJECT_STATUS — TimeWin24
 
 > Snapshot vérifié du chantier. Source de vérité = le repo, pas l'historique de chat.
-> Dernière mise à jour : 2026-06-20.
+> Dernière mise à jour : 2026-07-04.
 
 ## État build / qualité (vérifié)
 
 | Contrôle | Résultat | Méthode |
 |---|---|---|
 | TypeScript (`tsc --noEmit`) | ✅ 0 erreur | exécuté (après `prisma generate`) |
-| Tests unitaires (`jest`) | ✅ 95/95 (7 suites) | exécuté |
+| Tests unitaires (`jest`) | ✅ 584/584 (61 suites) | exécuté |
 | ESLint | ⚠️ ~87 erreurs repo (majorité `no-explicit-any`, `prefer-const`, unused) | exécuté ; **n'échoue pas le build** (preuve : Vercel vert) |
 | Build Vercel (3 projets) | ✅ vert | API GitHub statuses sur HEAD |
 | `npm audit` | 🔴 1 crit (dev), 21 high, 29 mod | dev tooling majoritaire ; runtime : `next`, `nodemailer` |
@@ -29,6 +29,18 @@
 ## Incident sécurité ouvert (⛔ ops)
 
 3 credentials committés (commit `6332a54`, toujours en historique) : mot de passe admin, rôle Postgres `caisse`, `POS_SECRET`. **Rotation = action ops** (hors session). Runbook prêt : `docs/SECURITY-ROTATION-RUNBOOK.md`. Séquence : rotation → purge historique → rebase #6 → re-CI → merge.
+
+## Audit complet + reprise sécurité (2026-07-04)
+
+Audit lecture-seule complet réalisé, puis **6 blocs de correction** :
+- **Bloc 1 (C1)** — migrations manquantes reconstruites (paie + enums POS), dérive schema↔migrations refermée ; `docs/RUNBOOK-EXPLOITATION.md` (sync DB, baseline, rollback, backup, secrets, POS).
+- **Bloc 2 (C2/M1/M2)** — scoping multi-magasin sur ~15 routes manager + clé POS liée à ses magasins ; helpers `store-scope.ts`/`canAccessEmployee`/`assertPosStoreAccess` ; 28 tests d'autorisation (purs + prisma-mock + route next-auth).
+- **Bloc 3 (C3)** — anti-spoofing pointage `attendance/*` (ownership + périmètre).
+- **Bloc 4 (M3)** — endpoints frontend cassés restaurés (`analytics/alerts`, `labels/templates/[id]/default`).
+- **Bloc 5 (M5/M6)** — identité contrat preview↔persist alignée ; sources de temps clarifiées (ClockIn autoritaire).
+- **Bloc 6** — docs réconciliées (ce fichier, README, PAYROLL-MODULE, runbook).
+
+**Décisions humaines restantes** : tenancy (mono-groupe vs SaaS multi-tenant), baseline migrations sur la prod existante (`migrate resolve`, accès DB requis), sort du moteur IA non branché, réconciliation temps POS↔app, format de mapping paie concret.
 
 ## Avancement de cette session (méthode modulaire)
 

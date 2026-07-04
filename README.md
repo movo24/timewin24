@@ -12,10 +12,10 @@ inventaire mobile, étiquettes, messagerie RH, analytics et moteur IA.
 ## Stack
 
 - **Next.js 16** (App Router, React Server Components) + TypeScript `strict`
-- **Prisma 7** + `@prisma/adapter-pg` (driver adapter obligatoire) + PostgreSQL — **56 modèles**
+- **Prisma 7** + `@prisma/adapter-pg` (driver adapter obligatoire) + PostgreSQL — **59 modèles**
 - **NextAuth 4** (Credentials + bcrypt, stratégie JWT, invalidation via `passwordChangedAt`)
 - **Tailwind CSS 4** + composants type shadcn/ui (Radix UI)
-- **Jest** (118 tests, 9 suites)
+- **Jest** (584 tests, 61 suites)
 - Intégrations optionnelles : **Gemini** (moteur IA), **SMTP** (emails), **web-push/VAPID**
   (notifications), **Twilio** (SMS), **webhooks HMAC** (caisse/POS)
 
@@ -129,9 +129,9 @@ src/
     employer-cost.ts, decimal.ts, cost-mappers.ts  # coûts (M007/M101)
     solver/, manager-ia/, replacement.ts    # planning & remplacements
     pos/, ai-engine/, analytics/, notifications/, labels/
-  __tests__/         # 9 suites Jest (118 tests)
+  __tests__/         # 61 suites Jest (584 tests)
 prisma/
-  schema.prisma      # 56 modèles
+  schema.prisma      # 59 modèles
   migrations/        # migrations versionnées
   seed.ts            # seed durci (M132)
 ```
