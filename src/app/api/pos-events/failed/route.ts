@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, getAccessibleStoreIds, errorResponse, successResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse } from "@/lib/api-helpers";
 
 // GET /api/pos-events/failed
 // Liste les événements POS en erreur ou non traités — outil de surveillance sync

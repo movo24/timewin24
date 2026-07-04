@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -471,7 +472,7 @@ export async function POST(req: NextRequest) {
         });
       } catch (dbErr) {
         // Trace persistence must never block the user response
-        console.error("PlanningNotification persist error:", dbErr);
+        logger.error("PlanningNotification persist error:", dbErr);
       }
     }
 
@@ -506,7 +507,7 @@ export async function POST(req: NextRequest) {
       isSingleDay,
     });
   } catch (err) {
-    console.error("Planning notify error:", err);
+    logger.error("Planning notify error:", err);
     return errorResponse("Erreur interne lors de l'envoi des notifications", 500);
   }
 }

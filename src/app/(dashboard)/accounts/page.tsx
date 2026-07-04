@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,7 +115,7 @@ export default function AccountsPage() {
         setTotalPages(data.pagination?.totalPages || 1);
       }
     } catch {
-      console.error("Erreur chargement comptes");
+      logger.error("Erreur chargement comptes");
     }
   }, [page, search]);
 
@@ -135,7 +136,7 @@ export default function AccountsPage() {
         setEmployees(withoutAccount);
       }
     } catch {
-      console.error("Erreur chargement employés");
+      logger.error("Erreur chargement employés");
     }
   }
 

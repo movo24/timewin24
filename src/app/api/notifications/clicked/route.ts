@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse } from "@/lib/api-helpers";
+import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 
 /**
  * POST /api/notifications/clicked
@@ -9,6 +10,11 @@ import { successResponse, errorResponse } from "@/lib/api-helpers";
  */
 export async function POST(req: NextRequest) {
   try {
+    // M121: endpoint public (SW sans cookie) — limiter l'abus d'écriture clickedAt.
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`notif-clicked:${ip}`, RATE_LIMITS.api);
+    if (!rl.allowed) return errorResponse("Trop de requêtes", 429);
+
     const body = await req.json();
     const { notificationId } = body as { notificationId?: string };
 

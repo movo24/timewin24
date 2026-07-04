@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/lib/api-helpers";
 import { AbsenceStatus } from "@/generated/prisma/client";
 import { createReplacementOffers } from "@/lib/replacement";
+import { logAudit } from "@/lib/audit";
 
 // PATCH /api/absences/[id] — Manager approves or rejects
 // RBAC: Manager can only manage absences for employees in their assigned stores
@@ -109,18 +111,29 @@ export async function PATCH(
         return result;
       });
 
-      // Create replacement offers for affected shifts (outside transaction — non-critical)
-      const offersCreated = await createReplacementOffers({
-        id: declaration.id,
-        employeeId: declaration.employeeId,
-        startDate: declaration.startDate,
-        endDate: declaration.endDate,
-      });
+      // Create replacement offers for affected shifts (outside transaction — best-effort).
+      // M112 — l'approbation est déjà committée ; un échec ici ne doit PAS transformer
+      // un succès en 500. On loggue pour rejouabilité au lieu de propager.
+      let offersCreated = 0;
+      try {
+        offersCreated = await createReplacementOffers({
+          id: declaration.id,
+          employeeId: declaration.employeeId,
+          startDate: declaration.startDate,
+          endDate: declaration.endDate,
+        });
+      } catch (offerErr) {
+        logger.error(
+          `[PATCH /api/absences/${id}] approbation committée mais génération des offres de remplacement échouée:`,
+          offerErr
+        );
+      }
 
-      console.log(
+      logger.debug(
         `[PATCH /api/absences/${id}] APPROVED — Created unavailabilities + ${offersCreated} replacement offers`
       );
 
+      await logAudit(user.id, "UPDATE", "AbsenceDeclaration", id, { status: "APPROVED", employeeId: declaration.employeeId });
       return successResponse(updated);
     } else {
       // Rejection: simple update, no transaction needed
@@ -137,11 +150,12 @@ export async function PATCH(
         },
       });
 
-      console.log(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
+      logger.debug(`[PATCH /api/absences/${id}] REJECTED by ${user.id}`);
+      await logAudit(user.id, "UPDATE", "AbsenceDeclaration", id, { status: "REJECTED", employeeId: declaration.employeeId });
       return successResponse(updated);
     }
   } catch (err) {
-    console.error("[PATCH /api/absences] Error:", err);
+    logger.error("[PATCH /api/absences] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

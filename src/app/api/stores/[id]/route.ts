@@ -1,6 +1,8 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { serializeStoreVat } from "@/lib/money-serialize";
 import { storeUpdateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
 
@@ -24,9 +26,9 @@ export async function GET(
     });
 
     if (!store) return errorResponse("Magasin non trouvé", 404);
-    return successResponse(store);
+    return successResponse(serializeStoreVat(store));
   } catch (err) {
-    console.error("GET /api/stores/[id] error:", err);
+    logger.error("GET /api/stores/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -56,9 +58,9 @@ export async function PUT(
       after: store,
     });
 
-    return successResponse(store);
+    return successResponse(serializeStoreVat(store));
   } catch (err) {
-    console.error("PUT /api/stores/[id] error:", err);
+    logger.error("PUT /api/stores/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -81,7 +83,14 @@ export async function DELETE(
 
     return successResponse({ success: true });
   } catch (err) {
-    console.error("DELETE /api/stores/[id] error:", err);
+    // M111: FK RESTRICT — historique présent (shifts, pointages…)
+    if ((err as { code?: string }).code === "P2003") {
+      return errorResponse(
+        "Ce magasin a un historique (shifts, pointages) et ne peut pas être supprimé. Désactivez-le à la place.",
+        409
+      );
+    }
+    logger.error("DELETE /api/stores/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

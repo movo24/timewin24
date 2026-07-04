@@ -8,12 +8,8 @@ import {
   Calendar,
   ScanLine,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   CheckCircle,
   XCircle,
-  Clock,
   BarChart3,
   Bell,
   ChevronRight,
@@ -86,12 +82,6 @@ function getRateColor(rate: number) {
   if (rate >= 90) return "text-emerald-600";
   if (rate >= 70) return "text-amber-600";
   return "text-red-600";
-}
-
-function getRateBg(rate: number) {
-  if (rate >= 90) return "bg-emerald-50 border-emerald-200";
-  if (rate >= 70) return "bg-amber-50 border-amber-200";
-  return "bg-red-50 border-red-200";
 }
 
 function getSeverityDot(severity: string) {
@@ -334,7 +324,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-gray-400">Absences aujourd'hui</p>
+              <p className="text-xs text-gray-400">Absences aujourd&apos;hui</p>
               <p className={`text-lg font-bold mt-0.5 ${today.absences > 0 ? "text-amber-600" : "text-gray-900"}`}>
                 {today.absences}
               </p>
@@ -449,7 +439,7 @@ export default function DashboardPage() {
             href="/performance"
             className="flex items-center justify-between mt-4 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
-            Voir l'analyse complète
+            Voir l&apos;analyse complète
             <ChevronRight className="h-4 w-4" />
           </Link>
         </div>

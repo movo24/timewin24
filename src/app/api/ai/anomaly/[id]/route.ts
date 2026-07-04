@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -47,7 +48,7 @@ export async function PATCH(
 
     return successResponse(updated);
   } catch (err) {
-    console.error("[PATCH /api/ai/anomaly/:id] Error:", err);
+    logger.error("[PATCH /api/ai/anomaly/:id] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

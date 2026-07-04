@@ -348,7 +348,6 @@ export function ShiftModal({
     }
     setError("");
     setWarning("");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift, storeId, defaultDate, defaultStartTime, open]);
 
   function handleStoreChange(newStoreId: string) {

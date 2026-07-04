@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -6,7 +7,7 @@ import { labelTemplateCreateSchema } from "@/lib/validations";
 
 export async function GET() {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const templates = await prisma.labelTemplate.findMany({
@@ -15,7 +16,7 @@ export async function GET() {
 
     return successResponse({ templates });
   } catch (e) {
-    console.error("[GET /api/labels/templates]", e);
+    logger.error("[GET /api/labels/templates]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(template, 201);
   } catch (e) {
-    console.error("[POST /api/labels/templates]", e);
+    logger.error("[POST /api/labels/templates]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,8 +1,8 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireAuthenticated,
-  requireManagerOrAdmin,
   errorResponse,
   successResponse,
 } from "@/lib/api-helpers";
@@ -52,7 +52,7 @@ export async function DELETE(
 
     return successResponse({ message: "Post supprimé" });
   } catch (err) {
-    console.error("DELETE /api/feed/[id] error:", err);
+    logger.error("DELETE /api/feed/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

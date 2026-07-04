@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -10,7 +11,7 @@ import {
 // GET /api/ai/anomaly — Liste anomalies détectées
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("manage_ai_anomalies");
+    const { error } = await requirePermission("manage_ai_anomalies");
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("[GET /api/ai/anomaly] Error:", err);
+    logger.error("[GET /api/ai/anomaly] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

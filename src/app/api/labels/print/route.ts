@@ -1,8 +1,10 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { labelPrintJobCreateSchema } from "@/lib/validations";
+import { serializeLabelJob } from "@/lib/money-serialize";
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,16 +68,16 @@ export async function POST(req: NextRequest) {
       format: data.format,
     });
 
-    return successResponse(job, 201);
+    return successResponse(serializeLabelJob(job), 201);
   } catch (e) {
-    console.error("[POST /api/labels/print]", e);
+    logger.error("[POST /api/labels/print]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const url = new URL(req.url);
@@ -99,7 +101,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ jobs, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (e) {
-    console.error("[GET /api/labels/print]", e);
+    logger.error("[GET /api/labels/print]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }

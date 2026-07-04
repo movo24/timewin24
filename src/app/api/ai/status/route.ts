@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -9,9 +10,9 @@ import { AI_CONFIG, isAiAvailable } from "@/lib/ai-engine/config";
 import { getEmbeddingStats } from "@/lib/ai-engine/shared/vector-store";
 
 // GET /api/ai/status — Statut moteur IA
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("view_ai_metrics");
+    const { error } = await requirePermission("view_ai_metrics");
     if (error) return error;
 
     // Stats de base
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("[GET /api/ai/status] Error:", err);
+    logger.error("[GET /api/ai/status] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

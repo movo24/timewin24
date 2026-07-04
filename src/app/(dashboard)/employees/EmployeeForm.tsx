@@ -37,7 +37,7 @@ export default function EmployeeForm({
   form, setForm, editing, setEditing,
   allStores, storesLoading, storesError,
   error, loading, showPassword, setShowPassword,
-  formCostPerHour, onSubmit, onCancel, onResetPasswordClick,
+  formCostPerHour, onSubmit, onCancel,
   onToggleSkill, onToggleStore, generatePassword,
   loadEmployees, setError,
 }: Props) {

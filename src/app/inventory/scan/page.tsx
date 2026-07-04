@@ -99,7 +99,7 @@ export default function InventoryScanPage() {
         </div>
 
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 text-center">
-          <p className="text-gray-400 mb-4">D&eacute;marrer une nouvelle session d'inventaire pour commencer &agrave; scanner.</p>
+          <p className="text-gray-400 mb-4">D&eacute;marrer une nouvelle session d&apos;inventaire pour commencer &agrave; scanner.</p>
           <button
             onClick={startSession}
             disabled={loading}

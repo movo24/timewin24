@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -176,7 +177,7 @@ export default function PlanningPage() {
         setShiftsVersion((v) => v + 1);
       }
     } catch {
-      console.error("Erreur chargement shifts");
+      logger.error("Erreur chargement shifts");
     }
   }, [weekStart, storeId, isAdmin, employeeId]);
 

@@ -16,7 +16,6 @@ import {
   XCircle,
   Clock,
   FileText,
-  AlertTriangle,
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import {
   requireManagerOrAdmin,
   successResponse,
@@ -20,7 +21,7 @@ export async function GET() {
 
     return successResponse({ count });
   } catch (err) {
-    console.error("GET /api/alerts/count error:", err);
+    logger.error("GET /api/alerts/count error:", err);
     return errorResponse(
       "Erreur serveur",
       500

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -41,7 +42,7 @@ export async function POST(
 
     return successResponse({ result });
   } catch (err) {
-    console.error("POST /api/integrations/pos/[id]/sync error:", err);
+    logger.error("POST /api/integrations/pos/[id]/sync error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

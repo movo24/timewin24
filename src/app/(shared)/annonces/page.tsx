@@ -49,7 +49,7 @@ export default function AnnoncesPage() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const userRole = (session?.user as any)?.role;
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
   const isManager = userRole === "ADMIN" || userRole === "MANAGER";
 
   // Create form

@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Calendar,
   CalendarDays,
-  Clock,
   MapPin,
   Timer,
   User,

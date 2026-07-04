@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -81,7 +82,7 @@ export async function GET(
 
     return successResponse(enriched);
   } catch (err) {
-    console.error("GET /api/messages/[id] error:", err);
+    logger.error("GET /api/messages/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -133,7 +134,7 @@ export async function PUT(
 
     return successResponse({ message: "Statut mis à jour" });
   } catch (err) {
-    console.error("PUT /api/messages/[id] error:", err);
+    logger.error("PUT /api/messages/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

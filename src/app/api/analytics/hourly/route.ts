@@ -1,5 +1,7 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import {
   requireManagerOrAdmin,
   getAccessibleStoreIds,
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest) {
         heatmapIndex.set(key, { revenue: 0, transactions: 0 });
       }
       const entry = heatmapIndex.get(key)!;
-      entry.revenue += sale.revenue;
+      entry.revenue += toNum(sale.revenue);
       entry.transactions += sale.transactions;
     }
 
@@ -89,7 +91,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ heatmap });
   } catch (err) {
-    console.error("[analytics/hourly] Error:", err);
+    logger.error("[analytics/hourly] Error:", err);
     return errorResponse("Erreur interne du serveur", 500);
   }
 }

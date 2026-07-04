@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ employeeId: string }> }
 ) {
   try {
-    const { session, error } = await requirePermission("view_ai_metrics");
+    const { error } = await requirePermission("view_ai_metrics");
     if (error) return error;
 
     const { employeeId } = await params;
@@ -44,7 +45,7 @@ export async function GET(
 
     return successResponse(metrics);
   } catch (err) {
-    console.error("[GET /api/ai/performance/:id] Error:", err);
+    logger.error("[GET /api/ai/performance/:id] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

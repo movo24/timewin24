@@ -1,4 +1,0 @@
-[    1723ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://resend.com/docs?_rsc=1r34m:0
-[    3676ms] [WARNING] updating from  115 to  118 @ https://resend.com/relay-qWzP/static/posthog-recorder.js?v=1.335.0:0
-[  151409ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://resend.com/docs/dashboard/emails/introduction?_rsc=pod2k:0
-[  180251ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://resend.com/docs?_rsc=iyv1n:0

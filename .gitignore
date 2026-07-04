@@ -52,3 +52,8 @@ next-env.d.ts
 
 # Playwright MCP local logs (transient, never commit)
 .playwright-mcp/
+
+# Junk / artefacts (M144)
+firebase-debug.log
+ai-engine-test-report.json
+/*.png

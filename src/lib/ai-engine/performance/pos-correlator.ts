@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 
 // ─── Types ───────────────────────────────────────
 
@@ -147,7 +148,7 @@ export async function correlateEmployeeSales(
       if (sale) {
         const coverageKey = `${shift.storeId}:${dateStr}:${h}`;
         const numEmployees = coverageIndex.get(coverageKey) || 1;
-        emp.totalRevenue += sale.revenue / numEmployees;
+        emp.totalRevenue += toNum(sale.revenue) / numEmployees;
         emp.totalTransactions += sale.transactions / numEmployees;
         emp.totalItemsSold += sale.itemsSold / numEmployees;
       }

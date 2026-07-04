@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
@@ -6,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
+import { toNum } from "@/lib/decimal";
 
 // ─── POST /api/auth/employee-login ───────────────────
 // Le POS appelle cet endpoint pour authentifier un employé à la caisse.
@@ -136,7 +138,8 @@ export async function POST(req: NextRequest) {
 
     // Build permissions based on role
     const role = employee.posRole || employee.user?.role || "EMPLOYEE";
-    const permissions = buildPosPermissions(role, employee.maxDiscountPct || 0);
+    const maxDiscount = toNum(employee.maxDiscountPct ?? 0); // M101b: Decimal -> number
+    const permissions = buildPosPermissions(role, maxDiscount);
 
     return successResponse({
       // Identité
@@ -149,7 +152,7 @@ export async function POST(req: NextRequest) {
       role: employee.posRole || "cashier",
       timewin_role: employee.user?.role || "EMPLOYEE",
       permissions,
-      max_discount: employee.maxDiscountPct || 0,
+      max_discount: maxDiscount,
 
       // Statut
       active: employee.active,
@@ -165,12 +168,12 @@ export async function POST(req: NextRequest) {
         employee_id: employee.id,
         employee_name: `${employee.firstName} ${employee.lastName}`,
         employee_role: employee.posRole || "cashier",
-        max_discount: employee.maxDiscountPct || 0,
+        max_discount: maxDiscount,
         captured_at: new Date().toISOString(),
       },
     });
   } catch (err) {
-    console.error("POST /api/auth/employee-login error:", err);
+    logger.error("POST /api/auth/employee-login error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

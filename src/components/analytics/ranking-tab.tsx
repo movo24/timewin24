@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Loader2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge, ScoreValue, getPerformanceLevel } from "@/components/analytics/score-badge";
-import { cn } from "@/lib/utils";
 
 interface RankingTabProps {
   dateFrom: string;

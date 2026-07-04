@@ -5,6 +5,7 @@
  * Implémente un rate limiter simple en mémoire pour éviter les 429.
  */
 
+import { logger } from "@/lib/logger";
 import {
   GoogleGenerativeAI,
   GenerativeModel,
@@ -152,7 +153,7 @@ export async function generateText(
       if (isRateLimit && attempt < AI_CONFIG.rateLimit.maxRetries) {
         const delay =
           AI_CONFIG.rateLimit.retryDelayMs * Math.pow(2, attempt);
-        console.warn(
+        logger.warn(
           `[AI Engine] Rate limited, retry ${attempt + 1}/${AI_CONFIG.rateLimit.maxRetries} in ${delay}ms`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -191,7 +192,6 @@ export async function generateEmbedding(
   try {
     await _rateLimiter.waitIfNeeded();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: EmbedContentResponse = await model.embedContent({
       content: { role: "user", parts: [{ text }] },
       outputDimensionality: AI_CONFIG.gemini.embeddingDimension,
@@ -239,7 +239,6 @@ export async function generateEmbeddingBatch(
   try {
     await _rateLimiter.waitIfNeeded();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await model.batchEmbedContents({
       requests: texts.map((text) => ({
         content: { role: "user", parts: [{ text }] },

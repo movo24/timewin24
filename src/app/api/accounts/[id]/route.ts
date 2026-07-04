@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -55,7 +56,7 @@ export async function PUT(
 
     return successResponse(updated);
   } catch (err) {
-    console.error("PUT /api/accounts/[id] error:", err);
+    logger.error("PUT /api/accounts/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -88,7 +89,7 @@ export async function DELETE(
 
     return successResponse({ message: "Compte supprimé" });
   } catch (err) {
-    console.error("DELETE /api/accounts/[id] error:", err);
+    logger.error("DELETE /api/accounts/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

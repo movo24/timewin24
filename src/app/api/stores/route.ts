@@ -1,14 +1,14 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
-import { storeCreateSchema } from "@/lib/validations";
-import { logAudit } from "@/lib/audit";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
+import { serializeStoreVat } from "@/lib/money-serialize";
 
 // GET /api/stores - List stores with pagination and search
 // RBAC: Manager sees only their assigned stores, Admin sees all
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -59,11 +59,11 @@ export async function GET(req: NextRequest) {
     ]);
 
     return successResponse({
-      stores,
+      stores: stores.map(serializeStoreVat),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("GET /api/stores error:", err);
+    logger.error("GET /api/stores error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

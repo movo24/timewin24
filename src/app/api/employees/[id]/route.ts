@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -25,7 +26,7 @@ export async function GET(
     if (!employee) return errorResponse("Employé non trouvé", 404);
     return successResponse(employee);
   } catch (err) {
-    console.error("GET /api/employees/[id] error:", err);
+    logger.error("GET /api/employees/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -52,7 +53,6 @@ export async function PUT(
     });
     if (!existing) return errorResponse("Employé non trouvé", 404);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { storeIds, password: _password, role: _role, ...data } = parsed.data;
 
     // Email is required - refuse empty/null
@@ -114,7 +114,7 @@ export async function PUT(
 
     return successResponse(employee);
   } catch (err) {
-    console.error("PUT /api/employees/[id] error:", err);
+    logger.error("PUT /api/employees/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -144,7 +144,14 @@ export async function DELETE(
 
     return successResponse({ success: true });
   } catch (err) {
-    console.error("DELETE /api/employees/[id] error:", err);
+    // M111: FK RESTRICT — historique présent (pointages, absences, coûts…)
+    if ((err as { code?: string }).code === "P2003") {
+      return errorResponse(
+        "Cet employé a un historique (pointages, absences, coûts) et ne peut pas être supprimé. Désactivez-le à la place.",
+        409
+      );
+    }
+    logger.error("DELETE /api/employees/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
@@ -55,6 +56,13 @@ export async function POST(req: NextRequest) {
       key: apiKey,
       createdBy: session!.user.id,
     },
+  });
+
+  // Audit : création d'une clé API service (jamais la valeur de la clé).
+  await logAudit(session!.user.id, "CREATE", "ServiceApiKey", key.id, {
+    name: key.name,
+    service: key.service,
+    role: key.role,
   });
 
   // Return the key ONLY at creation time

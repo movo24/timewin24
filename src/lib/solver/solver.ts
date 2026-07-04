@@ -24,6 +24,7 @@
  *   - never crash, never block — try/catch around every slot
  */
 
+import { logger } from "@/lib/logger";
 import type {
   SolverInput,
   SolverResult,
@@ -916,7 +917,7 @@ function solveDayWithShiftConstruction(
   const storeMaxEmployees = schedule.maxEmployees ?? store.maxEmployees;
 
   // Start with full day uncovered (minus already existing shifts)
-  let uncoveredRanges = findUncoveredRanges(
+  const uncoveredRanges = findUncoveredRanges(
     openMin,
     closeMin,
     existingShifts.filter((s) => s.date === date && s.storeId === store.id),
@@ -1199,7 +1200,7 @@ function solveWithShiftConstructionMode(input: SolverInput, solveOptions: SolveO
         }
       }
     } catch (dayErr) {
-      console.warn(`[Solver/ShiftConstruction] Erreur jour ${date}:`, dayErr);
+      logger.warn(`[Solver/ShiftConstruction] Erreur jour ${date}:`, dayErr);
       daysUncovered++;
       warnings.push(`${date}: erreur interne — jour non planifié`);
     }
@@ -1319,7 +1320,7 @@ export function solve(input: SolverInput, solveOptions: SolveOptions = {}): Solv
           });
         }
       } catch (dayErr) {
-        console.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
+        logger.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
         daysUncovered++;
         warnings.push(`${daySlot.date}: erreur interne — jour non planifié`);
       }
@@ -1370,7 +1371,7 @@ export function solve(input: SolverInput, solveOptions: SolveOptions = {}): Solv
           unassignedCount++;
         }
       } catch (slotErr) {
-        console.warn(`[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`, slotErr);
+        logger.warn(`[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`, slotErr);
         try {
           const { generated, raw } = createUnassignedShift(slot, store, date, phase);
           allGeneratedRaw.push(raw);
@@ -1443,7 +1444,7 @@ export function solve(input: SolverInput, solveOptions: SolveOptions = {}): Solv
               unassignedCount++;
             }
           } catch (slotErr) {
-            console.warn(`[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`, slotErr);
+            logger.warn(`[Solver] Erreur slot ${date} ${slot.startTime}-${slot.endTime}:`, slotErr);
             try {
               const { generated, raw } = createUnassignedShift(slot, store, date);
               allGeneratedRaw.push(raw);
@@ -1463,7 +1464,7 @@ export function solve(input: SolverInput, solveOptions: SolveOptions = {}): Solv
           if (!hasManager) warnings.push(`${date}: aucun manager planifié (magasin requiert un manager)`);
         }
       } catch (dayErr) {
-        console.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
+        logger.warn(`[Solver] Erreur jour ${daySlot.date}:`, dayErr);
         daysUncovered++;
         warnings.push(`${daySlot.date}: erreur interne — jour non planifié`);
       }
@@ -1546,7 +1547,7 @@ export function solveMultiStore(inputs: SolverInput[], solveOptions: SolveOption
       }));
       cumulativeShifts = [...cumulativeShifts, ...newExisting];
     } catch (storeErr) {
-      console.warn(`[Solver] Erreur store ${input.store.name}:`, storeErr);
+      logger.warn(`[Solver] Erreur store ${input.store.name}:`, storeErr);
       allWarnings.push(`[${input.store.name}] Erreur interne — magasin non planifié`);
     }
   }
@@ -1598,7 +1599,7 @@ export function solveWithScenarios(input: SolverInput, config: ScenarioConfig = 
       const score = scoreScenario(result, input, config);
       return { id, params, result, score };
     } catch (err) {
-      console.warn(`[Solver] Erreur scenario ${id}:`, err);
+      logger.warn(`[Solver] Erreur scenario ${id}:`, err);
       return emptyScenarioFallback(id + "-error", params);
     }
   }
@@ -1635,7 +1636,7 @@ export function solveMultiStoreWithScenarios(inputs: SolverInput[], config: Scen
       const score = scoreScenario(result, inputs, config);
       return { id, params, result, score };
     } catch (err) {
-      console.warn(`[Solver] Erreur multi-scenario ${id}:`, err);
+      logger.warn(`[Solver] Erreur multi-scenario ${id}:`, err);
       return emptyScenarioFallback(id + "-error", params);
     }
   }

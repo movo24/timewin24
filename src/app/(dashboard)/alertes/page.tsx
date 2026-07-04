@@ -14,6 +14,8 @@ import {
   Users,
   Store,
   Eye,
+  CreditCard,
+  ShieldAlert,
 } from "lucide-react";
 
 /* ---------- types ---------- */
@@ -50,6 +52,8 @@ const TYPE_CONFIG: Record<
   ABSENCE_NOT_REPLACED: { label: "Absence non remplacée", icon: Users },
   SIGNIFICANT_LATENESS: { label: "Retard significatif", icon: Clock },
   INCOMPLETE_TEAM: { label: "Équipe incomplète", icon: AlertTriangle },
+  UNSCHEDULED_POS_ACCESS: { label: "Accès caisse hors planning", icon: CreditCard },
+  FORBIDDEN_POS_ACCESS: { label: "Accès caisse refusé", icon: ShieldAlert },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -62,6 +66,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 const SEVERITY_CONFIG: Record<string, { label: string; className: string }> = {
   INFO: { label: "Info", className: "bg-blue-100 text-blue-700 hover:bg-blue-100" },
   WARNING: { label: "Attention", className: "bg-orange-100 text-orange-700 hover:bg-orange-100" },
+  URGENT: { label: "Urgent", className: "bg-amber-100 text-amber-800 hover:bg-amber-100" },
   CRITICAL: { label: "Critique", className: "bg-red-100 text-red-700 hover:bg-red-100" },
 };
 

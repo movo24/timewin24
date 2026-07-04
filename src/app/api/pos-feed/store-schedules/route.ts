@@ -1,7 +1,8 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
-import { validatePosAuth } from "@/lib/pos-auth";
+import { validatePosAuth, assertPosStoreAccess } from "@/lib/pos-auth";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -34,15 +35,18 @@ export async function GET(req: NextRequest) {
     const storeId = new URL(req.url).searchParams.get("storeId");
     if (!storeId) return errorResponse("storeId requis");
 
-    const schedules = await (prisma as any).storeSchedule.findMany({
+    const scopeErr = await assertPosStoreAccess(req, storeId);
+    if (scopeErr) return scopeErr;
+
+    const schedules = await prisma.storeSchedule.findMany({
       where: { storeId },
       orderBy: { dayOfWeek: "asc" },
     });
 
     return successResponse(schedules);
-  } catch (err: any) {
-    console.error("GET /api/pos-feed/store-schedules error:", err?.message);
-    return errorResponse("Erreur chargement horaires: " + (err?.message || "inconnu"), 500);
+  } catch (err) {
+    logger.error("GET /api/pos-feed/store-schedules error:", err);
+    return errorResponse("Erreur chargement horaires", 500);
   }
 }
 
@@ -61,6 +65,9 @@ export async function PUT(req: NextRequest) {
     const storeId = new URL(req.url).searchParams.get("storeId");
     if (!storeId) return errorResponse("storeId requis");
 
+    const scopeErr = await assertPosStoreAccess(req, storeId);
+    if (scopeErr) return scopeErr;
+
     const body = await req.json();
     const parsed = putBodySchema.safeParse(body);
     if (!parsed.success) {
@@ -72,9 +79,9 @@ export async function PUT(req: NextRequest) {
     const store = await prisma.store.findUnique({ where: { id: storeId } });
     if (!store) return errorResponse("Magasin introuvable", 404);
 
-    const result = await (prisma as any).$transaction(
+    const result = await prisma.$transaction(
       schedules.map((s) =>
-        (prisma as any).storeSchedule.upsert({
+        prisma.storeSchedule.upsert({
           where: { storeId_dayOfWeek: { storeId, dayOfWeek: s.dayOfWeek } },
           update: {
             closed: s.closed,
@@ -99,8 +106,8 @@ export async function PUT(req: NextRequest) {
     );
 
     return successResponse(result);
-  } catch (err: any) {
-    console.error("PUT /api/pos-feed/store-schedules error:", err?.message);
-    return errorResponse("Erreur sauvegarde horaires: " + (err?.message || "inconnu"), 500);
+  } catch (err) {
+    logger.error("PUT /api/pos-feed/store-schedules error:", err);
+    return errorResponse("Erreur sauvegarde horaires", 500);
   }
 }

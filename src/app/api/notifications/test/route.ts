@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import {
   requireAuthenticated,
   successResponse,
@@ -30,7 +31,7 @@ export async function POST() {
       ...result,
     });
   } catch (err) {
-    console.error("POST /api/notifications/test error:", err);
+    logger.error("POST /api/notifications/test error:", err);
     return errorResponse(
       "Erreur serveur",
       500

@@ -14,7 +14,6 @@ import {
 } from "@/lib/timeline-utils";
 import { ShiftDragGhost } from "./shift-drag-ghost";
 import type { DragState } from "@/hooks/useShiftDrag";
-import { Plus } from "lucide-react";
 import { ShiftSendBadge } from "./shift-send-badge";
 import type { NotificationStatus } from "@/app/api/planning/notifications/route";
 
@@ -182,7 +181,7 @@ export function WeekTimeline({
         </div>
 
         {/* Day columns */}
-        {days.map((day, idx) => {
+        {days.map((day) => {
           const dateStr = formatDate(day);
           const positioned = lanesByDate[dateStr] || [];
           const coverage = coverageByDate[dateStr] || [];

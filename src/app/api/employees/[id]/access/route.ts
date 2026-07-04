@@ -1,14 +1,19 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
+import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, errorResponse, successResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 function generateEmployeeCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000)); // 6-digit numeric
+  return String(randomInt(100000, 1000000)); // 6-digit numeric (CSPRNG)
 }
 
 function generatePin(length = 4): string {
-  return String(Math.floor(Math.pow(10, length - 1) + Math.random() * (Math.pow(10, length) - Math.pow(10, length - 1))));
+  const min = 10 ** (length - 1);
+  const max = 10 ** length;
+  return String(randomInt(min, max)); // CSPRNG, gates POS/inventory access
 }
 
 /**
@@ -28,7 +33,7 @@ function generatePin(length = 4): string {
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const { id } = await params;
@@ -40,6 +45,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       select: { id: true, firstName: true, lastName: true, employeeCode: true, accessStatus: true },
     });
     if (!employee) return errorResponse("Employé introuvable", 404);
+
+    // M110 — store-scoping : un MANAGER ne gère que les employés de ses magasins.
+    // getAccessibleStoreIds() renvoie null pour un admin (tout accès).
+    const { storeIds: accessibleStoreIds } = await getAccessibleStoreIds();
+    if (accessibleStoreIds !== null) {
+      const inScope = await prisma.storeEmployee.findFirst({
+        where: { employeeId: id, storeId: { in: accessibleStoreIds } },
+        select: { storeId: true },
+      });
+      if (!inScope) return errorResponse("Accès refusé : employé hors de votre périmètre", 403);
+    }
+
+    // Audit : toute action sur l'accès terrain d'un employé (block/unblock/…).
+    await logAudit(session!.user.id, "UPDATE", "EmployeeAccess", id, { action, reason: reason ?? null });
 
     switch (action) {
       case "block": {
@@ -130,7 +149,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         return errorResponse(`Action inconnue: ${action}`, 400);
     }
   } catch (err) {
-    console.error("POST /api/employees/[id]/access error:", err);
+    logger.error("POST /api/employees/[id]/access error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

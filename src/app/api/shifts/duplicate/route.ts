@@ -1,6 +1,8 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
+import { resolveStoreWhere } from "@/lib/store-scope";
 import { duplicateWeekSchema } from "@/lib/validations";
 import { findOverlappingShift } from "@/lib/shifts";
 import { logAudit } from "@/lib/audit";
@@ -21,6 +23,13 @@ export async function POST(req: NextRequest) {
 
     const { storeId, sourceWeekStart, targetWeekStart } = parsed.data;
 
+    // Périmètre : un manager ne duplique QUE ses magasins ; storeId omis ne doit
+    // jamais dupliquer tout le réseau pour un non-admin.
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+    const scoped = resolveStoreWhere(storeIds, storeId);
+    if (!scoped.ok) return errorResponse("Magasin hors de votre périmètre", 403);
+
     // Reject duplication if target store is inactive
     if (storeId) {
       const store = await prisma.store.findUnique({ where: { id: storeId }, select: { id: true, status: true } });
@@ -40,7 +49,7 @@ export async function POST(req: NextRequest) {
     const where: Record<string, unknown> = {
       date: { gte: srcStart, lte: srcEnd },
     };
-    if (storeId) where.storeId = storeId;
+    if (scoped.where !== undefined) where.storeId = scoped.where;
 
     const sourceShifts = await prisma.shift.findMany({
       where,
@@ -51,9 +60,25 @@ export async function POST(req: NextRequest) {
       return errorResponse("Aucun shift à dupliquer pour cette semaine");
     }
 
-    let created = 0;
     let skipped = 0;
     const conflicts: string[] = [];
+
+    // M112 — on accumule d'abord les shifts à créer, puis on commit le tout en UNE
+    // transaction (atomicité : pas de semaine à moitié dupliquée si une création échoue).
+    // La dédup intra-lot (ci-dessous) préserve la sémantique séquentielle de l'ancienne
+    // boucle (un shift cible en conflit avec un shift créé plus tôt dans le même lot).
+    type NewShift = {
+      storeId: string;
+      employeeId: string | null;
+      date: Date;
+      startTime: string;
+      endTime: string;
+      note: string | null;
+    };
+    const toCreate: NewShift[] = [];
+    const plannedUnassigned = new Set<string>();
+    const plannedAssigned = new Map<string, Array<{ start: string; end: string }>>();
+    const rangesOverlap = (aS: string, aE: string, bS: string, bE: string) => aS < bE && bS < aE;
 
     for (const shift of sourceShifts) {
       const newDate = new Date(shift.date);
@@ -62,6 +87,7 @@ export async function POST(req: NextRequest) {
 
       // For unassigned shifts, check for existing unassigned shift at same time
       if (!shift.employeeId) {
+        const key = `${shift.storeId}|${dateStr}|${shift.startTime}|${shift.endTime}`;
         const existingUnassigned = await prisma.shift.findFirst({
           where: {
             storeId: shift.storeId,
@@ -71,43 +97,51 @@ export async function POST(req: NextRequest) {
             employeeId: null,
           },
         });
-        if (existingUnassigned) {
+        if (existingUnassigned || plannedUnassigned.has(key)) {
           skipped++;
           conflicts.push(
             `${dateStr} ${shift.startTime}-${shift.endTime}: shift non assigné existant`
           );
           continue;
         }
+        plannedUnassigned.add(key);
       } else {
-        // Check for overlap before creating (assigned shifts)
+        // Check for overlap before creating (assigned shifts) — DB + lot courant
         const overlap = await findOverlappingShift(
           shift.employeeId,
           dateStr,
           shift.startTime,
           shift.endTime
         );
+        const mapKey = `${shift.employeeId}|${dateStr}`;
+        const planned = plannedAssigned.get(mapKey) ?? [];
+        const intraBatch = planned.some((p) => rangesOverlap(shift.startTime, shift.endTime, p.start, p.end));
 
-        if (overlap) {
+        if (overlap || intraBatch) {
           skipped++;
           conflicts.push(
             `${dateStr} ${shift.startTime}-${shift.endTime}: conflit existant`
           );
           continue;
         }
+        planned.push({ start: shift.startTime, end: shift.endTime });
+        plannedAssigned.set(mapKey, planned);
       }
 
-      await prisma.shift.create({
-        data: {
-          storeId: shift.storeId,
-          employeeId: shift.employeeId,
-          date: toUTCDate(dateStr),
-          startTime: shift.startTime,
-          endTime: shift.endTime,
-          note: shift.note,
-        },
+      toCreate.push({
+        storeId: shift.storeId,
+        employeeId: shift.employeeId,
+        date: toUTCDate(dateStr),
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        note: shift.note,
       });
-      created++;
     }
+
+    if (toCreate.length > 0) {
+      await prisma.$transaction(toCreate.map((data) => prisma.shift.create({ data })));
+    }
+    const created = toCreate.length;
 
     await logAudit(session!.user.id, "CREATE", "Shift", "bulk-duplicate", {
       sourceWeekStart,
@@ -144,7 +178,7 @@ export async function POST(req: NextRequest) {
       conflicts,
     });
   } catch (err) {
-    console.error("POST /api/shifts/duplicate error:", err);
+    logger.error("POST /api/shifts/duplicate error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

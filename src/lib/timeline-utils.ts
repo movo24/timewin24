@@ -54,11 +54,6 @@ export function minutesToTime(minutes: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
-/** Check if two shifts overlap in time */
-function shiftsOverlap(a: { startMinutes: number; endMinutes: number }, b: { startMinutes: number; endMinutes: number }): boolean {
-  return a.startMinutes < b.endMinutes && b.startMinutes < a.endMinutes;
-}
-
 /**
  * Assign lanes to a list of shifts for a single day.
  * Uses a greedy interval colouring algorithm.

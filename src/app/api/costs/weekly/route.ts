@@ -1,8 +1,11 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
-import { calculateShiftCost, FRANCE_2026_DEFAULTS, type CountryRules } from "@/lib/employer-cost";
-import { getWeekBounds, toUTCDate } from "@/lib/utils";
+import { calculateShiftCost } from "@/lib/employer-cost";
+import { countryRulesFromConfig } from "@/lib/cost-mappers";
+import { toNum, toNumN } from "@/lib/decimal";
+import { getWeekBounds } from "@/lib/utils";
 
 // GET /api/costs/weekly?storeId=xxx&weekStart=YYYY-MM-DD
 // Returns per-shift cost breakdown for a given week and store
@@ -92,26 +95,15 @@ export async function GET(req: NextRequest) {
         };
       }
 
-      const country = costConfig.country;
-      const rules: CountryRules = {
-        code: country.code,
-        name: country.name,
-        currency: country.currency,
-        minimumWageHour: country.minimumWageHour,
-        employerRate: country.employerRate,
-        reductionEnabled: country.reductionEnabled,
-        reductionMaxCoeff: country.reductionMaxCoeff,
-        reductionThreshold: country.reductionThreshold,
-        extraHourlyCost: country.extraHourlyCost,
-      };
+      const rules = countryRulesFromConfig(costConfig.country);
 
       const breakdown = calculateShiftCost(
         shift.startTime,
         shift.endTime,
-        costConfig.hourlyRateGross,
+        toNum(costConfig.hourlyRateGross),
         rules,
-        costConfig.employerRateOverride,
-        costConfig.extraHourlyCostOverride
+        toNumN(costConfig.employerRateOverride),
+        toNumN(costConfig.extraHourlyCostOverride)
       );
 
       totalCost += breakdown.employerCostTotal;
@@ -148,7 +140,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("GET /api/costs/weekly error:", err);
+    logger.error("GET /api/costs/weekly error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

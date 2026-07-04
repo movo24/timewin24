@@ -1,7 +1,9 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireManagerOrAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 import { z } from "zod";
+import { serializeCountryConfig } from "@/lib/cost-mappers";
 
 const countrySchema = z.object({
   code: z.string().min(2).max(5),
@@ -26,9 +28,9 @@ export async function GET() {
       orderBy: { name: "asc" },
     });
 
-    return successResponse({ countries });
+    return successResponse({ countries: countries.map(serializeCountryConfig) });
   } catch (err) {
-    console.error("GET /api/costs/countries error:", err);
+    logger.error("GET /api/costs/countries error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -68,9 +70,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return successResponse({ country }, 201);
+    return successResponse({ country: serializeCountryConfig(country) }, 201);
   } catch (err) {
-    console.error("POST /api/costs/countries error:", err);
+    logger.error("POST /api/costs/countries error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

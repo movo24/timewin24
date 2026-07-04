@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import {
   requireAdmin,
@@ -12,16 +13,16 @@ import {
 } from "@/lib/ai-engine/performance/embeddings";
 
 // POST /api/ai/embeddings — Sync tous les embeddings
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
-    const { session, error } = await requireAdmin();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     if (!isAiAvailable()) {
       return errorResponse("Module IA non disponible (clé API manquante)", 503);
     }
 
-    console.log("[POST /api/ai/embeddings] Starting full sync...");
+    logger.debug("[POST /api/ai/embeddings] Starting full sync...");
 
     const [employeeResult, storeResult, journalResult] = await Promise.all([
       syncEmployeeEmbeddings(),
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       journal: journalResult,
     });
   } catch (err) {
-    console.error("[POST /api/ai/embeddings] Error:", err);
+    logger.error("[POST /api/ai/embeddings] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

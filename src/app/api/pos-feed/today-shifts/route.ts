@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
-import { validatePosAuth } from "@/lib/pos-auth";
+import { validatePosAuth, assertPosStoreAccess } from "@/lib/pos-auth";
 
 // GET /api/pos-feed/today-shifts?storeId=xxx
 // Feed endpoint : le POS récupère les shifts planifiés du jour
@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
 
   const storeId = new URL(req.url).searchParams.get("storeId");
   if (!storeId) return errorResponse("storeId requis");
+
+  const scopeErr = await assertPosStoreAccess(req, storeId);
+  if (scopeErr) return scopeErr;
 
   // Today's date in store timezone (simplified: UTC date)
   const today = new Date();

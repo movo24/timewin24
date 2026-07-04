@@ -14,7 +14,6 @@ dotenv.config();
 
 // ─── Setup path aliases ────────────────────────────
 import path from "path";
-import { pathToFileURL } from "url";
 
 // Register path alias resolver for @/*
 const rootDir = path.resolve(__dirname, "..");
@@ -121,8 +120,7 @@ async function main() {
   section("2. Types Module");
 
   try {
-    const types = await import("../src/lib/ai-engine/types");
-    const exportNames = Object.keys(types);
+    await import("../src/lib/ai-engine/types");
     // types.ts only exports type definitions, which don't appear at runtime
     // But the import itself succeeding proves the module is valid
     record("Types", "Types module imports", "PASS", "all type definitions valid");
@@ -370,7 +368,7 @@ async function main() {
 
   try {
     const { calculateFraudScores } = await import("../src/lib/ai-engine/anomaly/fraud-scorer");
-    const { DetectedAnomaly } = await import("../src/lib/ai-engine/types") as any;
+    await import("../src/lib/ai-engine/types");
 
     // Create mock anomalies for testing
     const mockAnomalies = [
@@ -468,7 +466,7 @@ async function main() {
 
   try {
     // We can't actually run generateAlerts without DB, but we test the logic
-    const alertModule = await import("../src/lib/ai-engine/anomaly/alert-generator");
+    await import("../src/lib/ai-engine/anomaly/alert-generator");
 
     record("Alert Gen", "Module imports", "PASS", "alert-generator.ts loaded");
 
@@ -723,7 +721,7 @@ async function main() {
   section("14. API Usage Tracking");
 
   try {
-    const { initApiUsageTracking } = await import("../src/lib/ai-engine/api-usage");
+    await import("../src/lib/ai-engine/api-usage");
     record("Usage", "api-usage module imports", "PASS", "initApiUsageTracking available");
 
     const { onApiUsage } = await import("../src/lib/ai-engine/shared/gemini-client");
@@ -732,8 +730,7 @@ async function main() {
     );
 
     // Test the callback mechanism
-    let callbackFired = false;
-    onApiUsage(() => { callbackFired = true; });
+    onApiUsage(() => {});
     record("Usage", "Callback registration", "PASS", "Usage callback registered successfully");
 
   } catch (err) {

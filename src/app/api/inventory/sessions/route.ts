@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyInventoryToken } from "@/lib/inventory-jwt";
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const idempotencyKey = req.headers.get("x-idempotency-key")?.trim();
 
   if (!idempotencyKey || idempotencyKey.length === 0) {
-    console.warn(
+    logger.warn(
       `[SESSIONS] Requête REJETÉE — X-Idempotency-Key absent | store=${auth.storeId} employee=${auth.employeeId}`
     );
     return NextResponse.json(
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (cached) {
-      console.log(
+      logger.debug(
         `[IDEMPOTENCY] Session key "${idempotencyKey}" → replay`
       );
       return NextResponse.json(cached.response, {
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
       });
     }
   } catch (e) {
-    console.error(`[IDEMPOTENCY] Lookup error: ${e}`);
+    logger.error(`[IDEMPOTENCY] Lookup error: ${e}`);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (existingSession) {
-        console.log(
+        logger.debug(
           `[SESSIONS] Session IN_PROGRESS existante ${existingSession.id} pour employee=${auth.employeeId} store=${auth.storeId} → retournée`
         );
 
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
         where: { key: idempotencyKey },
       });
       if (cached) {
-        console.log(
+        logger.debug(
           `[IDEMPOTENCY-DB] Session race caught for key="${idempotencyKey}"`
         );
         return NextResponse.json(cached.response, {
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.error("[SESSIONS] Create failed:", error);
+    logger.error("[SESSIONS] Create failed:", error);
     return NextResponse.json(
       { error: "Erreur lors de la création de la session" },
       { status: 500 }

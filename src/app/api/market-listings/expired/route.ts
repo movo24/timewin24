@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
 
@@ -19,12 +20,12 @@ export async function POST() {
     });
 
     if (result.count > 0) {
-      console.log(`[POST /api/market-listings/expired] Expired ${result.count} listings`);
+      logger.debug(`[POST /api/market-listings/expired] Expired ${result.count} listings`);
     }
 
     return successResponse({ expired: result.count });
   } catch (err) {
-    console.error("[POST /api/market-listings/expired] Error:", err);
+    logger.error("[POST /api/market-listings/expired] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -62,14 +63,14 @@ export async function POST(
       posStores,
       posEmployees,
     });
-    } catch (err) {
+    } catch {
       return successResponse({
         connected: false,
         error: "Erreur de connexion",
       });
     }
   } catch (err) {
-    console.error("POST /api/integrations/pos/[id]/test error:", err);
+    logger.error("POST /api/integrations/pos/[id]/test error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
   NotificationEventType,
@@ -83,7 +84,7 @@ export async function dispatchNotification(
           },
         })
         .catch((err) => {
-          console.error("Failed to log notification:", err);
+          logger.error("Failed to log notification:", err);
         });
 
       if (result.success) totalSent++;
@@ -96,8 +97,9 @@ export async function dispatchNotification(
 
 /**
  * Determine which channels to use based on priority, defaults, and user preferences.
+ * Exporté pour les tests unitaires (routage de canaux).
  */
-function resolveChannels(
+export function resolveChannels(
   priority: NotificationPriority,
   defaults: { push: boolean; email: boolean; sms: boolean },
   pref?: { push: boolean; email: boolean; sms: boolean } | null
@@ -183,6 +185,6 @@ async function sendViaChannel(
  */
 export function dispatchNotificationAsync(params: DispatchParams): void {
   dispatchNotification(params).catch((err) => {
-    console.error("Notification dispatch error:", err);
+    logger.error("Notification dispatch error:", err);
   });
 }

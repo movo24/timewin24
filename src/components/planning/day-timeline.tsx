@@ -9,7 +9,6 @@ import {
   detectShiftViolations,
   timeToMinutes,
   type TimelineShift,
-  type PositionedShift,
   type StoreScheduleInfo,
 } from "@/lib/timeline-utils";
 import { ShiftDragGhost } from "./shift-drag-ghost";

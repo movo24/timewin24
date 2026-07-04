@@ -1,6 +1,8 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
+import { isStoreAccessible, resolveStoreWhere } from "@/lib/store-scope";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
@@ -37,13 +39,27 @@ export async function POST(req: NextRequest) {
     }
     const { command, weekStart, storeId, execute } = validatedBody.data;
 
+    // ─── Périmètre magasin ───────────────────────
+    // Un manager ne planifie que ses magasins ; les données chargées ET
+    // l'exécuteur sont bornés au périmètre (defense-in-depth).
+    const { storeIds: accessibleStoreIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+    const scoped = resolveStoreWhere(accessibleStoreIds, storeId);
+    if (!scoped.ok) return errorResponse("Magasin hors de votre périmètre", 403);
+    const storeIdWhere = scoped.where; // string | {in} | undefined
+
     // ─── Load data from DB ───────────────────────
     const { weekStart: wsDate, weekEnd: weDate } = getWeekBounds(weekStart);
     const today = formatDate(new Date());
 
-    // Load employees with stores and unavailabilities
+    // Load employees with stores and unavailabilities (restreints au périmètre)
     const employees = await prisma.employee.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        ...(accessibleStoreIds !== null
+          ? { stores: { some: { storeId: { in: accessibleStoreIds } } } }
+          : {}),
+      },
       include: {
         stores: { select: { storeId: true } },
         unavailabilities: {
@@ -58,8 +74,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Load stores with schedules
+    // Load stores with schedules (restreints au périmètre)
     const stores = await prisma.store.findMany({
+      ...(storeIdWhere !== undefined ? { where: { id: storeIdWhere } } : {}),
       include: {
         schedules: {
           select: {
@@ -78,7 +95,7 @@ export async function POST(req: NextRequest) {
     const shiftsRaw = await prisma.shift.findMany({
       where: {
         date: { gte: wsDate, lte: weDate },
-        ...(storeId ? { storeId } : {}),
+        ...(storeIdWhere !== undefined ? { storeId: storeIdWhere } : {}),
       },
       include: {
         store: { select: { id: true, name: true } },
@@ -182,13 +199,13 @@ export async function POST(req: NextRequest) {
     // ─── Execute if requested ────────────────────
 
     if (execute && proposal.actions.length > 0) {
-      const result = await executeProposal(proposal, session!.user.id);
+      const result = await executeProposal(proposal, session!.user.id, accessibleStoreIds);
       return successResponse({ proposal, result });
     }
 
     return successResponse({ proposal });
   } catch (err) {
-    console.error("POST /api/planning/manager-ia error:", err);
+    logger.error("POST /api/planning/manager-ia error:", err);
     return errorResponse(
       "Erreur serveur",
       500
@@ -200,13 +217,33 @@ export async function POST(req: NextRequest) {
 
 async function executeProposal(
   proposal: Proposal,
-  userId: string
+  userId: string,
+  accessibleStoreIds: string[] | null
 ): Promise<ExecutionResult> {
   let applied = 0;
   const errors: string[] = [];
 
   for (const action of proposal.actions) {
     try {
+      // Garde de périmètre : refuser toute mutation hors des magasins autorisés.
+      // Pour create/update, le magasin cible = action.storeId. Pour delete, on
+      // vérifie le magasin du shift existant.
+      if (action.type === "create" || action.type === "update") {
+        if (action.storeId && !isStoreAccessible(accessibleStoreIds, action.storeId)) {
+          errors.push("Action ignorée : magasin hors de votre périmètre.");
+          continue;
+        }
+      }
+      if ((action.type === "update" || action.type === "delete") && action.shiftId) {
+        const existing = await prisma.shift.findUnique({
+          where: { id: action.shiftId },
+          select: { storeId: true },
+        });
+        if (existing && !isStoreAccessible(accessibleStoreIds, existing.storeId)) {
+          errors.push("Action ignorée : shift d'un magasin hors de votre périmètre.");
+          continue;
+        }
+      }
       switch (action.type) {
         case "create": {
           await prisma.shift.create({
@@ -253,7 +290,7 @@ async function executeProposal(
           break;
         }
       }
-    } catch (err) {
+    } catch {
       errors.push(`Erreur lors de l'action ${action.type}`);
     }
   }

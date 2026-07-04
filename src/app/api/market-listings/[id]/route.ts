@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -178,7 +179,7 @@ export async function PATCH(
           }),
         ]);
 
-        console.log(
+        logger.debug(
           `[PATCH /api/market-listings/${id}] Manager approved: shift ${shift.id} transferred to ${listing.claimantId}`
         );
         return successResponse({ approved: true });
@@ -230,7 +231,7 @@ export async function PATCH(
         return errorResponse("Action non reconnue");
     }
   } catch (err) {
-    console.error("[PATCH /api/market-listings/[id]] Error:", err);
+    logger.error("[PATCH /api/market-listings/[id]] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

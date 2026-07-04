@@ -5,6 +5,7 @@
  * ce module utilise Gemini pour extraire un ParsedIntent structuré.
  */
 
+import { logger } from "@/lib/logger";
 import { generateText } from "../shared/gemini-client";
 import type { ParsedIntent, ActionType } from "@/lib/manager-ia/types";
 
@@ -94,7 +95,7 @@ Extrais l'intent en JSON:`;
   } catch (err) {
     // FIX H3: Re-throw instead of silently returning a misleading CREATE intent
     // The caller (enhanced-pipeline) handles failures via graceful degradation
-    console.error("[AI Engine] Gemini parse failed:", (err as Error).message);
+    logger.error("[AI Engine] Gemini parse failed:", (err as Error).message);
     throw new Error(`Gemini parse failed: ${(err as Error).message}`);
   }
 }

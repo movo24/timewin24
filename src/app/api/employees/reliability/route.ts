@@ -1,10 +1,14 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   requireManagerOrAdmin,
+  getAccessibleStoreIds,
+  canAccessEmployee,
   successResponse,
   errorResponse,
 } from "@/lib/api-helpers";
+import { resolveNestedStoreFilter } from "@/lib/store-scope";
 import { recalculateAndSave } from "@/lib/reliability-score";
 
 /**
@@ -17,14 +21,21 @@ export async function GET(req: NextRequest) {
     const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const { searchParams } = new URL(req.url);
     const storeId = searchParams.get("storeId");
+
+    const scoped = resolveNestedStoreFilter(storeIds, storeId);
+    if (!scoped.ok) return errorResponse("Magasin hors de votre périmètre", 403);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { active: true };
 
-    if (storeId) {
-      where.stores = { some: { storeId } };
+    // Restreint aux magasins accessibles (manager) ; admin = pas de filtre.
+    if (scoped.storeIdFilter !== undefined) {
+      where.stores = { some: { storeId: scoped.storeIdFilter } };
     }
 
     const employees = await prisma.employee.findMany({
@@ -45,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ employees });
   } catch (err) {
-    console.error("GET /api/employees/reliability error:", err);
+    logger.error("GET /api/employees/reliability error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -61,18 +72,27 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   try {
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const body = await req.json().catch(() => ({}));
     const { employeeId } = body as { employeeId?: string };
 
     if (employeeId) {
-      // Single employee
+      // Single employee — doit être dans le périmètre du manager.
+      if (!(await canAccessEmployee(employeeId, storeIds))) {
+        return errorResponse("Employé hors de votre périmètre", 403);
+      }
       const breakdown = await recalculateAndSave(employeeId);
       return successResponse({ breakdown });
     }
 
-    // All active employees
+    // Tous les employés actifs — restreints aux magasins accessibles (admin = tous).
     const employees = await prisma.employee.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        ...(storeIds !== null ? { stores: { some: { storeId: { in: storeIds } } } } : {}),
+      },
       select: { id: true },
     });
 
@@ -87,7 +107,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (err) {
-    console.error("POST /api/employees/reliability error:", err);
+    logger.error("POST /api/employees/reliability error:", err);
     return errorResponse(
       "Erreur serveur",
       500

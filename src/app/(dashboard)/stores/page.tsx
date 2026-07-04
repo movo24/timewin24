@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Clock, X, MapPin, Power, PowerOff, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, Search, ChevronLeft, ChevronRight, Clock, MapPin, Power, PowerOff, AlertTriangle } from "lucide-react";
 
 // Day names in French, indexed 0=Dim ... 6=Sam
 const DAY_NAMES = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-const DAY_FULL_NAMES = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 // Reorder for display: Mon-Sun (1,2,3,4,5,6,0)
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -178,34 +178,13 @@ export default function StoresPage() {
         setTotalPages(data.pagination?.totalPages || 1);
       }
     } catch {
-      console.error("Erreur chargement magasins");
+      logger.error("Erreur chargement magasins");
     }
   }, [page, search, showInactive]);
 
   useEffect(() => {
     loadStores();
   }, [loadStores]);
-
-  function openCreate() {
-    setEditing(null);
-    setForm({
-      name: "",
-      city: "",
-      address: "",
-      timezone: "Europe/Paris",
-      latitude: "",
-      longitude: "",
-      minEmployees: "1",
-      maxEmployees: "",
-      needsManager: false,
-      allowOverlap: false,
-      maxOverlapMinutes: "0",
-      maxSimultaneous: "1",
-    });
-    setSchedules(getDefaultSchedules());
-    setError("");
-    setDialogOpen(true);
-  }
 
   function openEdit(store: Store) {
     setEditing(store);

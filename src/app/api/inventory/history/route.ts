@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyInventoryToken } from "@/lib/inventory-jwt";
@@ -109,7 +110,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("[HISTORY] PATCH failed:", error);
+    logger.error("[HISTORY] PATCH failed:", error);
     return NextResponse.json(
       { error: "Erreur lors de la mise à jour de la session" },
       { status: 500 }

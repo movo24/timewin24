@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ imported, skipped, total: scans.length });
   } catch (e) {
-    console.error("[POST /api/products/import-from-inventory]", e);
+    logger.error("[POST /api/products/import-from-inventory]", e);
     return errorResponse("Erreur serveur", 500);
   }
 }

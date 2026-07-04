@@ -1,6 +1,9 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { errorResponse, successResponse, getSessionOrUnauthorized } from "@/lib/api-helpers";
+import { errorResponse, successResponse, getSessionOrUnauthorized, getAccessibleStoreIds, canAccessEmployee } from "@/lib/api-helpers";
+import { isAdmin } from "@/lib/rbac";
+import { isStoreAccessible } from "@/lib/store-scope";
 import { z } from "zod";
 
 // ─── POST /api/attendance/clock-out ──────────────────
@@ -15,7 +18,7 @@ const clockOutSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { error } = await getSessionOrUnauthorized();
+    const { session, error } = await getSessionOrUnauthorized();
     if (error) return error;
 
     const body = await req.json();
@@ -25,6 +28,19 @@ export async function POST(req: NextRequest) {
     }
 
     const { employeeId, storeId } = parsed.data;
+
+    // Anti-spoofing (cf. clock-in) : service-key/admin OK ; sinon périmètre +
+    // ownership (on ne dépointe pas pour autrui hors de son périmètre).
+    const actor = session!.user as { id: string; role: string; employeeId: string | null };
+    if (!actor.id.startsWith("service:") && !isAdmin(actor.role)) {
+      const { storeIds } = await getAccessibleStoreIds();
+      if (!isStoreAccessible(storeIds, storeId)) {
+        return errorResponse("Magasin hors de votre périmètre", 403);
+      }
+      if (actor.employeeId !== employeeId && !(await canAccessEmployee(employeeId, storeIds))) {
+        return errorResponse("Vous ne pouvez pas pointer pour cet employé", 403);
+      }
+    }
 
     // Find open clock-in (no clockOutAt)
     const openClockIn = await prisma.clockIn.findFirst({
@@ -60,7 +76,7 @@ export async function POST(req: NextRequest) {
       late_minutes: updated.lateMinutes,
     });
   } catch (err) {
-    console.error("POST /api/attendance/clock-out error:", err);
+    logger.error("POST /api/attendance/clock-out error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

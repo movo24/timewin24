@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, errorResponse } from "@/lib/api-helpers";
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("GET /api/shifts/export error:", err);
+    logger.error("GET /api/shifts/export error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,18 +1,19 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "./prisma";
 
 export async function logAudit(
   userId: string,
-  action: "CREATE" | "UPDATE" | "DELETE" | "IMPORT",
+  action: "CREATE" | "UPDATE" | "DELETE" | "IMPORT" | "EXPORT",
   entity: string,
   entityId: string,
   diff?: Record<string, unknown> | null,
-  newData?: unknown
+  _newData?: unknown
 ) {
   try {
     // Service API keys have userId like "service:xxx" — not a real User FK.
     // Skip audit log for service keys to avoid FK constraint violation.
     if (userId.startsWith("service:")) {
-      console.log(
+      logger.debug(
         `[AUDIT] ${action} ${entity}/${entityId} by ${userId} (service key — no DB log)`
       );
       return;
@@ -29,6 +30,6 @@ export async function logAudit(
     });
   } catch (error) {
     // Audit logging should never crash the main operation
-    console.error(`[AUDIT] Failed to log ${action} ${entity}/${entityId}:`, error);
+    logger.error(`[AUDIT] Failed to log ${action} ${entity}/${entityId}:`, error);
   }
 }

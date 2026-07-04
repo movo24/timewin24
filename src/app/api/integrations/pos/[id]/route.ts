@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -47,7 +48,7 @@ export async function GET(
     if (!provider) return errorResponse("Provider introuvable", 404);
 
     // Strip sensitive fields before returning
-    const { apiKey, apiSecret, accessToken, refreshToken, ...safeProvider } = provider as any;
+    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeProvider } = provider as Record<string, unknown>;
     return successResponse({
       provider: {
         ...safeProvider,
@@ -57,7 +58,7 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.error("GET /api/integrations/pos/[id] error:", err);
+    logger.error("GET /api/integrations/pos/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -96,7 +97,7 @@ export async function PUT(
     });
 
     // Strip sensitive fields before returning (BUG 1)
-    const { apiKey, apiSecret, accessToken, refreshToken, ...safeUpdated } = updated as any;
+    const { apiKey, apiSecret, accessToken, refreshToken: _refreshToken, ...safeUpdated } = updated as Record<string, unknown>;
     return successResponse({
       ...safeUpdated,
       hasApiKey: !!apiKey,
@@ -104,7 +105,7 @@ export async function PUT(
       hasAccessToken: !!accessToken,
     });
   } catch (err) {
-    console.error("PUT /api/integrations/pos/[id] error:", err);
+    logger.error("PUT /api/integrations/pos/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -131,7 +132,7 @@ export async function DELETE(
 
     return successResponse({ message: "Provider supprimé" });
   } catch (err) {
-    console.error("DELETE /api/integrations/pos/[id] error:", err);
+    logger.error("DELETE /api/integrations/pos/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

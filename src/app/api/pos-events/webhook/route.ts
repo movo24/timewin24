@@ -1,5 +1,7 @@
+import { logger } from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import { errorResponse, successResponse } from "@/lib/api-helpers";
 import { checkRateLimit, RATE_LIMITS, getClientIp } from "@/lib/rate-limit";
 import { validatePosAuth } from "@/lib/pos-auth";
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ received: true, eventId: event.id }, 201);
   } catch (err) {
-    console.error("POST /api/pos-events/webhook error:", err);
+    logger.error("POST /api/pos-events/webhook error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -168,7 +170,7 @@ async function processEvent(
                 select: { id: true, totalSales: true, transactions: true, itemsSold: true },
               });
               if (existing) {
-                const newTotal = existing.totalSales + revenue;
+                const newTotal = toNum(existing.totalSales) + revenue;
                 const newTx = existing.transactions + transactions;
                 await prisma.employeePerformanceDaily.update({
                   where: { id: existing.id },
@@ -244,6 +246,45 @@ async function processEvent(
             });
           }
         }
+        break;
+      }
+
+      case "employee.unscheduled_pos_access_granted":
+      case "employee.pos_access_denied": {
+        // Exception d'accès caisse remontée par le POS. TimeWin24 n'a PAS bloqué
+        // (le POS exécute) : on historise et on alerte le siège. Idempotent.
+        const denied = eventType === "employee.pos_access_denied";
+        const accessTime: string = data?.access_time || new Date().toISOString();
+        const dayStr = accessTime.slice(0, 10);
+        const dateOnly = new Date(dayStr + "T00:00:00Z");
+        const timeStr = accessTime.length >= 16 ? accessTime.slice(11, 16) : null;
+        const terminal = data?.terminal_id || "?";
+        // Clé d'idempotence : session POS si dispo, sinon employé+terminal+heure.
+        const contextKey = `posaccess-${data?.session_id || `${employeeId || "?"}-${terminal}-${timeStr || "?"}`}`;
+        const empName = data?.employee_name || employeeId || "Employé";
+        const motif = data?.motif || data?.justification || null;
+        const reason = data?.reason || (denied ? "access_denied" : "unscheduled");
+
+        const alertType = denied ? "FORBIDDEN_POS_ACCESS" : "UNSCHEDULED_POS_ACCESS";
+        const severity = denied ? "CRITICAL" : "URGENT";
+        const title = denied
+          ? `Accès caisse refusé — ${empName}`
+          : `Accès caisse hors planning — ${empName}`;
+        const details = [
+          `Caisse ${terminal}${timeStr ? ` à ${timeStr}` : ""}`,
+          denied ? `Refus : ${reason}` : `Accès accordé hors planning (${reason})`,
+          motif ? `Motif : ${motif}` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
+        await prisma.managerAlert.upsert({
+          where: {
+            type_storeId_date_contextKey: { type: alertType, storeId, date: dateOnly, contextKey },
+          },
+          create: { type: alertType, severity, storeId, date: dateOnly, time: timeStr, title, details, contextKey },
+          update: { details },
+        });
         break;
       }
 
@@ -337,7 +378,7 @@ async function processEvent(
         const ticketCount = data.ticketCount || 0;
 
         if (existing) {
-          const newTotal = existing.totalSales + totalRevenue;
+          const newTotal = toNum(existing.totalSales) + totalRevenue;
           const newTx = existing.transactions + ticketCount;
           await prisma.employeePerformanceDaily.update({
             where: { id: existing.id },

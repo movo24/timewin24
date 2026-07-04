@@ -1,6 +1,8 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
 import { calculateEmployerCost, FRANCE_2026_DEFAULTS, type CountryRules } from "@/lib/employer-cost";
+import { countryRulesFromConfig } from "@/lib/cost-mappers";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -33,17 +35,7 @@ export async function POST(req: NextRequest) {
       where: { code: "FR" },
     });
     if (country) {
-      rules = {
-        code: country.code,
-        name: country.name,
-        currency: country.currency,
-        minimumWageHour: country.minimumWageHour,
-        employerRate: country.employerRate,
-        reductionEnabled: country.reductionEnabled,
-        reductionMaxCoeff: country.reductionMaxCoeff,
-        reductionThreshold: country.reductionThreshold,
-        extraHourlyCost: country.extraHourlyCost,
-      };
+      rules = countryRulesFromConfig(country);
     } else {
       rules = FRANCE_2026_DEFAULTS;
     }
@@ -58,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ breakdown, rules });
   } catch (err) {
-    console.error("POST /api/costs/simulate error:", err);
+    logger.error("POST /api/costs/simulate error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -872,7 +872,7 @@ function planFillGaps(
 
 function planOptimize(
   cmd: ResolvedCommand,
-  ctx: PlannerContext
+  _ctx: PlannerContext
 ): Proposal {
   // For optimize, we inform the user to use the auto-plan feature
   // as it uses the full solver engine

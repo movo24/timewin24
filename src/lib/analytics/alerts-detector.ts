@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import type { PerformanceAlert } from "./types";
 
 /**
@@ -76,13 +77,13 @@ export async function detectAlerts(
       });
     }
     const emp = empMap.get(key)!;
-    emp.totalSales += d.totalSales;
+    emp.totalSales += toNum(d.totalSales);
     emp.totalTransactions += d.transactions;
     emp.totalItemsSold += d.itemsSold;
     emp.totalHours += d.workingHours;
-    emp.cashAmount += d.cashAmount;
+    emp.cashAmount += toNum(d.cashAmount);
     emp.days++;
-    emp.avgBasketSum += d.avgBasket;
+    emp.avgBasketSum += toNum(d.avgBasket);
   }
 
   // 3. Calculer les moyennes par magasin
@@ -188,7 +189,6 @@ export async function detectAlerts(
   // 5. Regle 5 : Drop de score > 30% vs periode precedente
   const periodLengthMs = dateTo.getTime() - dateFrom.getTime();
   const previousFrom = new Date(dateFrom.getTime() - periodLengthMs);
-  const previousTo = new Date(dateFrom.getTime() - 1); // Jour avant dateFrom
 
   const currentScores = await prisma.employeePerformanceScore.findMany({
     where: {

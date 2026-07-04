@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ posts: enriched, nextCursor });
   } catch (err) {
-    console.error("GET /api/feed error:", err);
+    logger.error("GET /api/feed error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(post, 201);
   } catch (err) {
-    console.error("POST /api/feed error:", err);
+    logger.error("POST /api/feed error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,18 +1,19 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireManagerOrAdmin, getAccessibleStoreIds, successResponse, errorResponse } from "@/lib/api-helpers";
 import { employeeCreateSchema } from "@/lib/validations";
 import { logAudit } from "@/lib/audit";
+import { serializeEmployeeCost } from "@/lib/cost-mappers";
 import bcrypt from "bcryptjs";
 
 // GET /api/employees
 // RBAC: Manager sees only employees from their assigned stores
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
-    const user = session!.user as { id: string; role: string; employeeId: string | null };
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
@@ -65,11 +66,15 @@ export async function GET(req: NextRequest) {
     ]);
 
     return successResponse({
-      employees,
+      employees: employees.map((e) =>
+        e.costConfig
+          ? { ...e, costConfig: serializeEmployeeCost(e.costConfig) }
+          : e
+      ),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("GET /api/employees error:", err);
+    logger.error("GET /api/employees error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -168,7 +173,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(employee, 201);
   } catch (err) {
-    console.error("POST /api/employees error:", err);
+    logger.error("POST /api/employees error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

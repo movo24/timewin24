@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ offers: enriched });
   } catch (err) {
-    console.error("[GET /api/replacements] Error:", err);
+    logger.error("[GET /api/replacements] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

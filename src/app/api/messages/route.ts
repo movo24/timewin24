@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -56,10 +57,10 @@ export async function GET(req: NextRequest) {
       // Admin/Manager: filtres
       const VALID_STATUSES = ["NEW", "IN_PROGRESS", "RESOLVED", "CLOSED"] as const;
       const VALID_CATEGORIES = ["GENERAL", "PLANNING", "CONGE", "ABSENCE", "ADMINISTRATIF", "RECLAMATION", "AUTRE"] as const;
-      if (status && VALID_STATUSES.includes(status as any)) where.status = status;
+      if (status && (VALID_STATUSES as readonly string[]).includes(status)) where.status = status;
       if (storeId) where.storeId = storeId;
       if (employeeId) where.employeeId = employeeId;
-      if (category && VALID_CATEGORIES.includes(category as any)) where.category = category;
+      if (category && (VALID_CATEGORIES as readonly string[]).includes(category)) where.category = category;
     }
 
     const [rawMessages, total] = await Promise.all([
@@ -88,9 +89,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Load attachments for all messages + replies
-    const allMessageIds = rawMessages.flatMap((m: any) => [
+    const allMessageIds = rawMessages.flatMap((m) => [
       m.id,
-      ...m.replies.map((r: any) => r.id),
+      ...m.replies.map((r) => r.id),
     ]);
     const attachments = allMessageIds.length > 0
       ? await prisma.messageAttachment.findMany({
@@ -103,10 +104,10 @@ export async function GET(req: NextRequest) {
       list.push(att);
       attachmentMap.set(att.entityId, list);
     }
-    const messages = rawMessages.map((m: any) => ({
+    const messages = rawMessages.map((m) => ({
       ...m,
       attachments: attachmentMap.get(m.id) || [],
-      replies: m.replies.map((r: any) => ({
+      replies: m.replies.map((r) => ({
         ...r,
         attachments: attachmentMap.get(r.id) || [],
       })),
@@ -130,7 +131,7 @@ export async function GET(req: NextRequest) {
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("GET /api/messages error:", err);
+    logger.error("GET /api/messages error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -286,7 +287,7 @@ export async function POST(req: NextRequest) {
 
     return errorResponse("Les administrateurs répondent aux messages existants via parentId");
   } catch (err) {
-    console.error("POST /api/messages error:", err);
+    logger.error("POST /api/messages error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

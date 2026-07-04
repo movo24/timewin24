@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -19,7 +20,7 @@ const MAX_RADIUS_METERS = 50;
  */
 export async function POST(req: NextRequest) {
   try {
-    const { session, employeeId, error } = await requireEmployee();
+    const { employeeId, error } = await requireEmployee();
     if (error) return error;
 
     const formData = await req.formData();
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse(clockIn, 201);
   } catch (err) {
-    console.error("POST /api/clock-in error:", err);
+    logger.error("POST /api/clock-in error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -220,7 +221,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ clockIns });
   } catch (err) {
-    console.error("GET /api/clock-in error:", err);
+    logger.error("GET /api/clock-in error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

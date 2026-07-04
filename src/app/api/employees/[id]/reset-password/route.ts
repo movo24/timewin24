@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -55,7 +56,7 @@ export async function POST(
 
     return successResponse({ success: true });
   } catch (err) {
-    console.error("POST /api/employees/[id]/reset-password error:", err);
+    logger.error("POST /api/employees/[id]/reset-password error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { NotificationEventType } from "@/generated/prisma/client";
@@ -50,7 +51,7 @@ export async function GET() {
 
     return successResponse({ preferences, phone: userData?.phone || null });
   } catch (err) {
-    console.error("GET /api/notifications/preferences error:", err);
+    logger.error("GET /api/notifications/preferences error:", err);
     return errorResponse(
       "Erreur serveur",
       500
@@ -115,7 +116,7 @@ export async function PUT(req: NextRequest) {
 
     return successResponse({ updated: true });
   } catch (err) {
-    console.error("PUT /api/notifications/preferences error:", err);
+    logger.error("PUT /api/notifications/preferences error:", err);
     return errorResponse(
       "Erreur serveur",
       500

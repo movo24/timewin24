@@ -28,12 +28,15 @@ import {
   BellRing,
   Tag,
   BarChart3,
+  FileSpreadsheet,
+  Clock,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notification-bell";
 import { useState } from "react";
-import { isAdminOrManager, isEmployee as isEmployeeRole, getLoginPageForRole, ROLE_LABELS } from "@/lib/rbac";
+import { getLoginPageForRole, ROLE_LABELS } from "@/lib/rbac";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -80,6 +83,7 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { href: "/performance", label: "Performance", icon: BarChart3 },
       { href: "/costs", label: "Coûts", icon: Euro },
+      { href: "/paie", label: "Variables de paie", icon: FileSpreadsheet },
       { href: "/alertes", label: "Alertes", icon: Bell },
     ],
   },
@@ -95,6 +99,7 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Système",
     items: [
+      { href: "/organisation", label: "Société & unités", icon: Building2 },
       { href: "/etiquettes", label: "Étiquettes", icon: Tag },
       { href: "/accounts", label: "Comptes", icon: Shield },
       { href: "/integrations", label: "Intégrations", icon: Plug },
@@ -156,6 +161,7 @@ const managerNavGroups: NavGroup[] = [
 const employeeLinks: NavItem[] = [
   { href: "/mon-planning", label: "Mon Planning", icon: Calendar },
   { href: "/pointage", label: "Pointage", icon: ScanLine },
+  { href: "/mes-heures", label: "Mes Heures", icon: Clock },
   { href: "/mes-absences", label: "Mes Absences", icon: AlertTriangle },
   { href: "/mes-remplacements", label: "Remplacements", icon: UserCheck },
   { href: "/marche-shifts", label: "Marché Shifts", icon: ShoppingBag },

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthenticated, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     return successResponse({ message: "Mot de passe modifié avec succès" });
   } catch (err) {
-    console.error("POST /api/me/change-password error:", err);
+    logger.error("POST /api/me/change-password error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

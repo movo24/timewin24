@@ -58,3 +58,39 @@ async function validatePosHmac(req: NextRequest, body: string) {
 
   return null; // success
 }
+
+/**
+ * Magasins accessibles à une clé POS (scoping multi-magasin).
+ *  - clé ConnectedApp → son unique `storeId` ;
+ *  - clé PosProvider → les magasins liés via `PosStoreLink`.
+ * Renvoie [] si la clé n'a aucun magasin lié.
+ */
+export async function posKeyStoreIds(keyId: string): Promise<string[]> {
+  const app = await prisma.connectedApp.findUnique({
+    where: { id: keyId },
+    select: { storeId: true },
+  });
+  if (app?.storeId) return [app.storeId];
+
+  const links = await prisma.posStoreLink.findMany({
+    where: { providerId: keyId },
+    select: { storeId: true },
+  });
+  return links.map((l) => l.storeId);
+}
+
+/**
+ * Vérifie qu'une clé POS (via `X-POS-Key-Id`) a accès à `storeId`.
+ * Renvoie une NextResponse 403 si hors périmètre, sinon null.
+ * À appeler APRÈS `validatePosAuth` (la clé est déjà authentifiée).
+ */
+export async function assertPosStoreAccess(req: NextRequest, storeId: string) {
+  const keyId = req.headers.get("x-pos-key-id");
+  if (!keyId) return errorResponse("X-POS-Key-Id requis", 401);
+  const allowed = await posKeyStoreIds(keyId);
+  if (!allowed.includes(storeId)) {
+    return errorResponse("Magasin hors du périmètre de cette clé POS", 403);
+  }
+  return null;
+}
+

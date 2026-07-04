@@ -2,6 +2,7 @@
 // Simulateur de POS pour le développement et les tests.
 // Génère des données réalistes sans connexion externe.
 
+import { logger } from "@/lib/logger";
 import type { PosAdapter } from "../adapter";
 import type {
   PosProviderConfig,
@@ -50,13 +51,13 @@ export class MockPosAdapter implements PosAdapter {
   }): Promise<{ posId: string }> {
     await new Promise((r) => setTimeout(r, 200));
     const id = `POS-EMP-${Date.now().toString(36).toUpperCase()}`;
-    console.log(`[MockPOS] Created employee ${employee.name} → ${id}`);
+    logger.debug(`[MockPOS] Created employee ${employee.name} → ${id}`);
     return { posId: id };
   }
 
   async deactivateEmployee(posEmployeeId: string): Promise<void> {
     await new Promise((r) => setTimeout(r, 100));
-    console.log(`[MockPOS] Deactivated employee ${posEmployeeId}`);
+    logger.debug(`[MockPOS] Deactivated employee ${posEmployeeId}`);
   }
 
   // ── Magasins ──

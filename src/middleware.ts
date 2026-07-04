@@ -9,7 +9,7 @@ const ADMIN_ROUTES = [
   "/remplacements", "/echanges", "/alertes", "/audit", "/accounts",
   "/integrations", "/journal", "/absences", "/notifications", "/messages",
   "/organizations", "/units", "/connected-apps", "/pos-events",
-  "/etiquettes", "/performance",
+  "/etiquettes", "/performance", "/organisation",
 ];
 
 const EMPLOYEE_ROUTES = [

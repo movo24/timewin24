@@ -8,10 +8,10 @@
  * 4. Creates ReplacementOffer + ReplacementCandidate records
  */
 
+import { logger } from "@/lib/logger";
 import { prisma } from "./prisma";
-import { findOverlappingShift, calculateWeeklyHours } from "./shifts";
 import { isAvailable } from "./solver/constraints";
-import { calculateShiftHours } from "./shift-utils";
+import { calculateShiftHours, doTimesOverlap } from "./shift-utils";
 import type { SolverUnavailability } from "./solver/types";
 
 interface AbsenceInfo {
@@ -83,27 +83,34 @@ export async function findEligibleCandidates(
       continue;
     }
 
-    // Check overlapping shifts
-    const overlap = await findOverlappingShift(
-      emp.id,
-      dateStr,
-      shift.startTime,
-      shift.endTime
+    // M113 — calculs en mémoire à partir de emp.shifts (déjà eager-loaded sur la
+    // semaine, lignes 52-59), au lieu de 2 requêtes DB par candidat
+    // (findOverlappingShift + calculateWeeklyHours). Équivalence : doTimesOverlap est
+    // le helper utilisé par findOverlappingShift ; emp.shifts couvre exactement la
+    // même fenêtre que calculateWeeklyHours.
+    const dailyShifts = emp.shifts.filter(
+      (s) => s.date.toISOString().split("T")[0] === dateStr
     );
-    if (overlap) continue;
 
-    // Check weekly hours
-    const weekStart = getWeekStart(shift.date);
-    const weekEnd = getWeekEnd(shift.date);
-    const weeklyHours = await calculateWeeklyHours(emp.id, weekStart, weekEnd);
+    // Check overlapping shifts (in-memory)
+    const hasOverlap = dailyShifts.some((s) =>
+      doTimesOverlap(
+        { date: dateStr, startTime: shift.startTime, endTime: shift.endTime },
+        { date: dateStr, startTime: s.startTime, endTime: s.endTime }
+      )
+    );
+    if (hasOverlap) continue;
+
+    // Check weekly hours (in-memory sum over the loaded week)
+    const weeklyHours = emp.shifts.reduce(
+      (sum, s) => sum + calculateShiftHours(s.startTime, s.endTime),
+      0
+    );
     const shiftHours = calculateShiftHours(shift.startTime, shift.endTime);
     const maxWeekly = emp.maxHoursPerWeek ?? 48;
     if (weeklyHours + shiftHours > maxWeekly) continue;
 
-    // Check daily hours
-    const dailyShifts = emp.shifts.filter(
-      (s) => s.date.toISOString().split("T")[0] === dateStr
-    );
+    // Check daily hours (reuse dailyShifts)
     const dailyHours = dailyShifts.reduce(
       (sum, s) => sum + calculateShiftHours(s.startTime, s.endTime),
       0
@@ -210,7 +217,7 @@ export async function createReplacementOffers(absence: AbsenceInfo): Promise<num
     offersCreated++;
   }
 
-  console.log(
+  logger.debug(
     `[Replacement] Created ${offersCreated} offers for absence ${absence.id} (${shifts.length} shifts affected)`
   );
 

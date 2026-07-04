@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ colleagues });
   } catch (err) {
-    console.error("GET /api/me/colleagues error:", err);
+    logger.error("GET /api/me/colleagues error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

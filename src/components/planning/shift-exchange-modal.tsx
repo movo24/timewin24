@@ -16,7 +16,6 @@ import {
   Search,
   Loader2,
   Send,
-  User,
 } from "lucide-react";
 
 interface ShiftInfo {

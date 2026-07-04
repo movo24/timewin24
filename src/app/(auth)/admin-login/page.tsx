@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -31,15 +32,15 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      console.log("[ADMIN-LOGIN] Auth error:", result.error);
+      logger.debug("[ADMIN-LOGIN] Auth error:", result.error);
       setError(result.error);
     } else {
-      console.log("[ADMIN-LOGIN] Auth success, fetching session...");
+      logger.debug("[ADMIN-LOGIN] Auth success, fetching session...");
       try {
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
         const role = sessionData?.user?.role;
-        console.log("[ADMIN-LOGIN] Session role:", role, "email:", sessionData?.user?.email);
+        logger.debug("[ADMIN-LOGIN] Session role:", role, "email:", sessionData?.user?.email);
 
         if (sessionData?.user?.mustChangePassword) {
           router.push("/changer-mot-de-passe");
@@ -48,10 +49,10 @@ export default function AdminLoginPage() {
 
         // Rediriger selon le rôle réel
         const target = role === "EMPLOYEE" ? "/mon-planning" : "/planning";
-        console.log(`[ADMIN-LOGIN] Role: ${role} → ${target}`);
+        logger.debug(`[ADMIN-LOGIN] Role: ${role} → ${target}`);
         router.push(target);
       } catch (err) {
-        console.error("[ADMIN-LOGIN] Session fetch failed:", err);
+        logger.error("[ADMIN-LOGIN] Session fetch failed:", err);
         router.push("/planning");
       }
     }

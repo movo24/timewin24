@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -39,7 +40,7 @@ export async function DELETE(
 
     return successResponse({ deleted: true });
   } catch (err) {
-    console.error("DELETE /api/journal/daily/[id] error:", err);
+    logger.error("DELETE /api/journal/daily/[id] error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

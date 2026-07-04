@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -16,7 +17,7 @@ import { isAiAvailable } from "@/lib/ai-engine/config";
 // GET /api/ai/performance — Liste métriques IA employés
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requirePermission("view_ai_metrics");
+    const { error } = await requirePermission("view_ai_metrics");
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     return successResponse({ metrics });
   } catch (err) {
-    console.error("[GET /api/ai/performance] Error:", err);
+    logger.error("[GET /api/ai/performance] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }
@@ -75,7 +76,7 @@ export async function GET(req: NextRequest) {
 // POST /api/ai/performance — Recalculer métriques (Admin only)
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requireAdmin();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     if (!isAiAvailable()) {
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     const start = new Date();
     start.setDate(end.getDate() - daysBack);
 
-    console.log(
+    logger.debug(
       `[POST /api/ai/performance] Calculating metrics for ${daysBack} days...`
     );
 
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       period: { start: start.toISOString(), end: end.toISOString() },
     });
   } catch (err) {
-    console.error("[POST /api/ai/performance] Error:", err);
+    logger.error("[POST /api/ai/performance] Error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

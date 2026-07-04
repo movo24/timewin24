@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -27,9 +28,9 @@ export async function GET(req: NextRequest) {
     const VALID_STATUSES = ["PENDING", "SENT", "FAILED"] as const;
 
     const where: Record<string, unknown> = {};
-    if (eventType && eventType !== "ALL" && VALID_EVENT_TYPES.includes(eventType as any)) where.eventType = eventType;
-    if (channel && channel !== "ALL" && VALID_CHANNELS.includes(channel as any)) where.channel = channel;
-    if (status && status !== "ALL" && VALID_STATUSES.includes(status as any)) where.status = status;
+    if (eventType && eventType !== "ALL" && (VALID_EVENT_TYPES as readonly string[]).includes(eventType)) where.eventType = eventType;
+    if (channel && channel !== "ALL" && (VALID_CHANNELS as readonly string[]).includes(channel)) where.channel = channel;
+    if (status && status !== "ALL" && (VALID_STATUSES as readonly string[]).includes(status)) where.status = status;
     if (userId) where.userId = userId;
 
     const [logs, total] = await Promise.all([
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("GET /api/notifications/logs error:", err);
+    logger.error("GET /api/notifications/logs error:", err);
     return errorResponse(
       "Erreur serveur",
       500

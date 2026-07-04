@@ -1,22 +1,11 @@
 /**
  * Tests for the snapshot hash function used to detect "planning modified after sent".
- * Logic mirrored from src/app/api/planning/notify/route.ts → computeShiftSnapshotHash.
+ * Importe la VRAIE fonction `computeShiftSnapshotHash` (src/lib/notifications/
+ * planning-hash.ts) pour que le test garde reellement le code de production
+ * (une divergence d'implementation casse desormais le test).
  */
-import crypto from "crypto";
+import { computeShiftSnapshotHash } from "@/lib/notifications/planning-hash";
 import type { ShiftRow } from "@/lib/notifications/planning-email";
-
-// Re-implement the hash here so the test catches any divergence.
-function computeShiftSnapshotHash(rows: ShiftRow[]): string {
-  const sorted = [...rows].sort((a, b) =>
-    a.date === b.date
-      ? a.startTime.localeCompare(b.startTime)
-      : a.date.localeCompare(b.date)
-  );
-  const repr = sorted
-    .map((s) => `${s.date}|${s.startTime}|${s.endTime}|${s.storeName}`)
-    .join("\n");
-  return crypto.createHash("sha256").update(repr).digest("hex");
-}
 
 const baseShift = (overrides: Partial<ShiftRow> = {}): ShiftRow => ({
   date: "2026-04-20",

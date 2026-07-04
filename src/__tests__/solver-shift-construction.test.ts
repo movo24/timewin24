@@ -19,7 +19,6 @@ import type {
   SolverEmployee,
   SolverExistingShift,
   SolverUnavailability,
-  DaySlot,
   SolverOptions,
 } from "@/lib/solver/types";
 

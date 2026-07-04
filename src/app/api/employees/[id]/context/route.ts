@@ -1,6 +1,9 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { errorResponse, successResponse, getSessionOrUnauthorized } from "@/lib/api-helpers";
+import { errorResponse, successResponse, getSessionOrUnauthorized, getAccessibleStoreIds, canAccessEmployee } from "@/lib/api-helpers";
+import { isAdmin } from "@/lib/rbac";
+import { toNum } from "@/lib/decimal";
 
 // ─── GET /api/employees/[id]/context ─────────────────
 // Le POS appelle cet endpoint pour récupérer le contexte d'un employé.
@@ -13,10 +16,24 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await getSessionOrUnauthorized();
+    const { session, error } = await getSessionOrUnauthorized();
     if (error) return error;
 
     const { id } = await params;
+
+    // Contrôle d'accès : clé service (POS, intégration de confiance) OU admin OU
+    // manager du périmètre de l'employé OU l'employé lui-même. Sinon 403 —
+    // empêche tout compte authentifié de lire le contexte d'un autre employé.
+    const user = session!.user as { id: string; role: string; employeeId: string | null };
+    const isService = user.id.startsWith("service:");
+    if (!isService && !isAdmin(user.role)) {
+      if (user.employeeId !== id) {
+        const { storeIds } = await getAccessibleStoreIds();
+        if (!(await canAccessEmployee(id, storeIds))) {
+          return errorResponse("Employé hors de votre périmètre", 403);
+        }
+      }
+    }
 
     const employee = await prisma.employee.findUnique({
       where: { id },
@@ -51,7 +68,7 @@ export async function GET(
       // Rôle POS
       pos_role: employee.posRole || "cashier",
       timewin_role: employee.user?.role || "EMPLOYEE",
-      max_discount: employee.maxDiscountPct || 0,
+      max_discount: toNum(employee.maxDiscountPct ?? 0),
 
       // Compétences (utiles pour la caisse)
       skills: employee.skills,
@@ -67,7 +84,7 @@ export async function GET(
       // posQrCode: NEVER expose — auth credential
     });
   } catch (err) {
-    console.error("GET /api/employees/[id]/context error:", err);
+    logger.error("GET /api/employees/[id]/context error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

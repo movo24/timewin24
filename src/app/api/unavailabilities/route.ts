@@ -1,6 +1,7 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireManagerOrAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
+import { requireManagerOrAdmin, getAccessibleStoreIds, canAccessEmployee, successResponse, errorResponse } from "@/lib/api-helpers";
 import { unavailabilityCreateSchema } from "@/lib/validations";
 
 // POST /api/unavailabilities
@@ -9,10 +10,13 @@ export async function POST(req: NextRequest) {
     const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const body = await req.json();
     const parsed = unavailabilityCreateSchema.safeParse(body);
     if (!parsed.success) {
-      console.error("[POST /api/unavailabilities] Validation error:", parsed.error.issues);
+      logger.error("[POST /api/unavailabilities] Validation error:", parsed.error.issues);
       return errorResponse(parsed.error.issues.map((e) => e.message).join(", "));
     }
 
@@ -43,6 +47,11 @@ export async function POST(req: NextRequest) {
     // Verify employee exists
     const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
     if (!employee) return errorResponse("Employé non trouvé", 404);
+
+    // Périmètre : le manager ne gère que les employés de ses magasins.
+    if (!(await canAccessEmployee(employeeId, storeIds))) {
+      return errorResponse("Employé hors de votre périmètre", 403);
+    }
 
     // Check for duplicate (same employee, same type, same date or dayOfWeek)
     if (type === "VARIABLE" && date) {
@@ -83,10 +92,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`[POST /api/unavailabilities] Created ${type} unavailability ${unavailability.id} for employee ${employeeId}`);
+    logger.debug(`[POST /api/unavailabilities] Created ${type} unavailability ${unavailability.id} for employee ${employeeId}`);
     return successResponse(unavailability, 201);
   } catch (err) {
-    console.error("[POST /api/unavailabilities] Error:", err);
+    logger.error("[POST /api/unavailabilities] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500
@@ -100,6 +109,9 @@ export async function DELETE(req: NextRequest) {
     const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
+    const { storeIds, error: scopeErr } = await getAccessibleStoreIds();
+    if (scopeErr) return scopeErr;
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return errorResponse("ID requis");
@@ -107,12 +119,17 @@ export async function DELETE(req: NextRequest) {
     const existing = await prisma.unavailability.findUnique({ where: { id } });
     if (!existing) return errorResponse("Indisponibilité non trouvée", 404);
 
+    // Périmètre : ne supprimer que l'indispo d'un employé de ses magasins.
+    if (!(await canAccessEmployee(existing.employeeId, storeIds))) {
+      return errorResponse("Employé hors de votre périmètre", 403);
+    }
+
     await prisma.unavailability.delete({ where: { id } });
 
-    console.log(`[DELETE /api/unavailabilities] Deleted unavailability ${id}`);
+    logger.debug(`[DELETE /api/unavailabilities] Deleted unavailability ${id}`);
     return successResponse({ success: true });
   } catch (err) {
-    console.error("[DELETE /api/unavailabilities] Error:", err);
+    logger.error("[DELETE /api/unavailabilities] Error:", err);
     return errorResponse(
       "Erreur serveur",
       500

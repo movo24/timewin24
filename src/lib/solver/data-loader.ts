@@ -5,8 +5,11 @@
  * This is the ONLY file in the solver package that accesses the database.
  */
 
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { calculateEmployerCost, FRANCE_2026_DEFAULTS } from "@/lib/employer-cost";
+import { countryRulesFromConfig } from "@/lib/cost-mappers";
+import { toNum, toNumN } from "@/lib/decimal";
 import type {
   SolverInput,
   SolverEmployee,
@@ -45,43 +48,6 @@ function getWeekDates(weekStart: string): Date[] {
     dates.push(dt);
   }
   return dates;
-}
-
-/**
- * Compute employer cost per hour for an employee.
- * Uses the EmployeeCost + CountryConfig if available, or returns null.
- */
-async function computeCostPerHour(employeeId: string): Promise<number | null> {
-  const costConfig = await prisma.employeeCost.findUnique({
-    where: { employeeId },
-    include: { country: true },
-  });
-
-  if (!costConfig) return null;
-
-  const rules = costConfig.country
-    ? {
-        code: costConfig.country.code,
-        name: costConfig.country.name,
-        currency: costConfig.country.currency,
-        minimumWageHour: costConfig.country.minimumWageHour,
-        employerRate: costConfig.country.employerRate,
-        reductionEnabled: costConfig.country.reductionEnabled,
-        reductionMaxCoeff: costConfig.country.reductionMaxCoeff,
-        reductionThreshold: costConfig.country.reductionThreshold,
-        extraHourlyCost: costConfig.country.extraHourlyCost,
-      }
-    : FRANCE_2026_DEFAULTS;
-
-  const breakdown = calculateEmployerCost({
-    hourlyRateGross: costConfig.hourlyRateGross,
-    hours: 1, // per-hour cost
-    rules,
-    employerRateOverride: costConfig.employerRateOverride,
-    extraHourlyCostOverride: costConfig.extraHourlyCostOverride,
-  });
-
-  return breakdown.costPerHour;
 }
 
 /**
@@ -158,25 +124,15 @@ export async function loadSolverInput(
     let costPerHour: number | null = null;
     if (emp.costConfig) {
       const rules = emp.costConfig.country
-        ? {
-            code: emp.costConfig.country.code,
-            name: emp.costConfig.country.name,
-            currency: emp.costConfig.country.currency,
-            minimumWageHour: emp.costConfig.country.minimumWageHour,
-            employerRate: emp.costConfig.country.employerRate,
-            reductionEnabled: emp.costConfig.country.reductionEnabled,
-            reductionMaxCoeff: emp.costConfig.country.reductionMaxCoeff,
-            reductionThreshold: emp.costConfig.country.reductionThreshold,
-            extraHourlyCost: emp.costConfig.country.extraHourlyCost,
-          }
+        ? countryRulesFromConfig(emp.costConfig.country)
         : FRANCE_2026_DEFAULTS;
 
       const breakdown = calculateEmployerCost({
-        hourlyRateGross: emp.costConfig.hourlyRateGross,
+        hourlyRateGross: toNum(emp.costConfig.hourlyRateGross),
         hours: 1,
         rules,
-        employerRateOverride: emp.costConfig.employerRateOverride,
-        extraHourlyCostOverride: emp.costConfig.extraHourlyCostOverride,
+        employerRateOverride: toNumN(emp.costConfig.employerRateOverride),
+        extraHourlyCostOverride: toNumN(emp.costConfig.extraHourlyCostOverride),
       });
       costPerHour = breakdown.costPerHour;
     }
@@ -284,7 +240,7 @@ export async function loadSolverInput(
       // Log silently-skipped days — helps diagnose "quai" stores with missing schedules
       const rawSched = store.schedules.find((s) => s.dayOfWeek === dow);
       if (!rawSched) {
-        console.warn(
+        logger.warn(
           `[DataLoader] Magasin "${store.name}" (${store.id}): ` +
           `aucune configuration horaire pour le ${DAY_NAMES[dow]} (${formatDate(dt)}) — ` +
           `jour ignoré par le solver. Configurez les horaires dans Paramètres > Magasins.`
@@ -326,13 +282,13 @@ export async function loadAllStoresSolverInput(
       inputs.push(input);
     } else {
       if (input.employees.length === 0) {
-        console.warn(
+        logger.warn(
           `[DataLoader] Magasin "${store.name}" (${store.id}): ` +
           `aucun employé actif assigné — exclu du planning. ` +
           `Assignez des employés via Employés > Magasins autorisés.`
         );
       } else if (input.weekDays.length === 0) {
-        console.warn(
+        logger.warn(
           `[DataLoader] Magasin "${store.name}" (${store.id}): ` +
           `aucun horaire configuré pour la semaine du ${weekStart} — exclu du planning. ` +
           `Configurez les horaires dans Paramètres > Magasins > Horaires.`

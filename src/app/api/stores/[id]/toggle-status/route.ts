@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, successResponse, errorResponse } from "@/lib/api-helpers";
@@ -81,23 +82,28 @@ export async function POST(
       }
     }
 
-    // Proceed with status change — cascade cleanup when deactivating
+    // Proceed with status change — cascade cleanup when deactivating.
+    // M112 — désactivation atomique : suppression des shifts futurs + changement de
+    // statut dans une seule $transaction (sinon échec entre les deux = shifts supprimés
+    // mais magasin encore ACTIVE).
     let cancelledShifts = 0;
+    let updated;
 
     if (newStatus === "INACTIVE") {
-      // Delete all future shifts for this store — they are no longer valid
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const deleted = await prisma.shift.deleteMany({
-        where: { storeId: id, date: { gte: today } },
-      });
+      const [deleted, store2] = await prisma.$transaction([
+        prisma.shift.deleteMany({ where: { storeId: id, date: { gte: today } } }),
+        prisma.store.update({ where: { id }, data: { status: newStatus } }),
+      ]);
       cancelledShifts = deleted.count;
+      updated = store2;
+    } else {
+      updated = await prisma.store.update({
+        where: { id },
+        data: { status: newStatus },
+      });
     }
-
-    const updated = await prisma.store.update({
-      where: { id },
-      data: { status: newStatus },
-    });
 
     await logAudit(session!.user.id, "UPDATE", "Store", id, {
       action: newStatus === "ACTIVE" ? "reactivate" : "deactivate",
@@ -115,7 +121,7 @@ export async function POST(
           : `Le magasin "${store.name}" a été désactivé${cancelledShifts > 0 ? ` — ${cancelledShifts} shift(s) futur(s) annulé(s)` : ""}`,
     });
   } catch (err) {
-    console.error("POST /api/stores/[id]/toggle-status error:", err);
+    logger.error("POST /api/stores/[id]/toggle-status error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

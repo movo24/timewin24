@@ -1,5 +1,7 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNum } from "@/lib/decimal";
 import {
   requireManagerOrAdmin,
   getAccessibleStoreIds,
@@ -110,7 +112,7 @@ export async function GET(req: NextRequest) {
 
     const salesMap = new Map<string, { totalSales: number; transactions: number; salesPerHour: number }>();
     for (const s of salesAgg) {
-      const totalSales = s._sum.totalSales || 0;
+      const totalSales = toNum(s._sum.totalSales ?? 0);
       const hours = s._sum.workingHours || 0;
       salesMap.set(`${s.employeeId}:${s.storeId}`, {
         totalSales: Math.round(totalSales * 100) / 100,
@@ -153,7 +155,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("[analytics/employees] Error:", err);
+    logger.error("[analytics/employees] Error:", err);
     return errorResponse("Erreur interne du serveur", 500);
   }
 }

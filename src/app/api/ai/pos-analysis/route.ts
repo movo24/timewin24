@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { requireManagerOrAdmin, errorResponse, successResponse, getAccessibleStoreIds } from "@/lib/api-helpers";
 import { collectPosData } from "@/lib/ai-engine/pos-analysis/data-collector";
@@ -7,7 +8,7 @@ import { analyzePosData } from "@/lib/ai-engine/pos-analysis/analyzer";
 // Génère une analyse business IA à partir des données POS réelles
 export async function POST(req: NextRequest) {
   try {
-    const { session, error } = await requireManagerOrAdmin();
+    const { error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const body = await req.json();
@@ -65,10 +66,7 @@ export async function POST(req: NextRequest) {
       generatedAt: result.generatedAt,
     });
   } catch (err) {
-    console.error("POST /api/ai/pos-analysis error:", err);
-    return errorResponse(
-      err instanceof Error ? err.message : "Erreur serveur",
-      500
-    );
+    logger.error("POST /api/ai/pos-analysis error:", err);
+    return errorResponse("Erreur serveur", 500);
   }
 }

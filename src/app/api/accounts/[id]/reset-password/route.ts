@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/api-helpers";
@@ -50,7 +51,7 @@ export async function POST(
 
     return successResponse({ message: "Mot de passe réinitialisé" });
   } catch (err) {
-    console.error("POST /api/accounts/[id]/reset-password error:", err);
+    logger.error("POST /api/accounts/[id]/reset-password error:", err);
     return errorResponse("Erreur serveur", 500);
   }
 }

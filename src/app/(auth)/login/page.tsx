@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -31,15 +32,15 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      console.log("[EMP-LOGIN] Auth error:", result.error);
+      logger.debug("[EMP-LOGIN] Auth error:", result.error);
       setError(result.error);
     } else {
-      console.log("[EMP-LOGIN] Auth success, fetching session...");
+      logger.debug("[EMP-LOGIN] Auth success, fetching session...");
       try {
         const sessionRes = await fetch("/api/auth/session");
         const sessionData = await sessionRes.json();
         const role = sessionData?.user?.role;
-        console.log("[EMP-LOGIN] Session role:", role, "email:", sessionData?.user?.email);
+        logger.debug("[EMP-LOGIN] Session role:", role, "email:", sessionData?.user?.email);
 
         if (sessionData?.user?.mustChangePassword) {
           router.push("/changer-mot-de-passe");
@@ -48,10 +49,10 @@ export default function LoginPage() {
 
         // Rediriger selon le rôle réel
         const target = role === "EMPLOYEE" ? "/mon-planning" : "/planning";
-        console.log(`[EMP-LOGIN] Role: ${role} → ${target}`);
+        logger.debug(`[EMP-LOGIN] Role: ${role} → ${target}`);
         router.push(target);
       } catch (err) {
-        console.error("[EMP-LOGIN] Session fetch failed:", err);
+        logger.error("[EMP-LOGIN] Session fetch failed:", err);
         router.push("/mon-planning");
       }
     }
