@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { randomInt } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireManagerOrAdmin, getAccessibleStoreIds, errorResponse, successResponse } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 function generateEmployeeCode(): string {
@@ -32,7 +33,7 @@ function generatePin(length = 4): string {
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error } = await requireManagerOrAdmin();
+    const { session, error } = await requireManagerOrAdmin();
     if (error) return error;
 
     const { id } = await params;
@@ -55,6 +56,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
       if (!inScope) return errorResponse("Accès refusé : employé hors de votre périmètre", 403);
     }
+
+    // Audit : toute action sur l'accès terrain d'un employé (block/unblock/…).
+    await logAudit(session!.user.id, "UPDATE", "EmployeeAccess", id, { action, reason: reason ?? null });
 
     switch (action) {
       case "block": {
